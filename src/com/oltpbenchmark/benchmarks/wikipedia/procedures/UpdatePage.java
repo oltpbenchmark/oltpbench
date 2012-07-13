@@ -25,6 +25,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import net.spy.memcached.MemcachedClient;
+
 import com.oltpbenchmark.api.Procedure;
 import com.oltpbenchmark.api.SQLStmt;
 import com.oltpbenchmark.benchmarks.wikipedia.WikipediaConstants;
@@ -124,11 +126,16 @@ public class UpdatePage extends Procedure {
         " WHERE user_id = ?"
     );
 	
+	private String mcUserTableKey(int userId) {
+	    return "wikidb:user:id" + userId;
+	}
+	
     // -----------------------------------------------------------------
     // RUN
     // -----------------------------------------------------------------
 	
-	public void run(Connection conn, int textId, int pageId,
+	public void run(Connection conn, MemcachedClient mcclient,
+	                                 int textId, int pageId,
 	                                 String pageTitle, String pageText, int pageNamespace,
 	                                 int userId, String userIp, String userText,
 	                                 int revisionId, String revComment, int revMinorEdit) throws SQLException {
@@ -236,7 +243,7 @@ public class UpdatePage extends Procedure {
 		// UPDATING WATCHLIST: txn3 (not always, only if someone is watching the
 		// page, might be part of txn2)
 		// =====================================================================
-		if (wlUser.isEmpty() == false) {
+		if (!wlUser.isEmpty()) {
 
 			// NOTE: this commit is skipped if none is watching the page, and
 			// the transaction merge with the following one
@@ -267,10 +274,25 @@ public class UpdatePage extends Procedure {
 			ps = this.getPreparedStatement(conn, selectUser);
             param = 1;
 			for (Integer otherUserId : wlUser) {
-				ps.setInt(param, otherUserId.intValue());
-				rs = ps.executeQuery();
-				rs.next();
-				rs.close();
+			    boolean doFetch = true;
+	            if (mcclient != null) {
+	                Object x;
+	                if ((x = mcclient.get(mcUserTableKey(userId))) != null) {
+	                    assert(((String)x).length() > 1);
+	                    doFetch = false;
+	                }
+	            }			    
+	            if (doFetch) {
+	                ps.setInt(param, otherUserId.intValue());
+	                rs = ps.executeQuery();
+	                rs.next();
+	                String username = rs.getString("user_name");
+	                rs.close();
+	                if (mcclient != null) {
+	                    // XXX: see note in GetPageAuthenticated
+	                    mcclient.add(mcUserTableKey(userId), WikipediaConstants.MC_KEY_TIMEOUT, "0" + username);
+	                }
+	            }
 			} // FOR
 		}
 

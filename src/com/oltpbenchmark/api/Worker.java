@@ -1,5 +1,6 @@
 package com.oltpbenchmark.api;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Savepoint;
@@ -7,6 +8,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
+
+import net.spy.memcached.MemcachedClient;
 
 import org.apache.log4j.Logger;
 
@@ -31,6 +34,7 @@ public abstract class Worker implements Runnable {
 	private final int id;
 	private final BenchmarkModule benchmarkModule;
 	protected final Connection conn;
+	protected MemcachedClient mcclient;
 	protected final WorkloadConfiguration wrkld;
 	protected final TransactionTypes transactionTypes;
 	protected final Map<TransactionType, Procedure> procedures = new HashMap<TransactionType, Procedure>();
@@ -59,6 +63,13 @@ public abstract class Worker implements Runnable {
 		    conn.setTransactionIsolation(wrkld.getIsolationMode());
 		} catch (SQLException ex) {
 		    throw new RuntimeException("Failed to connect to database", ex);
+		}
+		
+		try {
+		    this.mcclient = this.benchmarkModule.makeMCClient();
+		} catch (IOException ex) {
+		    LOG.warn("Could not connect to memcached instance: " + ex.getMessage());
+		    this.mcclient = null;
 		}
 		
 		// Generate all the Procedures that we're going to need

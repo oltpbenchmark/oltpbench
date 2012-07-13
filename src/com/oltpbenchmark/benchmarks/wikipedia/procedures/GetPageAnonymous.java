@@ -24,6 +24,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import net.spy.memcached.MemcachedClient;
+
 import com.oltpbenchmark.api.Procedure;
 import com.oltpbenchmark.api.SQLStmt;
 import com.oltpbenchmark.benchmarks.wikipedia.WikipediaConstants;
@@ -62,12 +64,18 @@ public class GetPageAnonymous extends Procedure {
         " WHERE old_id = ? LIMIT 1"
     );
 
+	private String mcKeyRevisionTextKey(int textId) {
+	    return "wikidb:revisiontext:textid:" + textId;
+	}
+	
+	
 	// -----------------------------------------------------------------
     // RUN
     // -----------------------------------------------------------------
 	
-	public Article run(Connection conn, boolean forSelect, String userIp,
-			                            int pageNamespace, String pageTitle) throws UserAbortException, SQLException {		
+	public Article run(Connection conn, MemcachedClient mcclient,
+	        boolean forSelect, String userIp,
+			int pageNamespace, String pageTitle) throws UserAbortException, SQLException {		
 	    int param = 1;
 	    
 		PreparedStatement st = this.getPreparedStatement(conn, selectPage);
@@ -115,19 +123,29 @@ public class GetPageAnonymous extends Procedure {
         int textId = rs.getInt("rev_text_id");
         assert !rs.next();
         rs.close();
-
-        // NOTE: the following is our variation of wikipedia... the original did
-        // not contain old_page column!
-        // sql =
-        // "SELECT old_text,old_flags FROM `text` WHERE old_id = '"+textId+"' AND old_page = '"+pageId+"' LIMIT 1";
-        // For now we run the original one, which works on the data we have
-        st = this.getPreparedStatement(conn, selectText);
-        st.setInt(1, textId);
-        rs = st.executeQuery();
-        if (!rs.next()) {
-            String msg = "No such text: " + textId + " for page_id:" + pageId + " page_namespace: " + pageNamespace + " page_title:" + pageTitle;
-            throw new UserAbortException(msg);
+        
+        boolean doFetch = true;
+        if (mcclient != null && mcclient.get(mcKeyRevisionTextKey(textId)) != null) {
+            doFetch = false;
         }
+        if (doFetch) {
+            // NOTE: the following is our variation of wikipedia... the original did
+            // not contain old_page column!
+            // sql =
+            // "SELECT old_text,old_flags FROM `text` WHERE old_id = '"+textId+"' AND old_page = '"+pageId+"' LIMIT 1";
+            // For now we run the original one, which works on the data we have
+            st = this.getPreparedStatement(conn, selectText);
+            st.setInt(1, textId);
+            rs = st.executeQuery();
+            if (!rs.next()) {
+                String msg = "No such text: " + textId + " for page_id:" + pageId + " page_namespace: " + pageNamespace + " page_title:" + pageTitle;
+                throw new UserAbortException(msg);
+            }
+            if (mcclient != null) {
+                mcclient.add(mcKeyRevisionTextKey(textId), WikipediaConstants.MC_KEY_TIMEOUT, rs.getString(1));
+            }
+        }
+
         Article a = null;
         if (!forSelect)
 			a = new Article(userIp, pageId, rs.getString("old_text"), textId, revisionId);

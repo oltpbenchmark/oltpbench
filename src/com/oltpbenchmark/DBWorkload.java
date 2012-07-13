@@ -153,6 +153,8 @@ public class DBWorkload {
         wrkld.setDBName(xmlConfig.getString("DBName"));
         wrkld.setDBUsername(xmlConfig.getString("username"));
         wrkld.setDBPassword(xmlConfig.getString("password"));
+        wrkld.setMCHostname(xmlConfig.getString("MCHostname"));
+        wrkld.setMCPort(xmlConfig.containsKey("MCPort") ? xmlConfig.getInt("MCPort") : -1);
         wrkld.setTerminals(xmlConfig.getInt("terminals"));
         wrkld.setIsolationMode(xmlConfig.getString("isolation", "TRANSACTION_SERIALIZABLE"));
         wrkld.setScaleFactor(xmlConfig.getDouble("scalefactor", 1.0));

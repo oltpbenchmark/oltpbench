@@ -44,6 +44,10 @@ public class WorkloadConfiguration {
 	private String db_username;
 	private String db_password;
 	private String db_driver;	
+	
+	private String mc_hostname;
+	private int mc_port;
+	
 	private double scaleFactor = 1.0;
 	private int terminals;
 	private XMLConfiguration xmlConfig = null;
@@ -113,7 +117,23 @@ public class WorkloadConfiguration {
 		return this.db_driver;
 	}
 	
-	public void setRecordAbortMessages(boolean recordAbortMessages) {
+	public String getMCHostname() {
+        return mc_hostname;
+    }
+
+    public void setMCHostname(String mc_hostname) {
+        this.mc_hostname = mc_hostname;
+    }
+
+    public int getMCPort() {
+        return mc_port;
+    }
+
+    public void setMCPort(int mc_port) {
+        this.mc_port = mc_port;
+    }
+
+    public void setRecordAbortMessages(boolean recordAbortMessages) {
         this.recordAbortMessages = recordAbortMessages;
     }
 	

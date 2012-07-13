@@ -127,14 +127,14 @@ public class WikipediaWorker extends Worker {
 			                        int nameSpace, String pageTitle) throws SQLException {
 		GetPageAnonymous proc = this.getProcedure(GetPageAnonymous.class);
         assert (proc != null);
-        return proc.run(conn, forSelect, userIp, nameSpace, pageTitle);
+        return proc.run(conn, mcclient, forSelect, userIp, nameSpace, pageTitle);
 	}
 
 	public Article getPageAuthenticated(boolean forSelect, String userIp, int userId,
 			                            int nameSpace, String pageTitle) throws SQLException {
 		GetPageAuthenticated proc = this.getProcedure(GetPageAuthenticated.class);
         assert (proc != null);
-        return proc.run(conn, forSelect, userIp, userId, nameSpace, pageTitle);
+        return proc.run(conn, mcclient, forSelect, userIp, userId, nameSpace, pageTitle);
 	}
 	
 	public void addToWatchlist(int userId, int nameSpace, String pageTitle) throws SQLException {
@@ -170,7 +170,8 @@ public class WikipediaWorker extends Worker {
 	        LOG.trace("UPDATING: Page: id:"+a.pageId+" ns:"+nameSpace +" title"+ pageTitle);
 		UpdatePage proc = this.getProcedure(UpdatePage.class);
         assert (proc != null);
-        proc.run(conn, a.textId, a.pageId, pageTitle, new String(newText),
+        proc.run(conn, mcclient, 
+                       a.textId, a.pageId, pageTitle, new String(newText),
                        nameSpace, userId, userIp, a.userText,
                        a.revisionId, revComment, revMinorEdit);
 	}

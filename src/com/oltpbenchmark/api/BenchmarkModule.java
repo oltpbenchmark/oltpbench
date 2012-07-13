@@ -21,6 +21,7 @@ package com.oltpbenchmark.api;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -32,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+
+import net.spy.memcached.MemcachedClient;
 
 import org.apache.log4j.Logger;
 
@@ -74,6 +77,11 @@ public abstract class BenchmarkModule {
      * The last Connection that was created using this BenchmarkModule
      */
     private Connection last_connection;
+    
+    /**
+     * The last memcached connection that was created using this Benchmark Module
+     */
+    private MemcachedClient last_mcclient;
     
     /**
      * A single Random object that should be re-used by all a benchmark's components
@@ -120,6 +128,22 @@ public abstract class BenchmarkModule {
      */
     protected final Connection getLastConnection() {
         return (this.last_connection);
+    }
+    
+    protected final MemcachedClient makeMCClient() throws IOException {
+        // no MC specified, so don't bother connecting
+        if (workConf.getMCHostname() == null && workConf.getMCPort() == -1) return null;
+        
+        String hostname = workConf.getMCHostname() == null ? "127.0.0.1" : workConf.getMCHostname();
+        int port = workConf.getMCPort() == -1 ? 11211 : workConf.getMCPort();
+        
+        MemcachedClient c = new MemcachedClient(new InetSocketAddress(hostname, port));
+        this.last_mcclient = c;
+        return c;
+    }
+    
+    protected final MemcachedClient getLastMCClient() {
+        return last_mcclient;
     }
 
     // --------------------------------------------------------------------------

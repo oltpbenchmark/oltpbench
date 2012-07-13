@@ -24,8 +24,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import net.spy.memcached.MemcachedClient;
+
 import com.oltpbenchmark.api.Procedure;
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.api.Procedure.UserAbortException;
 import com.oltpbenchmark.benchmarks.wikipedia.WikipediaConstants;
 import com.oltpbenchmark.benchmarks.wikipedia.util.Article;
 
@@ -60,6 +63,7 @@ public class GetPageAuthenticated extends Procedure {
         "SELECT old_text,old_flags FROM " + WikipediaConstants.TABLENAME_TEXT +
         " WHERE old_id = ? LIMIT 1"
     );
+    
 	public SQLStmt selectUser = new SQLStmt(
         "SELECT * FROM " + WikipediaConstants.TABLENAME_USER + 
         " WHERE user_id = ? LIMIT 1"
@@ -69,11 +73,19 @@ public class GetPageAuthenticated extends Procedure {
         " WHERE ug_user = ?"
     );
 
+	private String mcUserTableKey(int userId) {
+	    return "wikidb:user:id" + userId;
+	}
+	
+	private String mcKeyRevisionTextKey(int textId) {
+	    return "wikidb:revisiontext:textid:" + textId;
+	}
+	
     // -----------------------------------------------------------------
     // RUN
     // -----------------------------------------------------------------
 	
-    public Article run(Connection conn, boolean forSelect, String userIp, int userId, int nameSpace, String pageTitle) throws SQLException {
+    public Article run(Connection conn, MemcachedClient mcclient, boolean forSelect, String userIp, int userId, int nameSpace, String pageTitle) throws SQLException {
         // =======================================================
         // LOADING BASIC DATA: txn1
         // =======================================================
@@ -83,25 +95,54 @@ public class GetPageAuthenticated extends Procedure {
         String userText = userIp;
         PreparedStatement st = this.getPreparedStatement(conn, selectUser);
         if (userId > 0) {
-            st.setInt(1, userId);
-            ResultSet rs = st.executeQuery();
-            if (rs.next()) {
-                userText = rs.getString("user_name");
-            } else {
+            boolean doFetchUserTable = true;
+            boolean doFetchGrpTable = true;
+            if (mcclient != null) {
+                Object x;
+                if ((x = mcclient.get(mcUserTableKey(userId))) != null) {
+                    userText = (String) x;
+                    doFetchUserTable = false;
+                    // XXX: hack- we use the first character of the mc value to denote
+                    // whether or not we have "cachced" the groups
+                    assert(userText.length() > 1);
+                    doFetchGrpTable = userText.charAt(0) != '1';
+                    userText = userText.substring(1);
+                }
+            }
+
+            ResultSet rs;
+            if (doFetchUserTable) {
+                st.setInt(1, userId);
+                rs = st.executeQuery();
+                if (rs.next()) {
+                    userText = rs.getString("user_name");
+                } else {
+                    rs.close();
+                    throw new UserAbortException("Invalid UserId: " + userId);
+                }
                 rs.close();
-                throw new UserAbortException("Invalid UserId: " + userId);
             }
-            rs.close();
-            // Fetch all groups the user might belong to (access control
-            // information)
-            st = this.getPreparedStatement(conn, selectGroup);
-            st.setInt(1, userId);
-            rs = st.executeQuery();
-            while (rs.next()) {
-                @SuppressWarnings("unused")
-                String userGroupName = rs.getString(1);
+            
+            if (doFetchGrpTable) {
+                // Fetch all groups the user might belong to (access control
+                // information)
+                st = this.getPreparedStatement(conn, selectGroup);
+                st.setInt(1, userId);
+                rs = st.executeQuery();
+                while (rs.next()) {
+                    @SuppressWarnings("unused")
+                    String userGroupName = rs.getString(1);
+                }
+                rs.close();
             }
-            rs.close();
+            
+            if (mcclient != null) {
+                // XXX: we really should be putting group name information for the
+                // memcache value, but since the default transcoder uses java serialization
+                // for complex type (eg arrays) we just don't store it to avoid a perf
+                // penalty (which could be optimized away if we cared)
+                mcclient.add(mcUserTableKey(userId), WikipediaConstants.MC_KEY_TIMEOUT, "1" + userText);
+            }
         }
 
         st = this.getPreparedStatement(conn, selectPage);
@@ -151,18 +192,28 @@ public class GetPageAuthenticated extends Procedure {
         assert !rs.next();
         rs.close();
 
-        // NOTE: the following is our variation of wikipedia... the original did
-        // not contain old_page column!
-        // sql =
-        // "SELECT old_text,old_flags FROM `text` WHERE old_id = '"+textId+"' AND old_page = '"+pageId+"' LIMIT 1";
-        // For now we run the original one, which works on the data we have
-        st = this.getPreparedStatement(conn, selectText);
-        st.setInt(1, textId);
-        rs = st.executeQuery();
-        if (!rs.next()) {
-            rs.close();
-            throw new UserAbortException("no such text: " + textId + " for page_id:" + pageId + " page_namespace: " + nameSpace + " page_title:" + pageTitle);
+        boolean doFetch = true;
+        if (mcclient != null && mcclient.get(mcKeyRevisionTextKey(textId)) != null) {
+            doFetch = false;
         }
+        if (doFetch) {
+            // NOTE: the following is our variation of wikipedia... the original did
+            // not contain old_page column!
+            // sql =
+            // "SELECT old_text,old_flags FROM `text` WHERE old_id = '"+textId+"' AND old_page = '"+pageId+"' LIMIT 1";
+            // For now we run the original one, which works on the data we have
+            st = this.getPreparedStatement(conn, selectText);
+            st.setInt(1, textId);
+            rs = st.executeQuery();
+            if (!rs.next()) {
+                String msg = "No such text: " + textId + " for page_id:" + pageId + " page_namespace: " + nameSpace + " page_title:" + pageTitle;
+                throw new UserAbortException(msg);
+            }
+            if (mcclient != null) {
+                mcclient.add(mcKeyRevisionTextKey(textId), WikipediaConstants.MC_KEY_TIMEOUT, rs.getString(1));
+            }
+        }
+        
         Article a = null;
         if (!forSelect)
             a = new Article(userText, pageId, rs.getString("old_text"), textId, revisionId);
