@@ -261,7 +261,7 @@ public abstract class BenchmarkModule {
             assert(ddl != null) : "Failed to get DDL for " + this;
             assert(ddl.exists()) : "The file '" + ddl + "' does not exist";
             ScriptRunner runner = new ScriptRunner(conn, true, true);
-            if (LOG.isDebugEnabled()) LOG.debug("Executing script '" + ddl.getName() + "'");
+            if (LOG.isDebugEnabled()) LOG.debug("Executing script '" + ddl.getPath() + "'");
             runner.runScript(ddl);
         } catch (Exception ex) {
             throw new RuntimeException(String.format("Unexpected error when trying to create the %s database", this.benchmarkName), ex);
