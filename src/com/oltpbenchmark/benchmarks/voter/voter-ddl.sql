@@ -29,6 +29,7 @@ CREATE TABLE votes
 , state              varchar(2) NOT NULL 
 , contestant_number  integer    NOT NULL REFERENCES contestants (contestant_number)
 );
+CREATE INDEX idx_votes_phone_number ON votes (phone_number);
 
 -- rollup of votes by phone number, used to reject excessive voting
 CREATE VIEW v_votes_by_phone_number

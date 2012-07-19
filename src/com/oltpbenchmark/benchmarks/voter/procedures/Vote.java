@@ -51,7 +51,7 @@ public class Vote extends Procedure {
 	
     // Checks if the voter has exceeded their allowed number of votes
     public final SQLStmt checkVoterStmt = new SQLStmt(
-		"SELECT num_votes FROM v_votes_by_phone_number WHERE phone_number = ?;"
+		"SELECT COUNT(*) FROM votes WHERE phone_number = ?;"
     );
 	
     // Checks an area code to retrieve the corresponding state
