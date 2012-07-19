@@ -4,7 +4,7 @@ CREATE TABLE contestants
 (
   contestant_number integer     NOT NULL
 , contestant_name   varchar(50) NOT NULL
-, CONSTRAINT PK_contestants PRIMARY KEY
+, PRIMARY KEY
   (
     contestant_number
   )
@@ -15,7 +15,7 @@ CREATE TABLE area_code_state
 (
   area_code smallint   NOT NULL
 , state     varchar(2) NOT NULL
-, CONSTRAINT PK_area_code_state PRIMARY KEY
+, PRIMARY KEY
   (
     area_code
   )
@@ -26,9 +26,8 @@ CREATE TABLE area_code_state
 CREATE TABLE votes
 (
   phone_number       bigint     NOT NULL
-, state              varchar(2) NOT NULL -- REFERENCES area_code_state (state)
+, state              varchar(2) NOT NULL 
 , contestant_number  integer    NOT NULL REFERENCES contestants (contestant_number)
--- PARTITION BY ( phone_number )
 );
 
 -- rollup of votes by phone number, used to reject excessive voting
