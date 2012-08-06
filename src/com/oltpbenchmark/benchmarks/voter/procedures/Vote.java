@@ -61,10 +61,11 @@ public class Vote extends Procedure {
 	
     // Records a vote
     public final SQLStmt insertVoteStmt = new SQLStmt(
-		"INSERT INTO votes (phone_number, state, contestant_number) VALUES (?, ?, ?);"
+		"INSERT INTO votes (vote_id, phone_number, state, contestant_number, created) " +
+    "VALUES (?, ?, ?, ?, NOW());"
     );
 	
-    public long run(Connection conn, long phoneNumber, int contestantNumber, long maxVotesPerPhoneNumber) throws SQLException {
+    public long run(Connection conn, long voteId, long phoneNumber, int contestantNumber, long maxVotesPerPhoneNumber) throws SQLException {
 		
         PreparedStatement ps = getPreparedStatement(conn, checkContestantStmt);
         ps.setInt(1, contestantNumber);
@@ -101,9 +102,10 @@ public class Vote extends Procedure {
         rs.close();
 
         ps = getPreparedStatement(conn, insertVoteStmt);
-        ps.setLong(1, phoneNumber);
-        ps.setString(2, state);
-        ps.setInt(3, contestantNumber);
+        ps.setLong(1, voteId);
+        ps.setLong(2, phoneNumber);
+        ps.setString(3, state);
+        ps.setInt(4, contestantNumber);
         ps.execute();
 		
         // Set the return value to 0: successful vote

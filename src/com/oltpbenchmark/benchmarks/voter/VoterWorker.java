@@ -15,7 +15,7 @@ public class VoterWorker extends Worker {
     
     public VoterWorker(VoterBenchmark benchmarkModule, int id) {
         super(benchmarkModule, id);
-        switchboard = new PhoneCallGenerator(benchmarkModule.numContestants);
+        switchboard = new PhoneCallGenerator(0, benchmarkModule.numContestants);
     }
 
     @Override
@@ -24,7 +24,7 @@ public class VoterWorker extends Worker {
         PhoneCall call = switchboard.receive();
         Vote proc = getProcedure(Vote.class);
         assert (proc != null);
-        proc.run(conn, call.phoneNumber, call.contestantNumber, VoterConstants.MAX_VOTES);
+        proc.run(conn, call.voteId, call.phoneNumber, call.contestantNumber, VoterConstants.MAX_VOTES);
         conn.commit();
         return TransactionStatus.SUCCESS;
     }

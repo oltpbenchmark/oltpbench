@@ -25,9 +25,11 @@ CREATE TABLE area_code_state
 --   voters are not allowed to submit more than <x> votes, x is passed to client application
 CREATE TABLE votes
 (
-  phone_number       bigint     NOT NULL
+  vote_id            bigint     NOT NULL 
+, phone_number       bigint     NOT NULL
 , state              varchar(2) NOT NULL 
 , contestant_number  integer    NOT NULL REFERENCES contestants (contestant_number)
+, created            timestamp  NOT NULL
 );
 CREATE INDEX idx_votes_phone_number ON votes (phone_number);
 
