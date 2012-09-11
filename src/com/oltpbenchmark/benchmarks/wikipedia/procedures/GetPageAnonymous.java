@@ -23,6 +23,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Random;
 
 import net.spy.memcached.MemcachedClient;
 
@@ -30,6 +32,7 @@ import com.oltpbenchmark.api.Procedure;
 import com.oltpbenchmark.api.SQLStmt;
 import com.oltpbenchmark.benchmarks.wikipedia.WikipediaConstants;
 import com.oltpbenchmark.benchmarks.wikipedia.util.Article;
+import com.oltpbenchmark.distributions.ZipFianDistribution;
 
 public class GetPageAnonymous extends Procedure {
 	
@@ -50,6 +53,10 @@ public class GetPageAnonymous extends Procedure {
         "SELECT * FROM " + WikipediaConstants.TABLENAME_IPBLOCKS + 
         " WHERE ipb_address = ?"
     ); 
+	
+	public SQLStmt selectRevisionsByPage = new SQLStmt(
+	        "SELECT rev_id FROM " + WikipediaConstants.TABLENAME_REVISION + " WHERE page_id = ?");
+	
 	public SQLStmt selectPageRevision = new SQLStmt(
         "SELECT * " +
 	    "  FROM " + WikipediaConstants.TABLENAME_PAGE + ", " +
@@ -59,6 +66,17 @@ public class GetPageAnonymous extends Procedure {
 	    "   AND page_id = ? " +
         "   AND rev_id = page_latest LIMIT 1"
     );
+	
+	public SQLStmt selectPageRevisionNotLatest = new SQLStmt(
+	        "SELECT * " +
+	                "  FROM " + WikipediaConstants.TABLENAME_PAGE + ", " +
+	                WikipediaConstants.TABLENAME_REVISION +
+	                " WHERE page_id = rev_page " +
+	                "   AND rev_page = ? " +
+	                "   AND page_id = ? " +
+	                "   AND rev_id = ? LIMIT 1"
+	        );
+	
 	public SQLStmt selectText = new SQLStmt(
         "SELECT old_text, old_flags FROM " + WikipediaConstants.TABLENAME_TEXT +
         " WHERE old_id = ? LIMIT 1"
@@ -68,6 +86,12 @@ public class GetPageAnonymous extends Procedure {
 	    return "wikidb:revisiontext:textid:" + textId;
 	}
 	
+	private final Random rnd = new Random();
+	
+	private boolean flipCoin(double phead) {
+	    assert phead <= 1.0;
+	    return rnd.nextDouble() <= phead;
+	}
 	
 	// -----------------------------------------------------------------
     // RUN
@@ -109,20 +133,73 @@ public class GetPageAnonymous extends Procedure {
         } // WHILE
         rs.close();
 
-        st = this.getPreparedStatement(conn, selectPageRevision);
-        st.setInt(1, pageId);
-        st.setInt(2, pageId);
-        rs = st.executeQuery();
-        if (!rs.next()) {
-            String msg = String.format("Invalid Page: Namespace:%d / Title:--%s-- / PageId:%d",
-                                       pageNamespace, pageTitle, pageId);
-            throw new UserAbortException(msg);
-        }
+        int revisionId, textId;
+        if (flipCoin(WikipediaConstants.PAST_REV_CHECK_PROB)) {
+            // get a list of all past revisions
+            st = this.getPreparedStatement(conn, selectRevisionsByPage);
+            st.setInt(1, pageId);
+            rs = st.executeQuery();
+            
+            ArrayList<Integer> revIds = new ArrayList<Integer>();
+            while (rs.next()) {
+                revIds.add(rs.getInt(1));
+            }
+            if (revIds.isEmpty()) {
+                String msg = "bad pageid: " + pageId;
+                throw new UserAbortException(msg);
+            }
+            
+            int revId;
+            if (revIds.size() == 1) {
+                // only one rev, so we must pick it
+                revId = revIds.get(0);
+            } else {
+            
+                // revIds.size() - 1 so we exclude the latest revision (we want to make
+                // this branch load *not* the latest page
+                ZipFianDistribution zipf = new ZipFianDistribution(
+                        rnd, revIds.size() - 1, WikipediaConstants.PAST_REV_ZIPF_SKEW);
+                
+                // pick the index into revIds
+                int idx = zipf.next();
+                assert idx >= 0 && idx < (revIds.size() - 1);
+                    
+                // index from the end, since we want to favor latest revisions
+                revId = revIds.get( (revIds.size() - 2) - idx );
+            }
+            
+            st = this.getPreparedStatement(conn, selectPageRevisionNotLatest);
+            st.setInt(1, pageId);
+            st.setInt(2, pageId);
+            st.setInt(3, revId);
+            rs = st.executeQuery();
+            if (!rs.next()) {
+                String msg = String.format("Invalid Page: Namespace:%d / Title:--%s-- / PageId:%d",
+                                           pageNamespace, pageTitle, pageId);
+                throw new UserAbortException(msg);
+            }
 
-        int revisionId = rs.getInt("rev_id");
-        int textId = rs.getInt("rev_text_id");
-        assert !rs.next();
-        rs.close();
+            revisionId = rs.getInt("rev_id");
+            textId = rs.getInt("rev_text_id");
+            assert !rs.next();
+            rs.close();
+        } else {
+            // only interested in latest revision
+            st = this.getPreparedStatement(conn, selectPageRevision);
+            st.setInt(1, pageId);
+            st.setInt(2, pageId);
+            rs = st.executeQuery();
+            if (!rs.next()) {
+                String msg = String.format("Invalid Page: Namespace:%d / Title:--%s-- / PageId:%d",
+                                           pageNamespace, pageTitle, pageId);
+                throw new UserAbortException(msg);
+            }
+
+            revisionId = rs.getInt("rev_id");
+            textId = rs.getInt("rev_text_id");
+            assert !rs.next();
+            rs.close();
+        }
         
         boolean doFetch = true;
         if (mcclient != null && mcclient.get(mcKeyRevisionTextKey(textId)) != null) {
