@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-<plugins>
-    <plugin name="tpcc">com.oltpbenchmark.benchmarks.tpcc.TPCCBenchmark</plugin>
-    <plugin name="chbenchmark">com.oltpbenchmark.benchmarks.chbenchmark.CHBenCHmark</plugin>
-</plugins>
