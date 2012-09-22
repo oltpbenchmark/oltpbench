@@ -17,13 +17,14 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.oltpbenchmark.WorkloadConfiguration;
+import com.oltpbenchmark.api.BenchmarkModule;
 import com.oltpbenchmark.api.Loader;
 import com.oltpbenchmark.api.Worker;
 import com.oltpbenchmark.benchmarks.chbenchmark.queries.Q1;
 import com.oltpbenchmark.benchmarks.tpcc.TPCCBenchmark;
 import com.oltpbenchmark.benchmarks.tpcc.jTPCCConfig;
 
-public class CHBenCHmark extends TPCCBenchmark {
+public class CHBenCHmark extends BenchmarkModule {
 	private static final Logger LOG = Logger.getLogger(CHBenCHmark.class);
 	
 	static {
@@ -64,7 +65,7 @@ public class CHBenCHmark extends TPCCBenchmark {
 	}
 
 	public CHBenCHmark(WorkloadConfiguration workConf) {
-		super("chbenchmark", workConf);
+		super("chbenchmark", workConf, true);
 	}
 	
 	protected Package getProcedurePackageImpl() {

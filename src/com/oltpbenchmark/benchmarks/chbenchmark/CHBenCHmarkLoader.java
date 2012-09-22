@@ -14,6 +14,7 @@ import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 
+import com.oltpbenchmark.api.BenchmarkModule;
 import com.oltpbenchmark.benchmarks.chbenchmark.pojo.Nation;
 import com.oltpbenchmark.benchmarks.chbenchmark.pojo.Region;
 import com.oltpbenchmark.benchmarks.chbenchmark.pojo.Supplier;
@@ -26,7 +27,7 @@ public class CHBenCHmarkLoader extends TPCCLoader {
 	private static PreparedStatement nationPrepStmt;
 	private static PreparedStatement supplierPrepStmt;
 	
-	public CHBenCHmarkLoader(TPCCBenchmark benchmark, Connection c) {
+	public CHBenCHmarkLoader(BenchmarkModule benchmark, Connection c) {
 		super(benchmark, c);
 	}
 
