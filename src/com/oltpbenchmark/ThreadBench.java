@@ -156,6 +156,8 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
     }
 
     private void createWorkerThreads(boolean isRateLimited) {
+        assert testState == null;
+        testState = new BenchmarkState(workers.size() + 1, isRateLimited, RATE_QUEUE_LIMIT);
         
         for (Worker worker : workers) {
             worker.setBenchmarkState(testState);
@@ -242,7 +244,7 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
 
         long start = System.nanoTime();
         long measureEnd = -1;
-        
+       
         Phase phase = null;
         
         for (WorkloadConfiguration workConf : this.workConfs) {
@@ -415,5 +417,4 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
          */
 
     }
-
 }

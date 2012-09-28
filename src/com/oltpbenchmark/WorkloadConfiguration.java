@@ -103,7 +103,7 @@ public class WorkloadConfiguration {
 	public void setNumTxnTypes(int numTxnTypes) {
 		this.numTxnTypes = numTxnTypes;
 	}
-	
+
 	public String getDBName() {
 		return db_name;
 	}

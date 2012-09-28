@@ -2,3 +2,5 @@ bin/
 output.raw
 output.res
 .classpath
+.project
+.settings

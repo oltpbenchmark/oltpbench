@@ -40,7 +40,7 @@ public final class BenchmarkState {
 	public void setCurrentPhase(Phase currentPhase) {
 		this.currentPhase = currentPhase;
 	}
-	
+
 	/**
 	 * 
 	 * @param numThreads
