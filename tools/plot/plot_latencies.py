@@ -9,9 +9,10 @@ import numpy as np
 import pylab as p
 import sys
 
-if __name__ == '__main__':
-    
-    raw = np.genfromtxt(sys.argv[1], delimiter=",")
+
+  
+def extract_latency_data(filename, interval=None):
+    raw = np.genfromtxt(filename, delimiter=",")
     raw = raw[1:]
     queries = raw[:, 0]
     
@@ -30,11 +31,29 @@ if __name__ == '__main__':
         
         print "{l_q} {l_count}\n{l_mean} {l_min} {l_max}".format(**locals())
         result.append([l_q, l_count, l_mean, l_min, l_max])
-        
-    result = np.array(result)
-    
-    
-    
+
+    return np.array(result)
+
+def extract_troughput_data(filename, inteval=None):
+    # in sec
+    SLICE_SIZE = 5
+
+    raw = np.genfromtxt(filename, delimiter=',')
+    # filter the invalid transaction
+    raw = raw[1:]
+    test_start = raw[:, 1].min()
+    result = []
+
+    for t in xrange(0, 61, 5):
+        start = t
+        end = t + SLICE_SIZE
+        time_slice = raw[(raw[:, 1] >= start + test_start) & (raw[:, 1] < end + test_start)][:, 2]
+        throughput = len(time_slice) / SLICE_SIZE
+        result.append(throughput)
+
+    return np.array(result)
+
+def plot_latency_data(data, filename=None, ymax=1.5):
     fig = p.figure()
     
     ax = fig.add_subplot(111)
@@ -53,16 +72,36 @@ if __name__ == '__main__':
     ax.set_ylabel("Seconds")
     ax.set_xlabel("Query Number")
     
-    ax.set_ylim(ymax=1.5)
+    ax.set_ylim(ymax=ymax)
     
     
     ax.set_xticks(x + width * 1.5)
     ax.set_xticklabels(x.astype('I') - 1)
     
-    if len(sys.argv) > 2:
-        title = sys.argv[2]
+    if filename:
+        title = filename
         ax.set_title(title)
         p.savefig(title)
         
     p.show()
-    
+
+def plot_throughput_data(data, filename=None):
+    fig = p.figure()
+
+    ax = fig.add_subplot(111)
+
+    x = np.arange(len(data))
+
+    ax.plot(x, data)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([t * 5 for t in x])
+
+    p.show()
+
+if __name__ == '__main__':
+   
+    result = extract_latency_data(sys.argv[1])
+    ymax = result[:, 4].max() + .1
+    output = sys.argv[2] if len(sys.argv) > 2 else None
+    plot_latency_data(result, output, ymax)
