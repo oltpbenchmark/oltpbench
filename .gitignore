@@ -4,3 +4,4 @@ output.res
 .classpath
 .project
 .settings
+*.pyc
