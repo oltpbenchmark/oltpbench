@@ -32,10 +32,15 @@ private static final AtomicInteger terminalId = new AtomicInteger(0);
 		} catch (IllegalAccessException e) {
 			e.printStackTrace();
 			throw new RuntimeException("Run method of the query seems to be private.");
-		};
-		
+		}
+
         conn.commit();
         return (TransactionStatus.SUCCESS);
 
+	}
+	
+	@Override
+	protected boolean isRateLimited() {
+		return false;
 	}
 }
