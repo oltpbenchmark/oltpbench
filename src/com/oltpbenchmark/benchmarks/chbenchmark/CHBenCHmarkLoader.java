@@ -19,10 +19,12 @@ import com.oltpbenchmark.benchmarks.chbenchmark.pojo.Region;
 import com.oltpbenchmark.benchmarks.chbenchmark.pojo.Supplier;
 import com.oltpbenchmark.benchmarks.tpcc.TPCCBenchmark;
 import com.oltpbenchmark.benchmarks.tpcc.TPCCLoader;
+import com.oltpbenchmark.util.RandomGenerator;
 
 public class CHBenCHmarkLoader extends Loader {
 	private static final Logger LOG = Logger.getLogger(CHBenCHmarkLoader.class);
 	private final static int configCommitCount = 1000; // commit every n records
+	private static final RandomGenerator ran = new RandomGenerator(0);
 	private static PreparedStatement regionPrepStmt;
 	private static PreparedStatement nationPrepStmt;
 	private static PreparedStatement supplierPrepStmt;
@@ -241,26 +243,14 @@ public class CHBenCHmarkLoader extends Loader {
 
 			Supplier supplier = new Supplier();
 			
-			File file = new File("src", "com/oltpbenchmark/benchmarks/chbenchmark/supplier_gen.tbl");
-			BufferedReader br = new BufferedReader(new FileReader(file));
-			String line = br.readLine();
-			while (line != null) {
-				StringTokenizer st = new StringTokenizer(line, "|");
-				if (!st.hasMoreTokens()) { LOG.error("invalid input file: " + file.getAbsolutePath()); }
-				supplier.su_suppkey = Integer.parseInt(st.nextToken());
-				if (!st.hasMoreTokens()) { LOG.error("invalid input file: " + file.getAbsolutePath()); }
-				supplier.su_name = st.nextToken();
-				if (!st.hasMoreTokens()) { LOG.error("invalid input file: " + file.getAbsolutePath()); }
-				supplier.su_address = st.nextToken();
-				if (!st.hasMoreTokens()) { LOG.error("invalid input file: " + file.getAbsolutePath()); }
-				supplier.su_nationkey = Integer.parseInt(st.nextToken());
-				if (!st.hasMoreTokens()) { LOG.error("invalid input file: " + file.getAbsolutePath()); }
-				supplier.su_phone = st.nextToken();
-				if (!st.hasMoreTokens()) { LOG.error("invalid input file: " + file.getAbsolutePath()); }
-				supplier.su_acctbal = Float.parseFloat(st.nextToken());
-				if (!st.hasMoreTokens()) { LOG.error("invalid input file: " + file.getAbsolutePath()); }
-				supplier.su_comment = st.nextToken();
-				if (st.hasMoreTokens()) { LOG.error("invalid input file: " + file.getAbsolutePath()); }
+			for (int index = 1; index <= 10000; index++) {
+				supplier.su_suppkey = index;
+				supplier.su_name = ran.astring(25, 25);
+				supplier.su_address = ran.astring(20, 40);
+				supplier.su_nationkey = ran.number(1, 62);
+				supplier.su_phone = ran.nstring(15, 15);
+				supplier.su_acctbal = (float) ran.fixedPoint(2, 10000., 1000000000.);
+				supplier.su_comment = ran.astring(51, 101);
 
 				k++;
 				
@@ -285,7 +275,6 @@ public class CHBenCHmarkLoader extends Loader {
 					supplierPrepStmt.clearBatch();
 					conn.commit();
 				}
-				line = br.readLine();
 			}
 
 			long tmpTime = new java.util.Date().getTime();
