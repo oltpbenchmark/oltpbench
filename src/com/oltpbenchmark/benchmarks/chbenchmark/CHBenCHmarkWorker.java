@@ -4,11 +4,10 @@ import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.oltpbenchmark.api.BenchmarkModule;
-import com.oltpbenchmark.api.TransactionType;
 import com.oltpbenchmark.api.Procedure.UserAbortException;
+import com.oltpbenchmark.api.TransactionType;
 import com.oltpbenchmark.api.Worker;
 import com.oltpbenchmark.benchmarks.chbenchmark.queries.GenericQuery;
-
 import com.oltpbenchmark.types.TransactionStatus;
 
 public class CHBenCHmarkWorker extends Worker {
@@ -32,8 +31,8 @@ private static final AtomicInteger terminalId = new AtomicInteger(0);
 		} catch (IllegalAccessException e) {
 			e.printStackTrace();
 			throw new RuntimeException("Run method of the query seems to be private.");
-		};
-		
+		}
+
         conn.commit();
         return (TransactionStatus.SUCCESS);
 

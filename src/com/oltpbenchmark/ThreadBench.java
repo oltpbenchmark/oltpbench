@@ -155,9 +155,7 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
         }
     }
 
-    private void createWorkerThreads(boolean isRateLimited) {
-        assert testState == null;
-        testState = new BenchmarkState(workers.size() + 1, isRateLimited, RATE_QUEUE_LIMIT);
+    private void createWorkerThreads() {
         
         for (Worker worker : workers) {
             worker.setBenchmarkState(testState);
@@ -229,15 +227,19 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
      */
 
     public static Results runRateLimitedBenchmark(List<Worker> workers, List<WorkloadConfiguration> workConfs) throws QueueLimitException, IOException {
-        if (testState == null) {
-        	testState = new BenchmarkState(workers.size() + 1, true, RATE_QUEUE_LIMIT);
-        }
         ThreadBench bench = new ThreadBench(workers, workConfs);
         return bench.runRateLimitedMultiPhase();
     }
 
     public Results runRateLimitedMultiPhase() throws QueueLimitException, IOException {
-        this.createWorkerThreads(true);
+        assert testState == null;
+        testState = new BenchmarkState(workers.size() + 1, RATE_QUEUE_LIMIT);
+        
+        for (WorkloadConfiguration workConf : this.workConfs) {
+            workConf.setTestState(testState);
+        }
+        
+        this.createWorkerThreads();
         testState.blockForStart();
 
         // long measureStart = start;
@@ -249,10 +251,10 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
         
         for (WorkloadConfiguration workConf : this.workConfs) {
         	workConf.switchToNextPhase();
-        	phase = workConf.getCurrentState();
+        	phase = workConf.getCurrentPhase();
+        	LOG.info("[Starting Phase] [Time= " + phase.time + "] [Rate= " + phase.rate + "] [Ratios= " + phase.getWeights() + "]" + "[Rate limited= " + phase.rateLimited + "]");
         }
         
-        LOG.info("[Starting Phase] [Time= " + phase.time + "] [Rate= " + phase.rate + "] [Ratios= " + phase.getWeights() + "]");
 
         long intervalNs = (long) (1000000000. / (double) phase.rate + 0.5);
 
@@ -296,19 +298,22 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
                 resetQueues = true;
                 
                 // Fetch a new Phase
-                for (WorkloadConfiguration workConf : workConfs) {
-                	workConf.switchToNextPhase();
-                	phase = workConf.getCurrentState();
-                }
-                if (phase == null) {
-                    // Last phase
-                    lastEntry = true;
-                } else {
-                    delta += phase.time * 1000000000L;
-                    LOG.info("[Starting Phase] [Time= " + phase.time + "] [Rate= " + phase.rate + "] [Ratios= " + phase.getWeights() + "]");
-                    // update frequency in which we check according to wakeup
-                    // speed
-                    intervalNs = (long) (1000000000. / (double) phase.rate + 0.5);
+                synchronized (testState) {
+                    for (WorkloadConfiguration workConf : workConfs) {
+                    	workConf.switchToNextPhase();
+                    	phase = workConf.getCurrentPhase();
+                    	if (phase == null) {
+                    	    // Last phase
+                    	    lastEntry = true;
+                    	    break;
+                    	} else {
+                    	    delta += phase.time * 1000000000L;
+                    	    LOG.info("[Starting Phase] [Time= " + phase.time + "] [Rate= " + phase.rate + "] [Ratios= " + phase.getWeights() + "]");
+                    	    // update frequency in which we check according to wakeup
+                    	    // speed
+                    	    intervalNs = (long) (1000000000. / (double) phase.rate + 0.5);
+                    	}
+                    }
                 }
             }
 

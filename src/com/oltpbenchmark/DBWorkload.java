@@ -183,8 +183,8 @@ public class DBWorkload {
 	        
 	        int size = xmlConfig.configurationsAt("/works/work").size();
 	        for (int i = 1; i < size + 1; i++) {
-	            if ((int) xmlConfig.getInt("works/work[" + i + "]/rate") < 1) {
-	                LOG.fatal("You cannot use less than 1 TPS in a Phase of your expeirment");
+	            if ((int) xmlConfig.getInt("works/work[" + i + "]/rate") < 0) {
+	                LOG.fatal("Negative TPS do not make any sense");
 	                System.exit(-1);
 	            }
 	            SubnodeConfiguration work = xmlConfig.configurationAt("works/work[" + i + "]");
@@ -195,13 +195,23 @@ public class DBWorkload {
 				else {
 	            	weight_strings = work.getList("weights");
 	            }
-	            
-	            
-	            
-	            		
-	            wrkld.addWork(xmlConfig.getInt("works/work[" + i + "]/time"),
-	                          xmlConfig.getInt("works/work[" + i + "]/rate"),
-	                          weight_strings);
+	            int rate;
+	            if (work.containsKey("/rate" + pluginTest)) {
+	            	rate = work.getInt("/rate" + pluginTest);
+	            } else {
+	            	rate = work.getInt("/rate");
+	            }
+	            boolean rateLimited;
+	            rateLimited = work.getBoolean("rateLimited[not(@bench)]", true);
+	            rateLimited = work.getBoolean("ratelimited" + pluginTest, rateLimited);
+	            boolean disabled;
+	            disabled = work.getBoolean("disabled[not(@bench)]", false);
+	            disabled = work.getBoolean("disabled" + pluginTest, disabled);
+	            wrkld.addWork(work.getInt("/time"),
+	            			  rate,
+	                          weight_strings,
+	                          rateLimited,
+	                          disabled);
 	        } // FOR
 	
 	        wrkld.setNumTxnTypes(xmlConfig.configurationsAt("transactiontypes" + pluginTest + "/transactiontype").size());
@@ -270,10 +280,9 @@ public class DBWorkload {
 	        benchList.add(bench);
         }
         
-        BenchmarkModule bench = benchList.get(0);
-
         // Export StatementDialects
         if (isBooleanOptionSet(argsLine, "dialects-export")) {
+            BenchmarkModule bench = benchList.get(0);
             if (bench.getStatementDialects() != null) {
                 LOG.info("Exporting StatementDialects for " + bench);
                 String xml = bench.getStatementDialects().export(bench.getWorkloadConfiguration().getDBType(),
@@ -290,10 +299,12 @@ public class DBWorkload {
 
         // Create the Benchmark's Database
         if (isBooleanOptionSet(argsLine, "create")) {
-            CREATE_LOG.info("Creating new " + bench.getBenchmarkName().toUpperCase() + " database...");
-            runCreator(bench, verbose);
-            CREATE_LOG.info("Finished!");
-            CREATE_LOG.info(SINGLE_LINE);
+            for (BenchmarkModule benchmark : benchList) {
+                CREATE_LOG.info("Creating new " + benchmark.getBenchmarkName().toUpperCase() + " database...");
+                runCreator(benchmark, verbose);
+                CREATE_LOG.info("Finished!");
+                CREATE_LOG.info(SINGLE_LINE);
+            }
         } else if (CREATE_LOG.isDebugEnabled()) {
             CREATE_LOG.debug("Skipping creating benchmark database tables");
             CREATE_LOG.info(SINGLE_LINE);
@@ -301,10 +312,12 @@ public class DBWorkload {
 
         // Clear the Benchmark's Database
         if (isBooleanOptionSet(argsLine, "clear")) {
-            CREATE_LOG.info("Resetting " + bench.getBenchmarkName().toUpperCase() + " database...");
-            bench.clearDatabase();
-            CREATE_LOG.info("Finished!");
-            CREATE_LOG.info(SINGLE_LINE);
+                for (BenchmarkModule benchmark : benchList) {
+                CREATE_LOG.info("Resetting " + benchmark.getBenchmarkName().toUpperCase() + " database...");
+                benchmark.clearDatabase();
+                CREATE_LOG.info("Finished!");
+                CREATE_LOG.info(SINGLE_LINE);
+            }
         } else if (CREATE_LOG.isDebugEnabled()) {
             CREATE_LOG.debug("Skipping creating benchmark database tables");
             CREATE_LOG.info(SINGLE_LINE);
@@ -312,10 +325,12 @@ public class DBWorkload {
 
         // Execute Loader
         if (isBooleanOptionSet(argsLine, "load")) {
-            LOAD_LOG.info("Loading data into " + bench.getBenchmarkName().toUpperCase() + " database...");
-            runLoader(bench, verbose);
-            LOAD_LOG.info("Finished!");
-            LOAD_LOG.info(SINGLE_LINE);
+            for (BenchmarkModule benchmark : benchList) {
+                LOAD_LOG.info("Loading data into " + benchmark.getBenchmarkName().toUpperCase() + " database...");
+                runLoader(benchmark, verbose);
+                LOAD_LOG.info("Finished!");
+                LOAD_LOG.info(SINGLE_LINE);
+            }
         } else if (LOAD_LOG.isDebugEnabled()) {
             LOAD_LOG.debug("Skipping loading benchmark database records");
             LOAD_LOG.info(SINGLE_LINE);
@@ -323,11 +338,13 @@ public class DBWorkload {
         
         // Execute a Script
         if (argsLine.hasOption("runscript")) {
-            String script = argsLine.getOptionValue("runscript");
-            SCRIPT_LOG.info("Running a SQL script: "+script);
-            runScript(bench, script);
-            SCRIPT_LOG.info("Finished!");
-            SCRIPT_LOG.info(SINGLE_LINE);
+            for (BenchmarkModule benchmark : benchList) {
+                String script = argsLine.getOptionValue("runscript");
+                SCRIPT_LOG.info("Running a SQL script: "+script);
+                runScript(benchmark, script);
+                SCRIPT_LOG.info("Finished!");
+                SCRIPT_LOG.info(SINGLE_LINE);
+            }
         }
 
         // Execute Workload
@@ -337,7 +354,7 @@ public class DBWorkload {
             try {
                 r = runWorkload(benchList, verbose);
             } catch (Throwable ex) {
-                LOG.error("Unexpected error when running " + bench, ex);
+                LOG.error("Unexpected error when running benchmarks.", ex);
                 System.exit(1);
             }
             assert(r != null);
