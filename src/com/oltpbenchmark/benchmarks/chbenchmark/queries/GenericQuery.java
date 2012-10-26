@@ -7,13 +7,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Random;
 
 import org.apache.log4j.Logger;
 
 import com.oltpbenchmark.api.Procedure;
 import com.oltpbenchmark.api.SQLStmt;
-import com.oltpbenchmark.benchmarks.chbenchmark.CHBenCHmarkWorker;
 
 public abstract class GenericQuery extends Procedure {
     

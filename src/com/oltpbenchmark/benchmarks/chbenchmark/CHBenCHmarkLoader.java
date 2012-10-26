@@ -3,7 +3,10 @@ package com.oltpbenchmark.benchmarks.chbenchmark;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOError;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -17,8 +20,6 @@ import com.oltpbenchmark.api.Loader;
 import com.oltpbenchmark.benchmarks.chbenchmark.pojo.Nation;
 import com.oltpbenchmark.benchmarks.chbenchmark.pojo.Region;
 import com.oltpbenchmark.benchmarks.chbenchmark.pojo.Supplier;
-import com.oltpbenchmark.benchmarks.tpcc.TPCCBenchmark;
-import com.oltpbenchmark.benchmarks.tpcc.TPCCLoader;
 import com.oltpbenchmark.util.RandomGenerator;
 
 public class CHBenCHmarkLoader extends Loader {
@@ -85,6 +86,7 @@ public class CHBenCHmarkLoader extends Loader {
 		
 		int k = 0;
 		int t = 0;
+		BufferedReader br = null;
 		
 		try {
 		    
@@ -99,7 +101,7 @@ public class CHBenCHmarkLoader extends Loader {
 			Region region = new Region();
 			
 			File file = new File("src", "com/oltpbenchmark/benchmarks/chbenchmark/region_gen.tbl");
-			BufferedReader br = new BufferedReader(new FileReader(file));
+			br = new BufferedReader(new FileReader(file));
 			String line = br.readLine();
 			while (line != null) {
 				StringTokenizer st = new StringTokenizer(line, "|");
@@ -148,9 +150,20 @@ public class CHBenCHmarkLoader extends Loader {
 		} catch (SQLException se) {
 			LOG.debug(se.getMessage());
 			conn.rollback();
-		} catch (Exception e) {
-			e.printStackTrace();
-			conn.rollback();
+		
+		} catch (FileNotFoundException e) {
+		    e.printStackTrace();
+		}  catch (Exception e) {
+            e.printStackTrace();
+            conn.rollback();
+		} finally {
+		    if (br != null){
+		        try {
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+		    }
 		}
 
 		return (k);
@@ -161,6 +174,7 @@ public class CHBenCHmarkLoader extends Loader {
 		
 		int k = 0;
 		int t = 0;
+		BufferedReader br = null;
 		
 		try {
 
@@ -171,7 +185,7 @@ public class CHBenCHmarkLoader extends Loader {
 			Nation nation = new Nation();
 			
 			File file = new File("src", "com/oltpbenchmark/benchmarks/chbenchmark/nation_gen.tbl");
-			BufferedReader br = new BufferedReader(new FileReader(file));
+			br = new BufferedReader(new FileReader(file));
 			String line = br.readLine();
 			while (line != null) {
 				StringTokenizer st = new StringTokenizer(line, "|");
@@ -221,10 +235,20 @@ public class CHBenCHmarkLoader extends Loader {
 		} catch (SQLException se) {
 			LOG.debug(se.getMessage());
 			conn.rollback();
-		} catch (Exception e) {
-			e.printStackTrace();
-			conn.rollback();
-		}
+		} catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }  catch (Exception e) {
+            e.printStackTrace();
+            conn.rollback();
+        } finally {
+            if (br != null){
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
 
 		return (k);
 
