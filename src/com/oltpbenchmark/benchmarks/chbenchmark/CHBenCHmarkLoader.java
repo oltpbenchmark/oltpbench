@@ -1,12 +1,9 @@
 package com.oltpbenchmark.benchmarks.chbenchmark;
 
-import static com.oltpbenchmark.benchmarks.tpcc.jTPCCConfig.configCommitCount;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -25,6 +22,7 @@ import com.oltpbenchmark.benchmarks.tpcc.TPCCLoader;
 
 public class CHBenCHmarkLoader extends Loader {
 	private static final Logger LOG = Logger.getLogger(CHBenCHmarkLoader.class);
+	private final static int configCommitCount = 1000; // commit every n records
 	private static PreparedStatement regionPrepStmt;
 	private static PreparedStatement nationPrepStmt;
 	private static PreparedStatement supplierPrepStmt;
@@ -66,7 +64,20 @@ public class CHBenCHmarkLoader extends Loader {
 //		truncateTable("nation");
 //		truncateTable("region");
 		loadHelper();
+		conn.commit();
 	}
+	
+   static void truncateTable(String strTable) throws SQLException {
+
+        LOG.debug("Truncating '" + strTable + "' ...");
+        try {
+            conn.createStatement().execute("TRUNCATE TABLE " + strTable + " CASCADE");
+            conn.commit();
+        } catch (SQLException se) {
+            LOG.debug(se.getMessage());
+            conn.rollback();
+        }
+   }
 	
 	static int loadRegions() throws SQLException {
 		
@@ -74,6 +85,10 @@ public class CHBenCHmarkLoader extends Loader {
 		int t = 0;
 		
 		try {
+		    
+		    truncateTable("region");
+		    truncateTable("nation");
+		    truncateTable("supplier");
 
 			now = new java.util.Date();
 			LOG.debug("\nStart Region Load @ " + now
@@ -101,18 +116,16 @@ public class CHBenCHmarkLoader extends Loader {
 				regionPrepStmt.setString(3, region.r_comment);
 				regionPrepStmt.addBatch();
 
-				if ((k % configCommitCount) == 0) {
-					long tmpTime = new java.util.Date().getTime();
-					String etStr = "  Elasped Time(ms): "
-							+ ((tmpTime - lastTimeMS) / 1000.000)
-							+ "                    ";
-					LOG.debug(etStr.substring(0, 30)
-							+ "  Writing record " + k + " of " + t);
-					lastTimeMS = tmpTime;
-					regionPrepStmt.executeBatch();
-					regionPrepStmt.clearBatch();
-					conn.commit();
-				}
+				long tmpTime = new java.util.Date().getTime();
+				String etStr = "  Elasped Time(ms): "
+						+ ((tmpTime - lastTimeMS) / 1000.000)
+						+ "                    ";
+				LOG.debug(etStr.substring(0, 30)
+						+ "  Writing record " + k + " of " + t);
+				lastTimeMS = tmpTime;
+				regionPrepStmt.executeBatch();
+				regionPrepStmt.clearBatch();
+				conn.commit();
 				line = br.readLine();
 			}
 
@@ -178,18 +191,16 @@ public class CHBenCHmarkLoader extends Loader {
 				nationPrepStmt.setString(4, nation.n_comment);
 				nationPrepStmt.addBatch();
 
-				if ((k % configCommitCount) == 0) {
-					long tmpTime = new java.util.Date().getTime();
-					String etStr = "  Elasped Time(ms): "
-							+ ((tmpTime - lastTimeMS) / 1000.000)
-							+ "                    ";
-					LOG.debug(etStr.substring(0, 30)
-							+ "  Writing record " + k + " of " + t);
-					lastTimeMS = tmpTime;
-					nationPrepStmt.executeBatch();
-					nationPrepStmt.clearBatch();
-					conn.commit();
-				}
+				long tmpTime = new java.util.Date().getTime();
+				String etStr = "  Elasped Time(ms): "
+						+ ((tmpTime - lastTimeMS) / 1000.000)
+						+ "                    ";
+				LOG.debug(etStr.substring(0, 30)
+						+ "  Writing record " + k + " of " + t);
+				lastTimeMS = tmpTime;
+				nationPrepStmt.executeBatch();
+				nationPrepStmt.clearBatch();
+				conn.commit();
 				line = br.readLine();
 			}
 
