@@ -157,7 +157,6 @@ public abstract class Worker implements Runnable {
 	    
 		// In case of reuse reset the measurements
 		latencies = new LatencyRecord(testState.getTestStartNs());
-		boolean isRateLimited = testState.isRateLimited();
 
 		// Invoke the initialize callback
 		try {
@@ -181,13 +180,24 @@ public abstract class Worker implements Runnable {
 				testState.signalDone();
 				break;
 			}
-			Phase phase = null;
 			// apply load
-			if (isRateLimited) {
+			Phase phase = this.wrkld.getCurrentPhase();
+			// if the workload is disabled in this phase
+			// lay worker to sleep
+			if (phase != null && phase.disabled) {
+			    synchronized (wrkld) {
+			        try {
+                        wrkld.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+			        continue;
+			    }
+			}
+			if (phase != null && phase.rateLimited) {
 				// re-reads the state because it could have changed if we
 				// blocked
 				state = testState.fetchWork();
-				phase = testState.fetchWorkType();
 			}
 
 			boolean measure = state == State.MEASURE;

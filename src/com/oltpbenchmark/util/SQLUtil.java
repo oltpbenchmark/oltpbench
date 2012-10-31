@@ -14,7 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.HashSet;
 import java.util.Set;
 
-import oracle.sql.TIMESTAMP;
+//import oracle.sql.TIMESTAMP;
 
 import org.apache.log4j.Logger;
 
@@ -106,13 +106,13 @@ public abstract class SQLUtil {
         else if (obj instanceof Date) {
             return new Timestamp(((Date)obj).getTime());
         }
-        else if (obj instanceof oracle.sql.TIMESTAMP) {
-            try {
-                return ((oracle.sql.TIMESTAMP)obj).timestampValue();
-            } catch (SQLException ex) {
-                throw new RuntimeException("Failed to get timestamp from '" + obj + "'", ex);
-            }
-        }
+//        else if (obj instanceof oracle.sql.TIMESTAMP) {
+//            try {
+//                return ((oracle.sql.TIMESTAMP)obj).timestampValue();
+//            } catch (SQLException ex) {
+//                throw new RuntimeException("Failed to get timestamp from '" + obj + "'", ex);
+//            }
+//        }
         
         Long timestamp = SQLUtil.getLong(obj);
         return (timestamp != null ? new Timestamp(timestamp) : null);

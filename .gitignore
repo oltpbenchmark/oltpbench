@@ -1,0 +1,8 @@
+bin/
+/build/
+output.raw
+output.res
+.classpath
+.project
+.settings
+*.pyc
