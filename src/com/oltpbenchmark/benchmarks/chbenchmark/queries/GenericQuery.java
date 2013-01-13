@@ -45,6 +45,8 @@ public abstract class GenericQuery extends Procedure {
     public ResultSet run(Connection conn) throws SQLException {
 		
 		//initializing all prepared statements
+        Logger EXEC_LOG = Logger.getLogger(this.getClass());
+        EXEC_LOG.debug(get_query().getSQL());
     	stmt=this.getPreparedStatement(conn, get_query());
 
 
