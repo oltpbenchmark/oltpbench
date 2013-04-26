@@ -35,7 +35,6 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.apache.commons.collections15.map.ListOrderedMap;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.SubnodeConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.configuration.tree.xpath.XPathExpressionEngine;
@@ -97,6 +96,11 @@ public class DBWorkload {
 				"config", 
 				true,
 				"[required] Workload configuration file");
+		options.addOption(
+		        "d",
+		        "dbconfig",
+		        true,
+		        "Optional database connection file");
 		options.addOption(
                 null,
 	            "create",
@@ -172,12 +176,23 @@ public class DBWorkload {
 	        WorkloadConfiguration wrkld = new WorkloadConfiguration();
 	        wrkld.setBenchmarkName(plugin);
 	        wrkld.setXmlConfig(xmlConfig);
-	        wrkld.setDBType(DatabaseType.get(xmlConfig.getString("dbtype")));
-	        wrkld.setDBDriver(xmlConfig.getString("driver"));
-	        wrkld.setDBConnection(xmlConfig.getString("DBUrl"));
-	        wrkld.setDBName(xmlConfig.getString("DBName"));
-	        wrkld.setDBUsername(xmlConfig.getString("username"));
-	        wrkld.setDBPassword(xmlConfig.getString("password"));
+	        
+	        XMLConfiguration dbConfig;
+	        //database configuration
+	        if (argsLine.hasOption("dbconfig")){
+	            dbConfig = new XMLConfiguration(argsLine.getOptionValue("dbconfig"));
+	        } else {
+	            dbConfig = xmlConfig;
+	        }
+	        
+	        wrkld.setDBType(DatabaseType.get(dbConfig.getString("dbtype")));
+	        wrkld.setDBDriver(dbConfig.getString("driver"));
+	        wrkld.setDBConnection(dbConfig.getString("DBUrl"));
+	        wrkld.setDBName(dbConfig.getString("DBName"));
+	        wrkld.setDBUsername(dbConfig.getString("username"));
+	        wrkld.setDBPassword(dbConfig.getString("password"));
+	        
+	        
 	        int terminals = xmlConfig.getInt("terminals[not(@bench)]", 0);
 	        terminals = xmlConfig.getInt("terminals" + pluginTest, terminals);
 	        wrkld.setTerminals(terminals);
