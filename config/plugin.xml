@@ -294,91 +294,91 @@
     	<transactiontypes>
             <transactiontype>
                 <name>Q1</name>
-                <weight>4</weight>
+                <weight>4.55</weight>
             </transactiontype>
             <transactiontype>
                 <name>Q2</name>
-                <weight>5</weight>
+                <weight>4.55</weight>
             </transactiontype>
             <transactiontype>
                 <name>Q3</name>
-                <weight>4</weight>
+                <weight>4.55</weight>
             </transactiontype>
             <transactiontype>
                 <name>Q4</name>
-                <weight>5</weight>
+                <weight>4.55</weight>
             </transactiontype>
             <transactiontype>
                 <name>Q5</name>
-                <weight>4</weight>
+                <weight>4.55</weight>
             </transactiontype>
             <transactiontype>
                 <name>Q6</name>
-                <weight>5</weight>
+                <weight>4.55</weight>
             </transactiontype>
             <transactiontype>
                 <name>Q7</name>
-                <weight>4</weight>
+                <weight>4.55</weight>
             </transactiontype>
             <transactiontype>
                 <name>Q8</name>
-                <weight>5</weight>
+                <weight>4.55</weight>
             </transactiontype>
             <transactiontype>
                 <name>Q9</name>
-                <weight>4</weight>
+                <weight>4.55</weight>
             </transactiontype>
             <transactiontype>
                 <name>Q10</name>
-                <weight>5</weight>
+                <weight>4.55</weight>
             </transactiontype>
             <transactiontype>
                 <name>Q11</name>
-                <weight>4</weight>
+                <weight>4.55</weight>
             </transactiontype>
             <transactiontype>
                 <name>Q12</name>
-                <weight>5</weight>
+                <weight>4.55</weight>
             </transactiontype>
             <transactiontype>
                 <name>Q13</name>
-                <weight>4</weight>
+                <weight>4.55</weight>
             </transactiontype>      
             <transactiontype>
                 <name>Q14</name>
-                <weight>5</weight>
+                <weight>4.55</weight>
             </transactiontype>      
             <transactiontype>
                 <name>Q15</name>
-                <weight>4</weight>
+                <weight>4.55</weight>
             </transactiontype>   
             <transactiontype>
                 <name>Q16</name>
-                <weight>5</weight>
+                <weight>4.55</weight>
             </transactiontype>
             <transactiontype>
                 <name>Q17</name>
-                <weight>4</weight>
+                <weight>4.55</weight>
             </transactiontype>   
             <transactiontype>
                 <name>Q18</name>
-                <weight>5</weight>
+                <weight>4.55</weight>
             </transactiontype>   
             <transactiontype>
                 <name>Q19</name>
-                <weight>4</weight>
+                <weight>4.55</weight>
             </transactiontype>
             <transactiontype>
                 <name>Q20</name>
-                <weight>5</weight>
+                <weight>4.55</weight>
             </transactiontype>
             <transactiontype>
                 <name>Q21</name>
-                <weight>5</weight>
+                <weight>4.55</weight>
             </transactiontype>
             <transactiontype>
                 <name>Q22</name>
-                <weight>5</weight>
+                <weight>4.54</weight>
             </transactiontype>
     </transactiontypes> 
     </plugin>
