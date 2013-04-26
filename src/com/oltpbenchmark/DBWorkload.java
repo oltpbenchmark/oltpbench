@@ -35,6 +35,7 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.apache.commons.collections15.map.ListOrderedMap;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.SubnodeConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.configuration.tree.xpath.XPathExpressionEngine;
@@ -190,12 +191,23 @@ public class DBWorkload {
 	            SubnodeConfiguration work = xmlConfig.configurationAt("works/work[" + i + "]");
 	            List<String> weight_strings;
 	            
-	            // use a workaround if there multiple workloads or single
-	            // attributed workload
-	            if (pluginList.length > 1 || work.containsKey("weights[@bench]")) {
-					weight_strings = get_weights(plugin, work);
+	            //check if the config has a custom weight definition
+	            if (work.containsKey("weights" + pluginTest) || pluginList.length == 1) {
+    	            // use a workaround if there multiple workloads or single
+    	            // attributed workload
+    	            if (pluginList.length > 1 || work.containsKey("weights[@bench]")) {
+    					weight_strings = get_weights(plugin, work);
+    	            } else {
+    	            	weight_strings = work.getList("weights[not(@bench)]"); 
+    	            }
 	            } else {
-	            	weight_strings = work.getList("weights[not(@bench)]"); 
+	                // use the standard weights from the plugin definition
+	                weight_strings = new LinkedList<String>();
+	                for (Object weight : pluginConfig.configurationsAt("//plugin[@name='" + plugin + "']/transactiontypes/transactiontype/weight")) {
+	                    SubnodeConfiguration weightConf = (SubnodeConfiguration)(weight); 
+	                    weight_strings.add(weightConf.getString("/"));
+	                }
+	                
 	            }
 	            int rate = 1;
 	            boolean rateLimited = true;
@@ -224,6 +236,7 @@ public class DBWorkload {
 	                    System.exit(-1);
 	                }
 	            }
+	            
 	            Phase.Arrival arrival=Phase.Arrival.REGULAR;
 	            String arrive=work.getString("@arrival","regular");
 	            if(arrive.toUpperCase().equals("POISSON"))
@@ -237,6 +250,7 @@ public class DBWorkload {
 	                		"is bigger than the total number of terminals");
 	                System.exit(-1);
 	            }
+	            
 	            wrkld.addWork(work.getInt("/time"),
 	            			  rate,
 	                          weight_strings,
@@ -275,7 +289,7 @@ public class DBWorkload {
 	        // BENCHMARK MODULE
 	        // ----------------------------------------------------------------
         
-	       	String classname = pluginConfig.getString("/plugin[@name='" + plugin + "']");
+	       	String classname = pluginConfig.getString("/plugin[@name='" + plugin + "']/class");
 	
 	        if (classname == null)
 	            throw new ParseException("Plugin " + plugin + " is undefined in config/plugin.xml");
