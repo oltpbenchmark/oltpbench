@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <plugins>
+
     <plugin name="tpcc">
     	<class>com.oltpbenchmark.benchmarks.tpcc.TPCCBenchmark</class>
    		<transactiontypes>
@@ -30,15 +31,264 @@
 	    	</transactiontype>
    		</transactiontypes>
     </plugin>
-    <plugin name="tatp">com.oltpbenchmark.benchmarks.tatp.TATPBenchmark</plugin>
+
+    <plugin name="tatp">
+        <class>com.oltpbenchmark.benchmarks.tatp.TATPBenchmark</class>
+        <transactiontypes>
+            <transactiontype>
+                <name>DeleteCallForwarding</name>
+                <weight>2</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>GetAccessData</name>
+                <weight>35</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>GetNewDestination</name>
+                <weight>10</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>GetSubscriberData</name>
+                <weight>35</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>InsertCallForwarding</name>
+                <weight>2</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>UpdateLocation</name>
+                <weight>14</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>UpdateSubscriberData</name>
+                <weight>2</weight>
+            </transactiontype>
+        </transactiontypes>
+    </plugin>
+
     <plugin name="wikipedia">com.oltpbenchmark.benchmarks.wikipedia.WikipediaBenchmark</plugin>
-    <plugin name="resourcestresser">com.oltpbenchmark.benchmarks.resourcestresser.ResourceStresserBenchmark</plugin>
-    <plugin name="twitter">com.oltpbenchmark.benchmarks.twitter.TwitterBenchmark</plugin>
-    <plugin name="epinions">com.oltpbenchmark.benchmarks.epinions.EpinionsBenchmark</plugin>
-    <plugin name="ycsb">com.oltpbenchmark.benchmarks.ycsb.YCSBBenchmark</plugin>
-    <plugin name="jpab">com.oltpbenchmark.benchmarks.jpab.JPABBenchmark</plugin>
-    <plugin name="seats">com.oltpbenchmark.benchmarks.seats.SEATSBenchmark</plugin>
-    <plugin name="auctionmark">com.oltpbenchmark.benchmarks.auctionmark.AuctionMarkBenchmark</plugin>
+    <plugin name="resourcestresser">
+        <class>com.oltpbenchmark.benchmarks.resourcestresser.ResourceStresserBenchmark</class>
+        <transactiontypes>
+            <transactiontype>
+                <name>CPU1</name>
+                <weight>16.66</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>CPU2</name>
+                <weight>16.66</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>IO1</name>
+                <weight>16.66</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>IO2</name>
+                <weight>16.66</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>CONTENTION1</name>
+                <weight>16.66</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>CONTENTION2</name>
+                <weight>16.67</weight>
+            </transactiontype>
+        </transactiontypes>
+    </plugin>
+
+    <plugin name="twitter">
+        <class>com.oltpbenchmark.benchmarks.twitter.TwitterBenchmark</class>
+        <transactiontypes>
+            <transactiontype>
+                <name>GetTweet</name>
+                <weight>0.07</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>GetTweetsFromFollowing</name>
+                <weight>0.07</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>GetFollowers</name>
+                <weight>7.6725</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>GetUserTweets</name>
+                <weight>91.2656</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>InsertTweet</name>
+                <weight>0.9219</weight>
+            </transactiontype>
+        </transactiontypes>
+    </plugin>
+
+    <plugin name="epinions">
+        <class>com.oltpbenchmark.benchmarks.epinions.EpinionsBenchmark</class>
+        <transactiontypes>
+            <transactiontype>
+                <name>GetReviewItemById</name>
+                <weight>10</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>GetReviewsByUser</name>
+                <weight>10</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>GetAverageRatingByTrustedUser</name>
+                <weight>10</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>GetItemAverageRating</name>
+                <weight>10</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>GetItemReviewsByTrustedUser</name>
+                <weight>10</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>UpdateUserName</name>
+                <weight>10</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>UpdateItemTitle</name>
+                <weight>10</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>UpdateReviewRating</name>
+                <weight>10</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>UpdateTrustRating</name>
+                <weight>20</weight>
+            </transactiontype>
+        </transactiontypes> 
+    </plugin>
+
+    <plugin name="ycsb">
+        <class>com.oltpbenchmark.benchmarks.ycsb.YCSBBenchmark</class>
+        <transactiontypes>
+            <transactiontype>
+                <name>ReadRecord</name>
+                <weight>50</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>InsertRecord</name>
+                <weight>50</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>ScanRecord</name>
+                <weight>0</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>UpdateRecord</name>
+                <weight>0</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>DeleteRecord</name>
+                <weight>0</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>ReadModifyWriteRecord</name>
+                <weight>0</weight>
+            </transactiontype>
+        </transactiontypes>
+    </plugin>
+
+    <plugin name="jpab">
+        <class>com.oltpbenchmark.benchmarks.jpab.JPABBenchmark</class>
+        <transactiontypes>
+            <transactiontype>
+                <name>Persist</name>
+                <weight>25</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>Retrieve</name>
+                <weight>25</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>Update</name>
+                <weight>25</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>Delete</name>
+                <weight>25</weight>
+            </transactiontype>
+        </transactiontypes>
+    </plugin>
+
+    <plugin name="seats">
+        <class>com.oltpbenchmark.benchmarks.seats.SEATSBenchmark</class>
+        <transactiontypes>
+            <transactiontype>
+                <name>DeleteReservation</name>
+                <weight>10</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>FindFlights</name>
+                <weight>10</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>FindOpenSeats</name>
+                <weight>35</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>NewReservation</name>
+                <weight>20</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>UpdateCustomer</name>
+                <weight>10</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>UpdateReservation</name>
+                <weight>15</weight>
+            </transactiontype>
+        </transactiontypes>
+    </plugin>
+
+    <plugin name="auctionmark">
+        <class>com.oltpbenchmark.benchmarks.auctionmark.AuctionMarkBenchmark</class>
+        <transactiontypes>
+            <transactiontype>
+                <name>GetItem</name>
+                <weight>45</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>GetUserInfo</name>
+                <weight>10</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>NewBid</name>
+                <weight>20</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>NewComment</name>
+                <weight>2</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>NewCommentResponse</name>
+                <weight>1</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>NewFeedback</name>
+                <weight>4</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>NewItem</name>
+                <weight>10</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>NewPurchase</name>
+                <weight>5</weight>
+            </transactiontype>
+            <transactiontype>
+                <name>UpdateItem</name>
+                <weight>3</weight>
+            </transactiontype>
+        </transactiontypes>
+    </plugin>
+
     <plugin name="chbenchmark">
     	<class>com.oltpbenchmark.benchmarks.chbenchmark.CHBenCHmark</class>
     	<transactiontypes>
@@ -132,5 +382,14 @@
             </transactiontype>
     </transactiontypes> 
     </plugin>
-    <plugin name="voter">com.oltpbenchmark.benchmarks.voter.VoterBenchmark</plugin>
+    
+    <plugin name="voter">
+        <class>com.oltpbenchmark.benchmarks.voter.VoterBenchmark</class>
+        <transactiontypes>
+            <transactiontype>
+                    <name>Vote</name>
+                    <weight>100</weight>
+            </transactiontype>
+        </transactiontypes>
+    </plugin>
 </plugins>
