@@ -191,24 +191,20 @@ public class DBWorkload {
 	            SubnodeConfiguration work = xmlConfig.configurationAt("works/work[" + i + "]");
 	            List<String> weight_strings;
 	            
-	            //check if the config has a custom weight definition
-	            if (work.containsKey("weights" + pluginTest) || pluginList.length == 1) {
-    	            // use a workaround if there multiple workloads or single
-    	            // attributed workload
-    	            if (pluginList.length > 1 || work.containsKey("weights[@bench]")) {
-    					weight_strings = get_weights(plugin, work);
-    	            } else {
-    	            	weight_strings = work.getList("weights[not(@bench)]"); 
-    	            }
+	            // use a workaround if there multiple workloads or single
+	            // attributed workload
+	            if (pluginList.length > 1 || work.containsKey("weights[@bench]")) {
+					weight_strings = get_weights(plugin, work);
 	            } else {
-	                // use the standard weights from the plugin definition
-	                weight_strings = new LinkedList<String>();
-	                for (Object weight : pluginConfig.configurationsAt("//plugin[@name='" + plugin + "']/transactiontypes/transactiontype/weight")) {
-	                    SubnodeConfiguration weightConf = (SubnodeConfiguration)(weight); 
-	                    weight_strings.add(weightConf.getString("/"));
-	                }
-	                
+	            	weight_strings = work.getList("weights[not(@bench)]"); 
 	            }
+                // use the standard weights from the plugin definition if no weight were defined
+                if (weight_strings.size() == 0) {
+                    for (Object weight : pluginConfig.configurationsAt("//plugin[@name='" + plugin + "']/transactiontypes/transactiontype/weight")) {
+                        SubnodeConfiguration weightConf = (SubnodeConfiguration)(weight); 
+                        weight_strings.add(weightConf.getString("/"));
+                    }
+                }
 	            int rate = 1;
 	            boolean rateLimited = true;
 	            boolean disabled = false;
@@ -259,13 +255,20 @@ public class DBWorkload {
 	                          activeTerminals,
 	                          arrival);
 	        } // FOR
-	
-	        int numTxnTypes = xmlConfig.configurationsAt("transactiontypes" + pluginTest + "/transactiontype").size();
-	        if (numTxnTypes == 0 && pluginList.length == 1) {
-	            //if it is a single workload run, <transactiontypes /> w/o attribute is used
-	            pluginTest = "[not(@bench)]";
-	            numTxnTypes = xmlConfig.configurationsAt("transactiontypes" + pluginTest + "/transactiontype").size();
+	        
+	        SubnodeConfiguration txnTypes;
+	        // check possible transaction types location and fail gracefully at it
+	        try {
+	            txnTypes = xmlConfig.configurationAt("transactiontypes" + pluginTest);
+	        } catch (IllegalArgumentException exception) {
+	            try {
+	                txnTypes = xmlConfig.configurationAt("transactiontypes[not(@bench)]");	                
+	            } catch (IllegalArgumentException inner_exception) {
+	                txnTypes = pluginConfig.configurationAt("/plugin[@name='" + plugin + "']/transactiontypes");
+	            }
 	        }
+	        
+	        int numTxnTypes = txnTypes.configurationsAt("/transactiontype").size();
 	        wrkld.setNumTxnTypes(numTxnTypes);
 	
 	        // CHECKING INPUT PHASES
@@ -316,11 +319,11 @@ public class DBWorkload {
 	        ttypes.add(TransactionType.INVALID);
 	        int txnIdOffset = lastTxnId;
 	        for (int i = 1; i < wrkld.getNumTxnTypes() + 1; i++) {
-	            String key = "transactiontypes" + pluginTest + "/transactiontype[" + i + "]";
-	            String txnName = xmlConfig.getString(key + "/name");
+	            String key = "/transactiontype[" + i + "]";
+	            String txnName = txnTypes.getString(key + "/name");
 	            int txnId = i + 1;
-	            if (xmlConfig.containsKey(key + "/id")) {
-	                txnId = xmlConfig.getInt(key + "/id");
+	            if (txnTypes.containsKey(key + "/id")) {
+	                txnId = txnTypes.getInt(key + "/id");
 	            }
 	            ttypes.add(bench.initTransactionType(txnName, txnId + txnIdOffset));
 	            lastTxnId = i;
