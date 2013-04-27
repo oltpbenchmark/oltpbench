@@ -6,27 +6,22 @@
    		<transactiontypes>
     		<transactiontype>
     			<name>NewOrder</name>
-    			<id>1</id>
     			<weight>45</weight>
     		</transactiontype>
 	    	<transactiontype>
     			<name>Payment</name>
-    			<id>2</id>
     			<weight>43</weight>
 	    	</transactiontype>
     		<transactiontype>
     			<name>OrderStatus</name>
-    			<id>3</id>
     			<weight>4</weight>
 	    	</transactiontype>
     		<transactiontype>
     			<name>Delivery</name>
-    			<id>4</id>
     			<weight>4</weight>
 	    	</transactiontype>
     		<transactiontype>
     			<name>StockLevel</name>
-    			<id>5</id>
     			<weight>4</weight>
 	    	</transactiontype>
    		</transactiontypes>
