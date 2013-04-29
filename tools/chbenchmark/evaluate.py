@@ -4,7 +4,13 @@
 """Analyse output of OLTPBenchmark and compute CH-BenCHmark metrics
 
 Usage:
-./evaluate.py output.raw"""
+    ./evaluate.py output.raw [--graphs]
+
+Options:
+    -h --help   Show this help.
+    --graphs    Plot latency and throughput graphs.
+"""
+
 from __future__ import print_function, division
 
 import sys
@@ -12,9 +18,17 @@ import math
 import numpy as np
 import pandas as pd
 
+try:
+    import pylab as p
+    HAS_PYLAB = True
+except ImportError:
+    HAS_PYLAB = False
+
 NEW_ORDER_ID = 2
 OLAP_QUERY_LOWER_ID = 7
 OLAP_QUERY_HIGHER_ID = 28
+NUMBER_QUERIES = OLAP_QUERY_HIGHER_ID - OLAP_QUERY_LOWER_ID + 1
+THROUGHPUT_BIN_SIZE = 5  # in seconds
 REPORTING_FORMAT = """
 NewOrder Transactions per minute: \t {tpmCH}
 Geometric Mean of Latencies: \t\t {geometric_mean}
@@ -63,8 +77,7 @@ def get_query_set_time(norm_data):
 def get_queries_per_hour(query_set_time):
     """Using query set time, computes number of queries that can be
     theoretically executed in an hour"""
-    number_queries = OLAP_QUERY_HIGHER_ID - OLAP_QUERY_LOWER_ID + 1
-    return 60 * 60 / query_set_time * number_queries
+    return 60 * 60 / query_set_time * NUMBER_QUERIES
 
 
 def normalize_data(data, norm_factors):
@@ -83,9 +96,9 @@ def normalize_data(data, norm_factors):
         query['latency'] -= norm_factors[
             transaction_type - OLAP_QUERY_LOWER_ID + 1] \
                 * query['neworder_cum_sum']
-        #HACK: if the initial data set was small enough some of the normalized
-        #latencies can become negative. We mitigate it by settings the lowest
-        #value to zero and increasing the rest accordingly
+        #HACK: if the initial data set was small enough, some of the
+        #normalized latencies can become negative. We mitigate it by
+        #settings the lowest value to zero and increasing the rest accordingly
         lowest_latency = query['latency'].min()
         if lowest_latency < 0:
             query['latency'] += lowest_latency
@@ -93,17 +106,57 @@ def normalize_data(data, norm_factors):
     return norm_data
 
 
+def plot_latencies(norm_data):
+    """Plots the normalized data in a bar diagramm"""
+    latencies = pd.Series(
+        [query['latency'].mean() for query in norm_data],
+        index=xrange(1, NUMBER_QUERIES + 1))
+
+    fig = p.figure()
+    subplot = fig.add_subplot(111)
+    latencies.plot(kind='bar', ax=subplot)
+    subplot.set_title("Normalized Latencies")
+    subplot.set_ylabel("Seconds")
+    subplot.set_xlabel("Query Number")
+    p.show()
+
+
+def plot_throughput(data):
+    """Plot transactional throughput"""
+
+    transactional_data = data[data['transactiontype'] < OLAP_QUERY_LOWER_ID]
+    bins = transactional_data['starttime'].max() // THROUGHPUT_BIN_SIZE + 1
+    bins, edges = np.histogram(transactional_data['starttime'], bins=bins)
+    throughput = bins / np.diff(edges)
+
+    fig = p.figure()
+    subplot = fig.add_subplot(111)
+    subplot.plot(edges[:-1], throughput, ax=subplot)
+    subplot.set_ylabel("Transactions/second")
+    subplot.set_xlabel("Seconds")
+    p.show()
+
+
 def main():
     """Main module. Loads the raw output, delegates metrics computing"""
-    if len(sys.argv) != 2:
-        print("Too many arguments.")
+    # handle arguments by hand since docopt is not a part of stdlib
+    # and argparse is...suboptimal
+    if not 2 <= len(sys.argv) <= 3:
+        print("Wrong arguments.")
         print(__doc__)
         sys.exit(-1)
-    raw_data_path = sys.argv[1]
+    if len(sys.argv) == 3 and sys.argv[2] == "--graphs":
+        plot_graphs = True
+    else:
+        plot_graphs = False
+    first_argument = sys.argv[1]
+    if first_argument == "-h" or first_argument == "--help":
+        print (__doc__)
+        sys.exit(0)
     try:
-        data = pd.read_csv(raw_data_path)
+        data = pd.read_csv(first_argument)
     except IOError:
-        print ("Could not read {}.".format(raw_data_path))
+        print ("Could not read {}.".format(first_argument))
         print(__doc__)
         sys.exit(-1)
 
@@ -125,6 +178,15 @@ def main():
             query_set_time=query_set_time,
             queries_per_hour=get_queries_per_hour(query_set_time),
             ))
+
+    if plot_graphs:
+        if not HAS_PYLAB:
+            print("Pylab is not installed. Skipping graph plotting.")
+            sys.exit(-1)
+        print("Plotting OLAP latency graph")
+        plot_latencies(norm_data)
+        print("Plotting throughput graph")
+        plot_throughput(data)
 
 
 if __name__ == "__main__":
