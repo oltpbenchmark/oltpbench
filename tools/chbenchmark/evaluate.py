@@ -47,7 +47,7 @@ def get_norm_factors():
     except ImportError:
         print("Could not find norm_factors.py. "
                 "Not performing normalization on OLAP queries.")
-        norm_factors = {x: 0 for x in xrange(1, 23)}
+        norm_factors = {x: 0 for x in range(1, 23)}
     return norm_factors
 
 
@@ -110,11 +110,11 @@ def plot_latencies(norm_data):
     """Plots the normalized data in a bar diagramm"""
     latencies = pd.Series(
         [query['latency'].mean() for query in norm_data],
-        index=xrange(1, NUMBER_QUERIES + 1))
+        index=range(1, NUMBER_QUERIES + 1))
 
     fig = p.figure()
     subplot = fig.add_subplot(111)
-    latencies.plot(kind='bar', ax=subplot)
+    latencies.plot(kind='bar')
     subplot.set_title("Normalized Latencies")
     subplot.set_ylabel("Seconds")
     subplot.set_xlabel("Query Number")
@@ -131,7 +131,7 @@ def plot_throughput(data):
 
     fig = p.figure()
     subplot = fig.add_subplot(111)
-    subplot.plot(edges[:-1], throughput, ax=subplot)
+    subplot.plot(edges[:-1], throughput)
     subplot.set_ylabel("Transactions/second")
     subplot.set_xlabel("Seconds")
     p.show()
