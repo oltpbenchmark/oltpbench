@@ -1,0 +1,25 @@
+CH-BenCHmark Analysis Script
+=============================
+
+Overview
+---------
+
+This script computes the CH-BenCHmark specific metrics using normalized OLAP 
+latencies. The normalization factors for queries 1 to 22 are stored in 
+*norm_factors.py*. For more information on the metrics see 
+"Benchmarking Hybrid OLTP&OLAP Database Systems" by F. Funke.
+
+With the parameter --graphs it uses matplotlib to construct OLAP
+latency and OLTP throughput graphs.
+
+Example
+--------
+
+./evaluate.py ../../output.raw
+
+
+NewOrder Transactions per minute:        14166.6836852
+Geometric Mean of Latencies:             1.32751614644
+Query Set Time:                          53.7631818492
+Queries per Hour:                        1473.12709694
+
