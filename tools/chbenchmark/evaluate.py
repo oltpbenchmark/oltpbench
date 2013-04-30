@@ -93,15 +93,21 @@ def normalize_data(data, norm_factors):
     for transaction_type in range(OLAP_QUERY_LOWER_ID,
                                  OLAP_QUERY_HIGHER_ID + 1):
         query = data[data['transactiontype'] == transaction_type]
-        query['latency'] -= norm_factors[
-            transaction_type - OLAP_QUERY_LOWER_ID + 1] \
-                * query['neworder_cum_sum']
-        #HACK: if the initial data set was small enough, some of the
-        #normalized latencies can become negative. We mitigate it by
-        #settings the lowest value to zero and increasing the rest accordingly
-        lowest_latency = query['latency'].min()
-        if lowest_latency < 0:
-            query['latency'] += lowest_latency
+        if len(query) > 0:
+            query['latency'] -= norm_factors[
+                transaction_type - OLAP_QUERY_LOWER_ID + 1] \
+                    * query['neworder_cum_sum']
+            #HACK: if the initial data set was small enough, some of the
+            #normalized latencies can become negative. We mitigate it by
+            #settings the lowest value to zero and increasing the rest
+            #accordingly
+            lowest_latency = query['latency'].min()
+            if lowest_latency < 0:
+                query['latency'] += lowest_latency
+        else:
+            print("Not enough data to compute the metrics. "
+                "Please, make sure that every query executed at least once")
+            sys.exit(-1)
         norm_data.append(query)
     return norm_data
 
