@@ -193,7 +193,7 @@ class MetricsCalculator(object):
         """Loads data from the path and  converts it to a more usable format
         """
         try:
-            data = pd.read_csv(self.data_path)
+            data = pd.read_csv(self.data_path, na_filter=False)
         except IOError:
             print ("Could not read {}.".format(self.data_path))
             print(__doc__)
