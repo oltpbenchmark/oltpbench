@@ -192,12 +192,7 @@ class MetricsCalculator(object):
     def load_data(self):
         """Loads data from the path and  converts it to a more usable format
         """
-        try:
-            data = pd.read_csv(self.data_path, na_filter=False)
-        except IOError:
-            print ("Could not read {}.".format(self.data_path))
-            print(__doc__)
-            sys.exit(-1)
+        data = pd.read_csv(self.data_path, na_filter=False)
 
         # prepare the data set
         data.columns = ['transactiontype', 'starttime',
@@ -229,7 +224,7 @@ class MetricsCalculator(object):
         norm_data['normfactors'].fillna(0, inplace=True)
         norm_data['norm_latency'] = norm_data['latency'] - \
                 norm_data['normfactors'] * norm_data['neworder_cum_sum']
-        # HACK: if the initial data set is small enough, the normalized 
+        # HACK: if the initial data set is small enough, the normalized
         # latencies sometime may become negative. We set the lowest latency
         # to 0 and increase the others accordingly
         lowest_latency = norm_data['norm_latency'].min()
@@ -303,7 +298,12 @@ def main():
         print (__doc__)
         sys.exit(0)
 
-    metrics_calc = MetricsCalculator(first_argument)
+    try:
+        metrics_calc = MetricsCalculator(first_argument)
+    except IOError:
+        print ("Could not read {}.".format(first_argument))
+        print(__doc__)
+        sys.exit(-1)
 
     print(metrics_calc)
 
