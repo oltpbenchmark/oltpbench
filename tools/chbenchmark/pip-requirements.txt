@@ -1,2 +1,2 @@
-pandas
-pylab
+pandas>=0.11
+matplotlib>=1.1
