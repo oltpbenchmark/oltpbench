@@ -173,12 +173,12 @@ class MetricsCalculator(object):
         Usually works on normalized latencies of OLAP queries"""
         geometric_mean = 1
         for transaction_type in self.olap_groups:
-            geometric_mean *= transaction_type['latency'].mean()
+            geometric_mean *= transaction_type['norm_latency'].mean()
         return math.pow(geometric_mean, 1 / len(self.olap_groups))
 
     def get_query_set_time(self):
         """Computes the sum of mean normalized latencies of OLAP queries"""
-        return sum(query['latency'].mean()
+        return sum(query['norm_latency'].mean()
                 for query in self.olap_groups)
 
     def get_queries_per_hour(self, query_set_time=None):
@@ -211,7 +211,8 @@ class MetricsCalculator(object):
 
     def normalize_data(self, data, norm_factors):
         """Normalize the OLAP query latencies in data using given normalization
-        factors. Returns an array with OLAP queries"""
+        factors and stores it in the norm_latency column. Returns an array with
+        OLAP queries"""
         norm_data = []
         # set to 1 for NewOrder transactions
         data['neworder_count'] = np.where(data['transactiontype']
@@ -219,7 +220,6 @@ class MetricsCalculator(object):
         # cumulative sum of NewOrder transactions
         data['neworder_cum_sum'] = data['neworder_count'].cumsum()
 
-        # from IPython import embed; embed()
         norm_vector = pd.Series(norm_factors,
                                 index=range(self.OLAP_QUERY_LOWER_ID,
                                              self.OLAP_QUERY_HIGHER_ID + 1),
@@ -227,8 +227,14 @@ class MetricsCalculator(object):
 
         norm_data = data.join(norm_vector, "transactiontype")
         norm_data['normfactors'].fillna(0, inplace=True)
-        norm_data['latency'] -= norm_data['normfactors'] \
-                                * norm_data['neworder_cum_sum']
+        norm_data['norm_latency'] = norm_data['latency'] - \
+                norm_data['normfactors'] * norm_data['neworder_cum_sum']
+        # HACK: if the initial data set is small enough, the normalized 
+        # latencies sometime may become negative. We set the lowest latency
+        # to 0 and increase the others accordingly
+        lowest_latency = norm_data['norm_latency'].min()
+        if lowest_latency < 0:
+            norm_data['norm_latency'] -= lowest_latency
         return norm_data
 
     def get_metrics(self):
@@ -244,7 +250,7 @@ class MetricsCalculator(object):
     def plot_latencies(self):
         """Plots the normalized data in a bar diagramm"""
         latencies = pd.Series(
-            [query['latency'].mean() for query in self.olap_groups],
+            [query['norm_latency'].mean() for query in self.olap_groups],
             index=range(1, self.NUMBER_QUERIES + 1))
 
         fig = p.figure()
