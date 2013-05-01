@@ -64,7 +64,13 @@ class MetricsCalculator(object):
             execute every one of them.
 
         queries_per_hour: numpy.float64
-            How many OLAP queries will be executed in an hour on average
+            How many OLAP queries will be executed in an hour on average.
+            Computed as 3600 / query_set_time * number_of_queries
+
+        effective_queries_per_hour: numpy.float64
+            How many queries can be executed in total, i.e. by all analytical
+            workers combined. 
+            Computed as queries_per_hour * number_of_workers
 
 
     Example usage
@@ -75,10 +81,12 @@ class MetricsCalculator(object):
     5065.7051694977554
 
     >>> print(metrics_calc)
-    NewOrder Transactions per minute:        5065.7051695
-    Geometric Mean of Latencies:             0.507683095117
-    Query Set Time:                          16.4944362742
-    Queries per Hour:                        4801.61908435
+
+    NewOrder Transactions per minute:    4431.99420593
+    Geometric Mean of Latencies:         1.04456824704
+    Query Set Time:                      30.9542381403
+    Queries per Hour:                    2558.6157101
+    Effective Queries per Hour:          5117.2314202
 
     >>> metrics_calc.plot()
         # plots latency and throughput diagrams
@@ -94,6 +102,7 @@ class MetricsCalculator(object):
     Geometric Mean of Latencies: \t {geometric_mean}
     Query Set Time: \t\t\t {query_set_time}
     Queries per Hour: \t\t\t {queries_per_hour}
+    Effective Queries per Hour: \t {effective_queries_per_hour}
     """
     NORMALIZATION_FACTORS = {
                                 1: 1.590435275410472e-05,
@@ -133,11 +142,12 @@ class MetricsCalculator(object):
     def __str__(self):
         """Uses REPORTING_FORMAT to create a string representation"""
         return self.REPORTING_FORMAT.format(
-                            tpmCH=self.metrics.tpmCH,
-                            geometric_mean=self.metrics.geometric_mean,
-                            query_set_time=self.metrics.query_set_time,
-                            queries_per_hour=self.metrics.queries_per_hour,
-                            )
+            tpmCH=self.metrics.tpmCH,
+            geometric_mean=self.metrics.geometric_mean,
+            query_set_time=self.metrics.query_set_time,
+            queries_per_hour=self.metrics.queries_per_hour,
+            effective_queries_per_hour=self.
+                                        metrics.effective_queries_per_hour)
 
     def get_norm_factors(self, norm_factors):
         """Converts a normalization factors dict to a list"""
@@ -189,6 +199,17 @@ class MetricsCalculator(object):
             query_set_time = self.get_query_set_time()
         return 60 * 60 / query_set_time * self.NUMBER_QUERIES
 
+    def get_effective_queries_per_hour(self, queries_per_hour=None):
+        """Calculates number of effective queries per hour, i.e. how many
+        queries with normalized run time would be executed by all active
+        workers"""
+        if queries_per_hour is None:
+            queries_per_hour = self.get_queries_per_hour()
+        olap_data = self.data[self.data['transactiontype'] 
+                                    >= self.OLAP_QUERY_LOWER_ID]
+        num_workers = len(olap_data['workerid'].unique())
+        return queries_per_hour * num_workers
+
     def load_data(self):
         """Loads data from the path and  converts it to a more usable format
         """
@@ -236,11 +257,14 @@ class MetricsCalculator(object):
         """Calculates CH-BenCHmark metrics and returns a named tuple"""
 
         ch_metrics = namedtuple("CHMetrics",
-            ['tpmCH', 'geometric_mean', 'query_set_time', 'queries_per_hour'])
+            ['tpmCH', 'geometric_mean', 'query_set_time', 'queries_per_hour',
+            'effective_queries_per_hour'])
 
         query_set_time = self.get_query_set_time()
+        queries_per_hour = self.get_queries_per_hour(query_set_time)
         return ch_metrics(self.get_tpmch(), self.get_geometric_mean(),
-                query_set_time, self.get_queries_per_hour(query_set_time))
+                query_set_time, queries_per_hour,
+                self.get_effective_queries_per_hour(queries_per_hour))
 
     def plot_latencies(self):
         """Plots the normalized data in a bar diagramm"""
