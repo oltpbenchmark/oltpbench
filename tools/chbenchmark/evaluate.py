@@ -15,6 +15,7 @@ from __future__ import print_function, division
 
 import sys
 import math
+from collections import namedtuple
 import numpy as np
 import pandas as pd
 
@@ -51,6 +52,15 @@ def get_norm_factors():
     return norm_factors
 
 
+def get_olap_groups(norm_data):
+    """Returns an array of data grouped by transaction types. Only returns
+    OLAP queries.
+    """
+    olap_data = norm_data[norm_data['transactiontype'] >= OLAP_QUERY_LOWER_ID]
+    return [groupdata
+                for _, groupdata in olap_data.groupby('transactiontype')]
+
+
 def get_tpmch(data):
     """Computes number of NewOrder transactions per minute metric.
      First argument is raw data, second is transaction id which corresponds
@@ -64,20 +74,43 @@ def get_geometric_mean(norm_data):
     """Computes geometric mean of the latencies of the given data set.
     Usually works on normalized latencies of OLAP queries"""
     geometric_mean = 1
-    for transaction_type in norm_data:
+    olap_groups = get_olap_groups(norm_data)
+    for transaction_type in olap_groups:
         geometric_mean *= transaction_type['latency'].mean()
-    return math.pow(geometric_mean, 1 / len(norm_data))
+    return math.pow(geometric_mean, 1 / len(olap_groups))
 
 
 def get_query_set_time(norm_data):
     """Computes the sum of mean normalized latencies of OLAP queries"""
-    return sum(query['latency'].mean() for query in norm_data)
+    return sum(query['latency'].mean()
+            for query in get_olap_groups(norm_data))
 
 
 def get_queries_per_hour(query_set_time):
     """Using query set time, computes number of queries that can be
     theoretically executed in an hour"""
     return 60 * 60 / query_set_time * NUMBER_QUERIES
+
+
+def load_data(data_path):
+    """Loads data from the path, converts it to a more usable format
+    and normalizes it according using normalization factors"""
+    try:
+        data = pd.read_csv(data_path)
+    except IOError:
+        print ("Could not read {}.".format(data_path))
+        print(__doc__)
+        sys.exit(-1)
+
+    # prepare the data set
+    data.columns = ['transactiontype', 'starttime', 'latency', 'workerid',
+                                                                     'phase']
+    data['starttime'] -= data['starttime'].min()  # start the time from zero
+    data['latency'] /= 10 ** 6  # convert latency to seconds
+    data['diff'] = data['phase'].diff()  # phase switches are marker with 1
+
+    norm_data = normalize_data(data, get_norm_factors())
+    return norm_data
 
 
 def normalize_data(data, norm_factors):
@@ -90,32 +123,38 @@ def normalize_data(data, norm_factors):
     # cumulative sum of NewOrder transactions
     data['neworder_cum_sum'] = data['neworder_count'].cumsum()
 
-    for transaction_type in range(OLAP_QUERY_LOWER_ID,
-                                 OLAP_QUERY_HIGHER_ID + 1):
-        query = data[data['transactiontype'] == transaction_type]
-        if len(query) > 0:
-            query['latency'] -= norm_factors[
-                transaction_type - OLAP_QUERY_LOWER_ID + 1] \
-                    * query['neworder_cum_sum']
-            #HACK: if the initial data set was small enough, some of the
-            #normalized latencies can become negative. We mitigate it by
-            #settings the lowest value to zero and increasing the rest
-            #accordingly
-            lowest_latency = query['latency'].min()
-            if lowest_latency < 0:
-                query['latency'] += lowest_latency
-        else:
-            print("Not enough data to compute the metrics. "
-                "Please, make sure that every query executed at least once")
-            sys.exit(-1)
-        norm_data.append(query)
+    # from IPython import embed; embed()
+    norm_vector = pd.Series(norm_factors.values(),
+                            index=range(OLAP_QUERY_LOWER_ID,
+                                         OLAP_QUERY_HIGHER_ID + 1),
+                            name="normfactors")
+
+    norm_data = data.join(norm_vector, "transactiontype")
+    norm_data['normfactors'].fillna(0, inplace=True)
+    norm_data['latency'] -= norm_data['normfactors'] \
+                            * norm_data['neworder_cum_sum']
     return norm_data
+
+
+def get_metrics(data):
+    """Takes normalized data and computes CH-BenCHmark metrics.
+    Returns a named tuple chmetrics
+    """
+
+    ch_metric_tuple = namedtuple(
+             'CHBenCHmark_Metric',
+             ['tpmCH', 'geometric_mean', 'query_set_time', 'queries_per_hour'])
+
+    query_set_time = get_query_set_time(data)
+
+    return ch_metric_tuple(get_tpmch(data), get_geometric_mean(data),
+                        query_set_time, get_queries_per_hour(query_set_time))
 
 
 def plot_latencies(norm_data):
     """Plots the normalized data in a bar diagramm"""
     latencies = pd.Series(
-        [query['latency'].mean() for query in norm_data],
+        [query['latency'].mean() for query in get_olap_groups(norm_data)],
         index=range(1, NUMBER_QUERIES + 1))
 
     fig = p.figure()
@@ -159,38 +198,23 @@ def main():
     if first_argument == "-h" or first_argument == "--help":
         print (__doc__)
         sys.exit(0)
-    try:
-        data = pd.read_csv(first_argument)
-    except IOError:
-        print ("Could not read {}.".format(first_argument))
-        print(__doc__)
-        sys.exit(-1)
 
-    # prepare the data set
-    data.columns = ['transactiontype', 'starttime', 'latency', 'workerid',
-                                                                     'phase']
-    data['starttime'] -= data['starttime'].min()  # start the time from zero
-    data['latency'] /= 10 ** 6  # convert latency to seconds
-    data['diff'] = data['phase'].diff()  # phase switches are marker with 1
+    data = load_data(first_argument)
 
-    norm_factors = get_norm_factors()
-    norm_data = normalize_data(data, norm_factors)
-
-    query_set_time = get_query_set_time(norm_data)
-
+    ch_metrics = get_metrics(data)
     print(REPORTING_FORMAT.format(
-            tpmCH=get_tpmch(data),
-            geometric_mean=get_geometric_mean(norm_data),
-            query_set_time=query_set_time,
-            queries_per_hour=get_queries_per_hour(query_set_time),
+            tpmCH=ch_metrics.tpmCH,
+            geometric_mean=ch_metrics.geometric_mean,
+            query_set_time=ch_metrics.query_set_time,
+            queries_per_hour=ch_metrics.queries_per_hour,
             ))
 
     if plot_graphs:
         if not HAS_PYLAB:
-            print("Pylab is not installed. Skipping graph plotting.")
+            print("Matplotlib is not installed. Skipping graph plotting.")
             sys.exit(-1)
         print("Plotting OLAP latency graph")
-        plot_latencies(norm_data)
+        plot_latencies(data)
         print("Plotting throughput graph")
         plot_throughput(data)
 
