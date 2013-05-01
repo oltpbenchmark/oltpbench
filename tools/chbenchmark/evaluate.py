@@ -36,10 +36,9 @@ class MetricsCalculator(object):
     data_path: str or None
         path to the raw data from a benchmark run.
 
-    normalization_factors: list or None
+    normalization_factors: list, dict or None
         list of normalization factors corresponding to queries 1 to 22.
-        If None, tryies to import norm_factor, if it is not found, doesn't
-        normalize the OLAP dependencies.
+        If None, uses NORMALIZATION_FACTORS class constant.
 
 
     Attributes
@@ -96,14 +95,35 @@ class MetricsCalculator(object):
     Query Set Time: \t\t\t {query_set_time}
     Queries per Hour: \t\t\t {queries_per_hour}
     """
+    NORMALIZATION_FACTORS = {
+                                1: 1.590435275410472e-05,
+                                2: 9.610148892570295e-08,
+                                3: 2.1147973001370898e-07,
+                                4: 4.6011923929332791e-06,
+                                5: 1.1974298065049729e-05,
+                                6: 5.377834535522383e-06,
+                                7: 4.6766076072369774e-06,
+                                8: 8.8251595759070001e-07,
+                                9: 1.882785586177993e-06,
+                                10: 1.7979427697599198e-05,
+                                11: 6.008560937185928e-08,
+                                12: 1.0780755914018742e-05,
+                                13: 2.9288997777766841e-07,
+                                14: 1.2636332849403734e-05,
+                                15: 1.3195085796787411e-05,
+                                16: 4.8882401966285524e-07,
+                                17: 4.7709884643887435e-06,
+                                18: 2.6183661597541051e-05,
+                                19: 1.665878406702794e-05,
+                                20: 1.8154322640046881e-06,
+                                21: 4.8922382992852812e-06,
+                                22: 5.0099760741982071e-07
+                            }
 
     def __init__(self, data_path, norm_factors=None):
         self.data_path = data_path
 
-        if norm_factors is None:
-            self.norm_factors = self.get_norm_factors()
-        else:
-            self.norm_factors = norm_factors
+        self.norm_factors = self.get_norm_factors(norm_factors)
 
         self.data = self.load_data()
         self.olap_groups = self.get_olap_groups(self.data)
@@ -119,18 +139,15 @@ class MetricsCalculator(object):
                             queries_per_hour=self.metrics.queries_per_hour,
                             )
 
-    def get_norm_factors(self):
-        """Tryies to import norm_factors, returns a list. If norm_factors
-        is not found, the list contains zeros."""
-
-        try:
-            from norm_factors import normalization_factors
-            norm_factors = normalization_factors.values()
-        except ImportError:
-            print("Could not find norm_factors.py. "
-                    "Not performing normalization on OLAP queries.")
-            norm_factors = [0] * self.NUMBER_QUERIES
-        return norm_factors
+    def get_norm_factors(self, norm_factors):
+        """Converts a normalization factors dict to a list"""
+        if norm_factors is None:
+            norm_factors = self.NORMALIZATION_FACTORS
+        if isinstance(norm_factors, dict):
+            return [norm_factors[i]
+                    for i in range(1, self.NUMBER_QUERIES + 1)]
+        else:
+            return norm_factors
 
     def get_olap_groups(self, norm_data):
         """Returns an array of data grouped by transaction types. Only returns
