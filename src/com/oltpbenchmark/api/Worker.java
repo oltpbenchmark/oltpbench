@@ -210,7 +210,8 @@ public abstract class Worker implements Runnable {
 			
 			if (measure && type !=null) {
 				long end = System.nanoTime();
-				latencies.addLatency(type.getId(), start, end, this.id, phase.id);
+				latencies.addLatency(type.getId(), start, end, this.id,
+				        phase != null ? phase.id : -1);
 			}
 			state = wrkldState.getGlobalState();
 		}
