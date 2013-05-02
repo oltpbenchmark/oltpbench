@@ -33,12 +33,18 @@ class MetricsCalculator(object):
     Parameters
     -----------
 
-    data_path: str or None
+    data_path: str
         path to the raw data from a benchmark run.
 
     normalization_factors: list, dict or None
         list of normalization factors corresponding to queries 1 to 22.
         If None, uses NORMALIZATION_FACTORS class constant.
+        Default: None
+
+    keep_data: boolean
+        If true, keeps the data DataFrame as attribute. Turn off to save
+        the memory.
+        Default: True
 
 
     Attributes
@@ -129,7 +135,7 @@ class MetricsCalculator(object):
                                 22: 5.0099760741982071e-07
                             }
 
-    def __init__(self, data_path, norm_factors=None):
+    def __init__(self, data_path, norm_factors=None, keep_data=True):
         self.data_path = data_path
 
         self.norm_factors = self.get_norm_factors(norm_factors)
@@ -138,6 +144,9 @@ class MetricsCalculator(object):
         self.olap_groups = self.get_olap_groups(self.data)
 
         self.metrics = self.get_metrics()
+
+        if not keep_data:
+            del self.data
 
     def __str__(self):
         """Uses REPORTING_FORMAT to create a string representation"""
@@ -299,6 +308,9 @@ class MetricsCalculator(object):
 
     def plot(self, latencies=True, throughput=True):
         """Wrapper method for latencies and throughput plotting"""
+        if not keep_data:
+            raise ValueError("Can not plot graphs if no data was kept"
+                                " (keep_data=False")
         if latencies:
             self.plot_latencies()
         if throughput:
