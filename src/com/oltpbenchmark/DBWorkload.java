@@ -97,6 +97,11 @@ public class DBWorkload {
 				true,
 				"[required] Workload configuration file");
 		options.addOption(
+		        "d",
+		        "dbconfig",
+		        true,
+		        "Optional database connection file");
+		options.addOption(
                 null,
 	            "create",
                 true,
@@ -171,12 +176,23 @@ public class DBWorkload {
 	        WorkloadConfiguration wrkld = new WorkloadConfiguration();
 	        wrkld.setBenchmarkName(plugin);
 	        wrkld.setXmlConfig(xmlConfig);
-	        wrkld.setDBType(DatabaseType.get(xmlConfig.getString("dbtype")));
-	        wrkld.setDBDriver(xmlConfig.getString("driver"));
-	        wrkld.setDBConnection(xmlConfig.getString("DBUrl"));
-	        wrkld.setDBName(xmlConfig.getString("DBName"));
-	        wrkld.setDBUsername(xmlConfig.getString("username"));
-	        wrkld.setDBPassword(xmlConfig.getString("password"));
+	        
+	        XMLConfiguration dbConfig;
+	        //database configuration
+	        if (argsLine.hasOption("dbconfig")){
+	            dbConfig = new XMLConfiguration(argsLine.getOptionValue("dbconfig"));
+	        } else {
+	            dbConfig = xmlConfig;
+	        }
+	        
+	        wrkld.setDBType(DatabaseType.get(dbConfig.getString("dbtype")));
+	        wrkld.setDBDriver(dbConfig.getString("driver"));
+	        wrkld.setDBConnection(dbConfig.getString("DBUrl"));
+	        wrkld.setDBName(dbConfig.getString("DBName"));
+	        wrkld.setDBUsername(dbConfig.getString("username"));
+	        wrkld.setDBPassword(dbConfig.getString("password"));
+	        
+	        
 	        int terminals = xmlConfig.getInt("terminals[not(@bench)]", 0);
 	        terminals = xmlConfig.getInt("terminals" + pluginTest, terminals);
 	        wrkld.setTerminals(terminals);
@@ -197,6 +213,13 @@ public class DBWorkload {
 	            } else {
 	            	weight_strings = work.getList("weights[not(@bench)]"); 
 	            }
+                // use the standard weights from the plugin definition if no weight were defined
+                if (weight_strings.size() == 0) {
+                    for (Object weight : pluginConfig.configurationsAt("//plugin[@name='" + plugin + "']/transactiontypes/transactiontype/weight")) {
+                        SubnodeConfiguration weightConf = (SubnodeConfiguration)(weight); 
+                        weight_strings.add(weightConf.getString("/"));
+                    }
+                }
 	            int rate = 1;
 	            boolean rateLimited = true;
 	            boolean disabled = false;
@@ -224,6 +247,7 @@ public class DBWorkload {
 	                    System.exit(-1);
 	                }
 	            }
+	            
 	            Phase.Arrival arrival=Phase.Arrival.REGULAR;
 	            String arrive=work.getString("@arrival","regular");
 	            if(arrive.toUpperCase().equals("POISSON"))
@@ -237,6 +261,7 @@ public class DBWorkload {
 	                		"is bigger than the total number of terminals");
 	                System.exit(-1);
 	            }
+	            
 	            wrkld.addWork(work.getInt("/time"),
 	            			  rate,
 	                          weight_strings,
@@ -245,13 +270,20 @@ public class DBWorkload {
 	                          activeTerminals,
 	                          arrival);
 	        } // FOR
-	
-	        int numTxnTypes = xmlConfig.configurationsAt("transactiontypes" + pluginTest + "/transactiontype").size();
-	        if (numTxnTypes == 0 && pluginList.length == 1) {
-	            //if it is a single workload run, <transactiontypes /> w/o attribute is used
-	            pluginTest = "[not(@bench)]";
-	            numTxnTypes = xmlConfig.configurationsAt("transactiontypes" + pluginTest + "/transactiontype").size();
+	        
+	        SubnodeConfiguration txnTypes;
+	        // check possible transaction types location and fail gracefully at it
+	        try {
+	            txnTypes = xmlConfig.configurationAt("transactiontypes" + pluginTest);
+	        } catch (IllegalArgumentException exception) {
+	            try {
+	                txnTypes = xmlConfig.configurationAt("transactiontypes[not(@bench)]");	                
+	            } catch (IllegalArgumentException inner_exception) {
+	                txnTypes = pluginConfig.configurationAt("/plugin[@name='" + plugin + "']/transactiontypes");
+	            }
 	        }
+	        
+	        int numTxnTypes = txnTypes.configurationsAt("/transactiontype").size();
 	        wrkld.setNumTxnTypes(numTxnTypes);
 	
 	        // CHECKING INPUT PHASES
@@ -275,7 +307,7 @@ public class DBWorkload {
 	        // BENCHMARK MODULE
 	        // ----------------------------------------------------------------
         
-	       	String classname = pluginConfig.getString("/plugin[@name='" + plugin + "']");
+	       	String classname = pluginConfig.getString("/plugin[@name='" + plugin + "']/class");
 	
 	        if (classname == null)
 	            throw new ParseException("Plugin " + plugin + " is undefined in config/plugin.xml");
@@ -302,11 +334,11 @@ public class DBWorkload {
 	        ttypes.add(TransactionType.INVALID);
 	        int txnIdOffset = lastTxnId;
 	        for (int i = 1; i < wrkld.getNumTxnTypes() + 1; i++) {
-	            String key = "transactiontypes" + pluginTest + "/transactiontype[" + i + "]";
-	            String txnName = xmlConfig.getString(key + "/name");
+	            String key = "/transactiontype[" + i + "]";
+	            String txnName = txnTypes.getString(key + "/name");
 	            int txnId = i + 1;
-	            if (xmlConfig.containsKey(key + "/id")) {
-	                txnId = xmlConfig.getInt(key + "/id");
+	            if (txnTypes.containsKey(key + "/id")) {
+	                txnId = txnTypes.getInt(key + "/id");
 	            }
 	            ttypes.add(bench.initTransactionType(txnName, txnId + txnIdOffset));
 	            lastTxnId = i;
