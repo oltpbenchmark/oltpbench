@@ -6,8 +6,8 @@ Overview
 
 This script computes the CH-BenCHmark specific metrics using normalized OLAP 
 latencies. The normalization factors for queries 1 to 22 are stored in 
-*norm_factors.py*. For more information on the metrics see 
-"Benchmarking Hybrid OLTP&OLAP Database Systems" by F. Funke.
+*evaluate.MetricsCalculator.NORMALIZATION_FACTORS*. For more information on 
+the metrics see "Benchmarking Hybrid OLTP&OLAP Database Systems" by F. Funke.
 
 With the parameter --plot it uses matplotlib to construct OLAP
 latency and OLTP throughput graphs.

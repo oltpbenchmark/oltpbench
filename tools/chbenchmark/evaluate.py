@@ -25,6 +25,12 @@ try:
 except ImportError:
     HAS_PYLAB = False
 
+# container for CH metrics. Has to be located at the module level for it
+# to be pickled
+CH_METRICS = namedtuple("CH_METRICS",
+    ['tpmCH', 'geometric_mean', 'query_set_time', 'queries_per_hour',
+    'effective_queries_per_hour'])
+
 
 class MetricsCalculator(object):
     """Loads a raw output file, parses it and computes CH-BenCHmark metrics.
@@ -33,12 +39,18 @@ class MetricsCalculator(object):
     Parameters
     -----------
 
-    data_path: str or None
+    data_path: str
         path to the raw data from a benchmark run.
 
     normalization_factors: list, dict or None
         list of normalization factors corresponding to queries 1 to 22.
         If None, uses NORMALIZATION_FACTORS class constant.
+        Default: None
+
+    keep_data: boolean
+        If true, keeps the data DataFrame as attribute. Turn off to save
+        the memory.
+        Default: True
 
 
     Attributes
@@ -69,7 +81,7 @@ class MetricsCalculator(object):
 
         effective_queries_per_hour: numpy.float64
             How many queries can be executed in total, i.e. by all analytical
-            workers combined. 
+            workers combined.
             Computed as queries_per_hour * number_of_workers
 
 
@@ -129,7 +141,7 @@ class MetricsCalculator(object):
                                 22: 5.0099760741982071e-07
                             }
 
-    def __init__(self, data_path, norm_factors=None):
+    def __init__(self, data_path, norm_factors=None, keep_data=True):
         self.data_path = data_path
 
         self.norm_factors = self.get_norm_factors(norm_factors)
@@ -138,6 +150,9 @@ class MetricsCalculator(object):
         self.olap_groups = self.get_olap_groups(self.data)
 
         self.metrics = self.get_metrics()
+
+        if not keep_data:
+            del self.data
 
     def __str__(self):
         """Uses REPORTING_FORMAT to create a string representation"""
@@ -205,7 +220,7 @@ class MetricsCalculator(object):
         workers"""
         if queries_per_hour is None:
             queries_per_hour = self.get_queries_per_hour()
-        olap_data = self.data[self.data['transactiontype'] 
+        olap_data = self.data[self.data['transactiontype']
                                     >= self.OLAP_QUERY_LOWER_ID]
         num_workers = len(olap_data['workerid'].unique())
         return queries_per_hour * num_workers
@@ -256,13 +271,9 @@ class MetricsCalculator(object):
     def get_metrics(self):
         """Calculates CH-BenCHmark metrics and returns a named tuple"""
 
-        ch_metrics = namedtuple("CHMetrics",
-            ['tpmCH', 'geometric_mean', 'query_set_time', 'queries_per_hour',
-            'effective_queries_per_hour'])
-
         query_set_time = self.get_query_set_time()
         queries_per_hour = self.get_queries_per_hour(query_set_time)
-        return ch_metrics(self.get_tpmch(), self.get_geometric_mean(),
+        return CH_METRICS(self.get_tpmch(), self.get_geometric_mean(),
                 query_set_time, queries_per_hour,
                 self.get_effective_queries_per_hour(queries_per_hour))
 
@@ -299,6 +310,9 @@ class MetricsCalculator(object):
 
     def plot(self, latencies=True, throughput=True):
         """Wrapper method for latencies and throughput plotting"""
+        if not hasattr(self, 'data'):
+            raise ValueError("Can not plot graphs if no data was kept"
+                                " (initialized with keep_data=False).")
         if latencies:
             self.plot_latencies()
         if throughput:
