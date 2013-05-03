@@ -325,7 +325,8 @@ public class DBWorkload {
 	        INIT_LOG.info(SINGLE_LINE + "\n\n" + StringUtil.formatMaps(initDebug));
 	        INIT_LOG.info(SINGLE_LINE);
 
-        
+	        //Load additional options
+	        bench.loadOptions();
 
 	        // Load TransactionTypes
 	        List<TransactionType> ttypes = new ArrayList<TransactionType>();
