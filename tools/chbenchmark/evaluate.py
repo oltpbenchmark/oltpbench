@@ -4,7 +4,7 @@
 """Analyse output of OLTPBenchmark and compute CH-BenCHmark metrics
 
 Usage:
-    ./evaluate.py output.raw [--plot]
+    ./evaluate.py output.raw scale_factor [--plot]
 
 Options:
     -h --help   Show this help.
@@ -29,7 +29,7 @@ except ImportError:
 # to be pickled
 CH_METRICS = namedtuple("CH_METRICS",
     ['tpmCH', 'geometric_mean', 'query_set_time', 'queries_per_hour',
-    'effective_queries_per_hour'])
+        'effective_queries_per_hour'])
 
 
 class MetricsCalculator(object):
@@ -41,6 +41,10 @@ class MetricsCalculator(object):
 
     data_path: str
         path to the raw data from a benchmark run.
+
+    scale_factor: float
+        Size of the initial data size measured in TPC-C warehouses.
+        Corresponds to the scale_factor parameter of TPC-C.
 
     normalization_factors: list, dict or None
         list of normalization factors corresponding to queries 1 to 22.
@@ -116,34 +120,35 @@ class MetricsCalculator(object):
     Queries per Hour: \t\t\t {queries_per_hour}
     Effective Queries per Hour: \t {effective_queries_per_hour}
     """
-    NORMALIZATION_FACTORS = {
-                                1: 1.590435275410472e-05,
-                                2: 9.610148892570295e-08,
-                                3: 2.1147973001370898e-07,
-                                4: 4.6011923929332791e-06,
-                                5: 1.1974298065049729e-05,
-                                6: 5.377834535522383e-06,
-                                7: 4.6766076072369774e-06,
-                                8: 8.8251595759070001e-07,
-                                9: 1.882785586177993e-06,
-                                10: 1.7979427697599198e-05,
-                                11: 6.008560937185928e-08,
-                                12: 1.0780755914018742e-05,
-                                13: 2.9288997777766841e-07,
-                                14: 1.2636332849403734e-05,
-                                15: 1.3195085796787411e-05,
-                                16: 4.8882401966285524e-07,
-                                17: 4.7709884643887435e-06,
-                                18: 2.6183661597541051e-05,
-                                19: 1.665878406702794e-05,
-                                20: 1.8154322640046881e-06,
-                                21: 4.8922382992852812e-06,
-                                22: 5.0099760741982071e-07
-                            }
+    NORMALIZATION_FACTORS = {1: 4.3080787947283295e-05,
+                             2: 1.3511842916930463e-06,
+                             3: 1.4061316186722519e-05,
+                             4: 5.0505764012875709e-05,
+                             5: 8.2386818827363912e-05,
+                             6: 4.76976420878031e-05,
+                             7: 6.1194069039292685e-05,
+                             8: 1.8605473268914576e-05,
+                             9: 2.9757274683884159e-05,
+                             10: 4.9739834035716385e-05,
+                             11: 2.6012010035246955e-06,
+                             12: 4.8384581137254573e-05,
+                             13: 9.1957660424126757e-06,
+                             14: 3.9511578568506352e-05,
+                             15: 7.8781204811696957e-05,
+                             16: 6.929053496878889e-07,
+                             17: 3.229470913104759e-05,
+                             18: 9.6369692588189949e-05,
+                             19: 1.3354042769484055e-05,
+                             20: 2.3403405125265545e-05,
+                             21: 4.632092053642501e-05,
+                             22: 1.2041461648844624e-05
+                             }
 
-    def __init__(self, data_path, norm_factors=None, keep_data=True):
+    def __init__(self, data_path, scale_factor, norm_factors=None,
+                                                    keep_data=True):
         self.data_path = data_path
 
+        self.scale_factor = scale_factor
         self.norm_factors = self.get_norm_factors(norm_factors)
 
         self.data = self.load_data()
@@ -237,13 +242,15 @@ class MetricsCalculator(object):
         data['latency'] /= 10 ** 6  # convert latency to seconds
         data['diff'] = data['phase'].diff()  # phase switches are marker with 1
 
-        norm_data = self.normalize_data(data, self.norm_factors)
+        norm_data = self.normalize_data(data, self.scale_factor,
+                                                self.norm_factors)
         return norm_data
 
-    def normalize_data(self, data, norm_factors):
+    def normalize_data(self, data, scale_factor, norm_factors):
         """Normalize the OLAP query latencies in data using given normalization
-        factors and stores it in the norm_latency column. Returns an array with
-        OLAP queries"""
+        factors and scale factor and stores it in the norm_latency column.
+        Stores the normalized data in the norm_latency column.
+        """
         norm_data = []
         # set to 1 for NewOrder transactions
         data['neworder_count'] = np.where(data['transactiontype']
@@ -258,14 +265,10 @@ class MetricsCalculator(object):
 
         norm_data = data.join(norm_vector, "transactiontype")
         norm_data['normfactors'].fillna(0, inplace=True)
-        norm_data['norm_latency'] = norm_data['latency'] - \
-                norm_data['normfactors'] * norm_data['neworder_cum_sum']
-        # HACK: if the initial data set is small enough, the normalized
-        # latencies sometime may become negative. We set the lowest latency
-        # to 0 and increase the others accordingly
-        lowest_latency = norm_data['norm_latency'].min()
-        if lowest_latency < 0:
-            norm_data['norm_latency'] -= lowest_latency
+        norm_data['norm_latency'] = norm_data['latency'] / \
+                (1 + norm_data['normfactors'] *
+                     norm_data['neworder_cum_sum'] /
+                     scale_factor)
         return norm_data
 
     def get_metrics(self):
@@ -323,7 +326,7 @@ def main():
     """Main module. Loads the raw output, delegates metrics computing"""
     # handle arguments by hand since docopt is not a part of stdlib
     # and argparse is...suboptimal
-    if not 2 <= len(sys.argv) <= 3:
+    if not 3 <= len(sys.argv) <= 4:
         print("Wrong arguments.")
         print(__doc__)
         sys.exit(-1)
@@ -337,7 +340,14 @@ def main():
         sys.exit(0)
 
     try:
-        metrics_calc = MetricsCalculator(first_argument)
+        scale_factor = float(sys.argv[2])
+    except ValueError:
+        print("Please provide a decimal scale factor as the second argument.")
+        print(__doc__)
+        sys.exit(0)
+
+    try:
+        metrics_calc = MetricsCalculator(first_argument, scale_factor)
     except IOError:
         print ("Could not read {}.".format(first_argument))
         print(__doc__)
