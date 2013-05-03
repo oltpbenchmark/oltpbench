@@ -13,6 +13,7 @@ Options:
 
 from __future__ import print_function, division
 
+import re
 import sys
 import math
 from collections import namedtuple
@@ -266,9 +267,8 @@ class MetricsCalculator(object):
         norm_data = data.join(norm_vector, "transactiontype")
         norm_data['normfactors'].fillna(0, inplace=True)
         norm_data['norm_latency'] = norm_data['latency'] / \
-                (1 + norm_data['normfactors'] *
-                     norm_data['neworder_cum_sum'] /
-                     scale_factor)
+                (scale_factor + norm_data['normfactors'] *
+                     norm_data['neworder_cum_sum'])
         return norm_data
 
     def get_metrics(self):
