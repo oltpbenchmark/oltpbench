@@ -46,9 +46,12 @@ public class TPCCBenchmark extends BenchmarkModule {
 
 	public TPCCBenchmark(WorkloadConfiguration workConf) {
 		super("tpcc", workConf, true);
-		
-		XMLConfiguration xml = workConf.getXmlConfig();
-		randomWorkerWarehouse = xml.getBoolean("tpcc_random_warehouse", randomWorkerWarehouse);
+	}
+	
+	@Override
+	public void loadOptions() {
+	    XMLConfiguration xml = workConf.getXmlConfig();
+	    randomWorkerWarehouse = xml.getBoolean("tpcc_random_warehouse", randomWorkerWarehouse);	    
 	}
 
 	@Override
