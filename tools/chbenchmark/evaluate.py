@@ -13,7 +13,6 @@ Options:
 
 from __future__ import print_function, division
 
-import re
 import sys
 import math
 from collections import namedtuple
