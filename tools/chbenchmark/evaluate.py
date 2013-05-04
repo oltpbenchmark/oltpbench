@@ -13,7 +13,6 @@ Options:
 
 from __future__ import print_function, division
 
-import re
 import sys
 import math
 from collections import namedtuple
@@ -51,6 +50,14 @@ class MetricsCalculator(object):
         list of normalization factors corresponding to queries 1 to 22.
         If None, uses NORMALIZATION_FACTORS class constant.
         Default: None
+
+    mean_neworder: boolean
+        Use the mean value of NewOrder number to normalize the latencies.
+        Should be used, when transaction isolation level is lower than
+        SNAPSHOT_ISOLATION, to not to favor longer-running transactions.
+        Currently it takes about double of the time since the data frame
+        has to be re-sorted.
+        Default: False
 
     keep_data: boolean
         If true, keeps the data DataFrame as attribute. Turn off to save
@@ -146,11 +153,12 @@ class MetricsCalculator(object):
                              }
 
     def __init__(self, data_path, scale_factor, norm_factors=None,
-                                                    keep_data=True):
+                                    mean_neworder=False, keep_data=True):
         self.data_path = data_path
 
         self.scale_factor = scale_factor
         self.norm_factors = self.get_norm_factors(norm_factors)
+        self.mean_neworder = mean_neworder
 
         self.data = self.load_data()
         self.olap_groups = self.get_olap_groups(self.data)
@@ -252,7 +260,6 @@ class MetricsCalculator(object):
         factors and scale factor and stores it in the norm_latency column.
         Stores the normalized data in the norm_latency column.
         """
-        norm_data = []
         # set to 1 for NewOrder transactions
         data['neworder_count'] = np.where(data['transactiontype']
                                                 == self.NEW_ORDER_ID, 1, 0)
@@ -266,9 +273,28 @@ class MetricsCalculator(object):
 
         norm_data = data.join(norm_vector, "transactiontype")
         norm_data['normfactors'].fillna(0, inplace=True)
+        if self.mean_neworder:
+            # calculate the end of the transaction and number of new order
+            # transactions till its end
+            norm_data['endtime'] = norm_data['starttime'] +\
+                                   norm_data['latency']
+            endtime_cumsum = norm_data.filter(['endtime',
+                                            'neworder_count']).\
+                                                set_index('endtime')
+            endtime_cumsum.sort(inplace=True)
+            endtime_cumsum.name = 'endtime_cumsum'
+            endtime_cumsum['endtime_cum_sum'] = endtime_cumsum[
+                                        'neworder_count'].cumsum()
+
+            norm_data = pd.merge(norm_data, endtime_cumsum,
+                                 left_on='endtime', right_index=True)
+            dependency_vector = (norm_data['neworder_cum_sum'] +
+                                        norm_data['endtime_cum_sum']) / 2
+        else:
+            dependency_vector = norm_data['neworder_cum_sum']
         norm_data['norm_latency'] = norm_data['latency'] / \
                 (scale_factor + norm_data['normfactors'] *
-                     norm_data['neworder_cum_sum'])
+                     dependency_vector)
         return norm_data
 
     def get_metrics(self):
