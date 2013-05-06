@@ -55,8 +55,6 @@ class MetricsCalculator(object):
         Use the mean value of NewOrder number to normalize the latencies.
         Should be used, when transaction isolation level is lower than
         SNAPSHOT_ISOLATION, to not to favor longer-running transactions.
-        Currently it takes about double of the time since the data frame
-        has to be re-sorted.
         Default: False
 
     keep_data: boolean
@@ -249,6 +247,7 @@ class MetricsCalculator(object):
                          'latency', 'workerid', 'phase']
         data['starttime'] -= data['starttime'].min()  # measure time from zero
         data['latency'] /= 10 ** 6  # convert latency to seconds
+        data['endtime'] = data['starttime'] + data['latency']
         data['diff'] = data['phase'].diff()  # phase switches are marker with 1
 
         norm_data = self.normalize_data(data, self.scale_factor,
@@ -274,22 +273,17 @@ class MetricsCalculator(object):
         norm_data = data.join(norm_vector, "transactiontype")
         norm_data['normfactors'].fillna(0, inplace=True)
         if self.mean_neworder:
-            # calculate the end of the transaction and number of new order
-            # transactions till its end
-            norm_data['endtime'] = norm_data['starttime'] +\
-                                   norm_data['latency']
-            endtime_cumsum = norm_data.filter(['endtime',
-                                            'neworder_count']).\
-                                                set_index('endtime')
-            endtime_cumsum.sort(inplace=True)
-            endtime_cumsum.name = 'endtime_cumsum'
-            endtime_cumsum['endtime_cum_sum'] = endtime_cumsum[
-                                        'neworder_count'].cumsum()
+            norm_data['endtime_cum_sum'] = norm_data['neworder_cum_sum']
+            olap = norm_data[norm_data['transactiontype'] > \
+                                            self.OLAP_QUERY_LOWER_ID - 1]
+            insert_helper = pd.DataFrame({"insertinto": np.searchsorted(data['starttime'], olap['endtime'])})
+            insert_helper = insert_helper.join(norm_data['neworder_cum_sum'], on='insertinto')
+            insert_helper['neworder_cum_sum'].fillna(norm_data['neworder_cum_sum'].max(), inplace=True)
 
-            norm_data = pd.merge(norm_data, endtime_cumsum,
-                                 left_on='endtime', right_index=True)
-            dependency_vector = (norm_data['neworder_cum_sum'] +
-                                        norm_data['endtime_cum_sum']) / 2
+            norm_data['endtime_cum_sum'] = insert_helper['neworder_cum_sum']
+            self.insert_helper = insert_helper
+            dependency_vector = (norm_data['endtime_cum_sum'] +
+                                        norm_data['neworder_cum_sum']) / 2
         else:
             dependency_vector = norm_data['neworder_cum_sum']
         norm_data['norm_latency'] = norm_data['latency'] / \
