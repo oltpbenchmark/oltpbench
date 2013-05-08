@@ -274,14 +274,16 @@ class MetricsCalculator(object):
         norm_data['normfactors'].fillna(0, inplace=True)
         if self.mean_neworder:
             norm_data['endtime_cum_sum'] = norm_data['neworder_cum_sum']
-            olap = norm_data[norm_data['transactiontype'] > \
+            olap = norm_data[norm_data['transactiontype'] >
                                             self.OLAP_QUERY_LOWER_ID - 1]
-            insert_helper = pd.DataFrame({"insertinto": np.searchsorted(data['starttime'], olap['endtime'])})
-            insert_helper = insert_helper.join(norm_data['neworder_cum_sum'], on='insertinto')
-            insert_helper['neworder_cum_sum'].fillna(norm_data['neworder_cum_sum'].max(), inplace=True)
+            insert_helper = pd.DataFrame({"insertinto":
+                        np.searchsorted(data['starttime'], olap['endtime'])})
+            insert_helper = insert_helper.join(
+                        norm_data['neworder_cum_sum'], on='insertinto')
+            insert_helper['neworder_cum_sum'].fillna(
+                        norm_data['neworder_cum_sum'].max(), inplace=True)
 
             norm_data['endtime_cum_sum'] = insert_helper['neworder_cum_sum']
-            self.insert_helper = insert_helper
             dependency_vector = (norm_data['endtime_cum_sum'] +
                                         norm_data['neworder_cum_sum']) / 2
         else:
