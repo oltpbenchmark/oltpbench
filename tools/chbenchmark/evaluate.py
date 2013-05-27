@@ -1,14 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Analyse output of OLTPBenchmark and compute CH-BenCHmark metrics
+"""usage: evaluate.py [-h] [--mean-neworder] [--plot] path scale_factor
 
-Usage:
-    ./evaluate.py output.raw scale_factor [--plot]
+Analyse output of OLTPBenchmark and compute CH-BenCHmark metrics.
 
-Options:
-    -h --help   Show this help.
-    --plot      Plot latency and throughput graphs.
+positional arguments:
+  path             Path to the raw output
+  scale_factor     Number of warehouses
+
+optional arguments:
+  -h, --help       show this help message and exit
+  --mean-neworder  Use mean number of processed NewOrder transactions to
+                   normalize the latencies
+  --plot           Plot latency and throughput graphs
 """
 
 from __future__ import print_function, division
@@ -16,6 +21,7 @@ from __future__ import print_function, division
 import sys
 import math
 from collections import namedtuple
+import argparse
 import numpy as np
 import pandas as pd
 
@@ -350,38 +356,28 @@ class MetricsCalculator(object):
 
 def main():
     """Main module. Loads the raw output, delegates metrics computing"""
-    # handle arguments by hand since docopt is not a part of stdlib
-    # and argparse is...suboptimal
-    if not 3 <= len(sys.argv) <= 4:
-        print("Wrong arguments.")
-        print(__doc__)
-        sys.exit(-1)
-    if len(sys.argv) == 3 and sys.argv[2] == "--plot":
-        plot_graphs = True
-    else:
-        plot_graphs = False
-    first_argument = sys.argv[1]
-    if first_argument == "-h" or first_argument == "--help":
-        print (__doc__)
-        sys.exit(0)
+    parser = argparse.ArgumentParser(description='Analyse output of '
+        'OLTPBenchmark and compute CH-BenCHmark metrics.')
+    parser.add_argument('path', help="Path to the raw output")
+    parser.add_argument('scale_factor', help='Number of warehouses',
+                        type=int)
+    parser.add_argument('--mean-neworder', help='Use mean number of processed'
+        ' NewOrder transactions to normalize the latencies',
+        action='store_true')
+    parser.add_argument('--plot', help='Plot latency and throughput graphs',
+        action='store_true')
+    args = parser.parse_args()
 
     try:
-        scale_factor = float(sys.argv[2])
-    except ValueError:
-        print("Please provide a decimal scale factor as the second argument.")
-        print(__doc__)
-        sys.exit(0)
-
-    try:
-        metrics_calc = MetricsCalculator(first_argument, scale_factor)
+        metrics_calc = MetricsCalculator(args.path, args.scale_factor,
+                                            mean_neworder=args.mean_neworder)
     except IOError:
-        print ("Could not read {}.".format(first_argument))
-        print(__doc__)
+        print ("Could not read {}.".format(args.path))
         sys.exit(-1)
 
     print(metrics_calc)
 
-    if plot_graphs:
+    if args.plot:
         if not HAS_PYLAB:
             print("Matplotlib is not installed. Skipping graph plotting.")
             sys.exit(-1)
