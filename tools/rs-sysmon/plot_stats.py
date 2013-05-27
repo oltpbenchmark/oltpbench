@@ -1,5 +1,18 @@
 #!/usr/bin/env python
 #-*- encoding: utf-8 -*-
+
+"""usage: Plot the load statistics [-h] ds_path raw_path [columns [columns ...]]
+
+positional arguments:
+  ds_path     Path to the ds-stat loadstatistics
+  raw_path    Path to OLTPBenchmark rawoutput
+  columns     Ds-stat columns that should be ploted. It the label
+              containsspaces, use " (default: ['load avg', 'memory usage'])
+
+optional arguments:
+  -h, --help  show this help message and exit
+"""
+
 from __future__ import print_function, division
 
 import numpy as np
@@ -31,24 +44,30 @@ def prepare_data(ds_path, raw_path):
 
     return filtered_data, raw_data
 
-def plot_avg_load(filtered_data, raw_data):
-    """Plot throughput and avg cpu load"""
-
-    fig = p.figure()
-    ax1 = fig.add_subplot(111)
-
+def prepare_throughput_axis(ax, raw_data):
+    """Plots throughput on the given matplotlib axis"""
     bin_number = raw_data['start'].max() // 5
     bins, edges = np.histogram(raw_data['start'],
                                 bins=bin_number)
     throughput = bins / np.diff(edges)
 
-    ax1.plot(edges[:-1], throughput, label='Throughput')
-    ax1.set_ylabel("Transactions / second")
-    ax1.set_xlabel("Seconds")
+    ax.plot(edges[:-1], throughput, label='Throughput')
+    ax.set_ylabel("Transactions / second")
+    ax.set_xlabel("Seconds")
 
+def plot_stat(filtered_data, raw_data, stat_name, label=None):
+    """Plot throughput alongside the defined stat. If label is specified,
+    use it as the label for the stat"""
+
+    fig = p.figure()
+    ax1 = fig.add_subplot(111)
+    prepare_throughput_axis(ax1, raw_data)
+    
     ax2 = ax1.twinx()
-    filtered_data['load avg'].plot(ax=ax2, color='red', label='Avg Load')
-    ax2.set_ylabel("Avg Load (s)")
+    if label is None:
+        label = stat_name.title()
+    filtered_data[stat_name].plot(ax=ax2, color='red', label='Avg Load')
+    ax2.set_ylabel(label)
     handles1, labels1 = ax1.get_legend_handles_labels()
     handles2, labels2 = ax2.get_legend_handles_labels()
     ax2.legend(handles1 + handles2, labels1 + labels2, 4)
@@ -56,15 +75,21 @@ def plot_avg_load(filtered_data, raw_data):
 
 
 def main():
-    parser = argparse.ArgumentParser("Plot the load statistics")
+    parser = argparse.ArgumentParser("Plot the load statistics",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("ds_path", help='Path to the ds-stat load'
         'statistics')
     parser.add_argument("raw_path", help='Path to OLTPBenchmark raw'
         'output')
+    parser.add_argument("columns", nargs='*', default=['load avg',
+                                                         'memory usage'],
+        help='Ds-stat columns that should be ploted. It the label contains'
+                'spaces, use \"')
     args = parser.parse_args()
 
     filtered_data, raw_data = prepare_data(args.ds_path, args.raw_path)
-    plot_avg_load(filtered_data, raw_data)
+    for stat_name in args.columns:
+        plot_stat(filtered_data, raw_data, stat_name)
 
 
 if __name__ == "__main__":
