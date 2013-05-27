@@ -319,7 +319,6 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
                     	if (phase == null) {
                     	    // Last phase
                     	    lastEntry = true;
-                    	    break;
                     	} else {
                     	    LOG.info(phase.currentPhaseString());
                             if (phase.rate < lowestRate) {
