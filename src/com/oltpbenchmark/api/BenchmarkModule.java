@@ -146,6 +146,14 @@ public abstract class BenchmarkModule {
      *             TODO
      */
     protected abstract Loader makeLoaderImpl(Connection conn) throws SQLException;
+    
+    /**
+     * Load additional options from the XML configuration
+     * does nothing per default
+     */
+    public void loadOptions() {
+        ;
+    }
 
     /**
      * @param txns

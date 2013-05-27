@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.log4j.BasicConfigurator;
+
 import junit.framework.TestCase;
 
 import com.oltpbenchmark.WorkloadConfiguration;
@@ -18,6 +20,7 @@ public abstract class AbstractTestCase<T extends BenchmarkModule> extends TestCa
     // HACK
     static {
 //      org.apache.log4j.PropertyConfigurator.configure("/home/pavlo/Documents/OLTPBenchmark/OLTPBenchmark/log4j.properties");
+        BasicConfigurator.configure();
     }
     
     // -----------------------------------------------------------------

@@ -27,6 +27,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
 
 
@@ -39,9 +40,18 @@ import com.oltpbenchmark.util.SimpleSystemPrinter;
 
 public class TPCCBenchmark extends BenchmarkModule {
     private static final Logger LOG = Logger.getLogger(TPCCBenchmark.class);
+    // Defines if the workers are bound to a warehouse or may randomly choose
+    // one for each transaction
+    private boolean randomWorkerWarehouse = false;
 
 	public TPCCBenchmark(WorkloadConfiguration workConf) {
 		super("tpcc", workConf, true);
+	}
+	
+	@Override
+	public void loadOptions() {
+	    XMLConfiguration xml = workConf.getXmlConfig();
+	    randomWorkerWarehouse = xml.getBoolean("tpcc_random_warehouse", randomWorkerWarehouse);	    
 	}
 
 	@Override
@@ -59,7 +69,12 @@ public class TPCCBenchmark extends BenchmarkModule {
 		ArrayList<Worker> workers = new ArrayList<Worker>();
 
 		try {
-			List<TPCCWorker> terminals = createTerminals();
+		    List<TPCCWorker> terminals;
+		    if (randomWorkerWarehouse) {
+		        terminals = createRandomClients();
+		    } else {
+		        terminals = createTerminals();
+		    }
 			workers.addAll(terminals);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -71,6 +86,31 @@ public class TPCCBenchmark extends BenchmarkModule {
 	@Override
 	protected Loader makeLoaderImpl(Connection conn) throws SQLException {
 		return new TPCCLoader(this, conn);
+	}
+	
+	/**
+	 * Creates a set of TPC-C workers which are not bound to the a
+	 * individual warehouse or district and generate a warehouse 
+	 * number on each transaction
+	 * @return list of client workers
+	 * @throws SQLException
+	 */
+	protected ArrayList<TPCCWorker> createRandomClients() throws SQLException {
+	    int numWarehouses = (int) workConf.getScaleFactor();
+	    int numClients = workConf.getTerminals();
+	    
+	    LOG.info(String.format("Creating %d dynamic TPC-C clients working on %d warehouses",
+	            numClients, numWarehouses));
+	    
+	    ArrayList<TPCCWorker> ret = new ArrayList<TPCCWorker>();
+	    for (int clientID = 0; clientID < numClients; clientID++) {
+	        String clientName = "Random TPC-C client " + clientID;
+	        TPCCWorker client = new TPCCWorker(clientName, this,
+	                new SimpleSystemPrinter(null), new SimpleSystemPrinter(null),
+	                numWarehouses);
+	        ret.add(client);
+	    }
+	    return ret;
 	}
 
 	protected ArrayList<TPCCWorker> createTerminals() throws SQLException {
