@@ -240,7 +240,11 @@ class MetricsCalculator(object):
     def load_data(self):
         """Loads data from the path and  converts it to a more usable format
         """
-        data = pd.read_csv(self.data_path, na_filter=False)
+        if pd.version.short_version.split('.') > (0, 11, 0):
+            # use new fast load option
+            data = pd.read_csv(self.data_path, na_filter=False)
+        else:
+            data = pd.read_csv(self.data_path)
 
         # prepare the data set
         data.columns = ['transactiontype', 'starttime',
