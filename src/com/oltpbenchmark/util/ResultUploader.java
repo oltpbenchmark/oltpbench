@@ -88,7 +88,12 @@ public class ResultUploader {
     }
 
     public void writeDBParameters(PrintStream os) {
-        String dbConf = collector.collectParameters();
+        String dbConf = collector.collectConfigParameters();
+        os.print(dbConf);
+    }
+    
+    public void writeDBStatus(PrintStream os) {
+        String dbConf = collector.collectStatusParameters();
         os.print(dbConf);
     }
 
@@ -114,13 +119,17 @@ public class ResultUploader {
         }
     }
 
-    public void uploadResult() throws ParseException {
+    public void uploadResult(boolean includeRawData) throws ParseException {
         try {
             File expConfFile = File.createTempFile("expConf", ".tmp");
             File sampleFile = File.createTempFile("sample", ".tmp");
             File summaryFile = File.createTempFile("summary", ".tmp");
             File dbConfFile = File.createTempFile("dbConf", ".tmp");
-            File rawDataFile = File.createTempFile("raw", ".gz");
+            File dbStatusFile = File.createTempFile("dbStatus", ".tmp");
+            File rawDataFile = null;
+            if (includeRawData) {
+            	rawDataFile = File.createTempFile("raw", ".gz");
+            }
 
             PrintStream confOut = new PrintStream(new FileOutputStream(expConfFile));
             writeBenchmarkConf(confOut);
@@ -137,23 +146,33 @@ public class ResultUploader {
             confOut = new PrintStream(new FileOutputStream(summaryFile));
             writeSummary(confOut);
             confOut.close();
-
-            confOut = new PrintStream(new GZIPOutputStream(new FileOutputStream(rawDataFile)));
-            results.writeAllCSVAbsoluteTiming(confOut);
+            
+            confOut = new PrintStream(new FileOutputStream(dbStatusFile));
+            writeDBStatus(confOut);
             confOut.close();
+
+            if (includeRawData) {
+            	confOut = new PrintStream(new GZIPOutputStream(new FileOutputStream(rawDataFile)));
+            	results.writeAllCSVAbsoluteTiming(confOut);
+            	confOut.close();
+            }
 
             CloseableHttpClient httpclient = HttpClients.createDefault();
             HttpPost httppost = new HttpPost(uploadUrl);
-
-            HttpEntity reqEntity = MultipartEntityBuilder.create()
+            
+            MultipartEntityBuilder builder = MultipartEntityBuilder.create()
                     .addTextBody("upload_code", uploadCode)
                     .addPart("sample_data", new FileBody(sampleFile))
-                    .addPart("raw_data", new FileBody(rawDataFile))
                     .addPart("db_conf_data", new FileBody(dbConfFile))
+                    .addPart("db_status_data", new FileBody(dbStatusFile))
                     .addPart("benchmark_conf_data", new FileBody(expConfFile))
-                    .addPart("summary_data", new FileBody(summaryFile))
-                    .build();
+                    .addPart("summary_data", new FileBody(summaryFile));
+            
+            if (includeRawData) {
+            	builder.addPart("raw_data", new FileBody(rawDataFile));
+            }
 
+            HttpEntity reqEntity = builder.build();
             httppost.setEntity(reqEntity);
 
             LOG.info("executing request " + httppost.getRequestLine());

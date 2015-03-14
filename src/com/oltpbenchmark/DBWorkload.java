@@ -45,6 +45,7 @@ import com.oltpbenchmark.api.TransactionTypes;
 import com.oltpbenchmark.api.Worker;
 import com.oltpbenchmark.types.DatabaseType;
 import com.oltpbenchmark.util.ClassUtil;
+import com.oltpbenchmark.util.ErrorCodes;
 import com.oltpbenchmark.util.FileUtil;
 import com.oltpbenchmark.util.QueueLimitException;
 import com.oltpbenchmark.util.ResultUploader;
@@ -123,6 +124,11 @@ public class DBWorkload {
                 "upload",
                 true,
                 "Upload the result");
+        options.addOption(
+        		null,
+        		"exclude-raw",
+        		true,
+        		"Exclude raw data from the result files");
 
         options.addOption("v", "verbose", false, "Display Messages");
         options.addOption("h", "help", false, "Print this help");
@@ -550,13 +556,18 @@ public class DBWorkload {
                 System.exit(1);
             }
             assert(r != null);
+            if (!r.valid()) {
+            	LOG.error("Unexpected error when loading benchmark results.");
+                System.exit(ErrorCodes.INVALID_RESULTS);
+            }
 
             PrintStream ps = System.out;
             PrintStream rs = System.out;
             
             // Special result uploader
             ResultUploader ru = new ResultUploader(r, xmlConfig, argsLine);
-
+            boolean includeRawData = !isBooleanOptionSet(argsLine, "exclude-raw");
+            
             if (argsLine.hasOption("o")) {
                 // Check if directory needs to be created
                 if (outputDirectory.length() > 0) {
@@ -570,10 +581,12 @@ public class DBWorkload {
                 String nextName = FileUtil.getNextFilename(FileUtil.joinPath(outputDirectory, baseFile + ".res"));
                 ps = new PrintStream(new File(nextName));
                 LOG.info("Output into file: " + nextName);
-
-                nextName = FileUtil.getNextFilename(FileUtil.joinPath(outputDirectory, baseFile + ".raw"));
-                rs = new PrintStream(new File(nextName));
-                LOG.info("Output Raw data into file: " + nextName);
+                
+                if (includeRawData) {
+                	nextName = FileUtil.getNextFilename(FileUtil.joinPath(outputDirectory, baseFile + ".raw"));
+                	rs = new PrintStream(new File(nextName));
+                	LOG.info("Output Raw data into file: " + nextName);
+                }
 
                 nextName = FileUtil.getNextFilename(FileUtil.joinPath(outputDirectory, baseFile + ".summary"));
                 PrintStream ss = new PrintStream(new File(nextName));
@@ -586,6 +599,12 @@ public class DBWorkload {
                 ss = new PrintStream(new File(nextName));
                 LOG.info("Output db config into file: " + nextName);
                 if (ru != null) ru.writeDBParameters(ss);
+                ss.close();
+                
+                nextName = FileUtil.getNextFilename(FileUtil.joinPath(outputDirectory, baseFile + ".db.status"));
+                ss = new PrintStream(new File(nextName));
+                LOG.info("Output db status into file: " + nextName);
+                if (ru != null) ru.writeDBStatus(ss);
                 ss.close();
 
                 nextName = FileUtil.getNextFilename(FileUtil.joinPath(outputDirectory, baseFile + ".ben.cnf"));
@@ -603,7 +622,7 @@ public class DBWorkload {
                 r.writeCSV(windowSize, ps);
 
                 if (isBooleanOptionSet(argsLine, "upload") && ru != null) {
-                    ru.uploadResult();
+                    ru.uploadResult(includeRawData);
                 }
 
                 // Allow more detailed reporting by transaction to make it easier to check
@@ -616,7 +635,7 @@ public class DBWorkload {
                             // Get the actual filename for the output
                             String baseFile = timestampValue + argsLine.getOptionValue("o") + "_" + t.getName();
                             String prepended = outputDirectory + timestampValue;
-                            String nextName = FileUtil.getNextFilename(FileUtil.joinPath(outputDirectory, baseFile + ".res"));                            
+                            String nextName = FileUtil.getNextFilename(FileUtil.joinPath(outputDirectory, baseFile + ".res")); 
                             ts = new PrintStream(new File(nextName));
                             r.writeCSV(windowSize, ts, t);
                             ts.close();
@@ -637,8 +656,10 @@ public class DBWorkload {
             } else if (LOG.isDebugEnabled()) {
                 LOG.warn("No bucket size specified");
             }
-
-            r.writeAllCSVAbsoluteTiming(rs);
+            
+            if (includeRawData) {
+            	r.writeAllCSVAbsoluteTiming(rs);
+            }
 
             ps.close();
             rs.close();

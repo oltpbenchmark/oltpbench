@@ -70,7 +70,7 @@ public abstract class FileUtil {
         
         File f = new File(basename);
         if (f != null && f.isFile()) {
-            String parts[] = EXT_SPLIT.split(basename);
+            String parts[] = EXT_SPLIT.split(basename, 2);
             
             // Check how many files already exist
             int counter = 1;

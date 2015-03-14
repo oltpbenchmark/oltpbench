@@ -125,5 +125,9 @@ public final class Results {
             out.println(s.tranType + "," + String.format("%10.6f", startUs - offset) + "," + s.latencyUs + "," + s.workerId + "," + s.phaseId);
         }
     }
+    
+    public boolean valid() {
+    	return getRequestsPerSecond() != 0.0;
+    }
 
 }

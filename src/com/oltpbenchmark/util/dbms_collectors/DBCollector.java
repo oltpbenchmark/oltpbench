@@ -25,21 +25,31 @@ import java.util.TreeMap;
 class DBCollector implements DBParameterCollector {
     private static final Logger LOG = Logger.getLogger(DBCollector.class);
     protected final Map<String, String> dbConf = new TreeMap<String, String>();
+    protected final Map<String, String> dbStatus = new TreeMap<String, String>();
 
     @Override
-    public String collectParameters() {
-        StringBuilder confBuilder = new StringBuilder();
-        for (Map.Entry<String, String> kv : dbConf.entrySet()) {
-            confBuilder.append(kv.getKey().toLowerCase())
+    public String collectConfigParameters() {
+        return collectMap(dbConf);
+    }
+    
+    @Override
+    public String collectStatusParameters() {
+        return collectMap(dbStatus);
+    }
+    
+    @Override
+    public String collectVersion() {
+        return "";
+    }
+    
+    private static String collectMap(Map<String,String> dbMap) {
+    	StringBuilder builder = new StringBuilder();
+        for (Map.Entry<String, String> kv : dbMap.entrySet()) {
+            builder.append(kv.getKey().toLowerCase())
                        .append("=")
                        .append(kv.getValue().toLowerCase())
                        .append("\n");
         }
-        return confBuilder.toString();
-    }
-
-    @Override
-    public String collectVersion() {
-        return "";
+        return builder.toString();
     }
 }

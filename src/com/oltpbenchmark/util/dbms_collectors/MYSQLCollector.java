@@ -17,29 +17,92 @@
 package com.oltpbenchmark.util.dbms_collectors;
 
 import com.oltpbenchmark.catalog.Catalog;
+import com.oltpbenchmark.util.ErrorCodes;
+
 import org.apache.log4j.Logger;
 
 import java.sql.*;
-import java.util.Map;
 
 class MYSQLCollector extends DBCollector {
     private static final Logger LOG = Logger.getLogger(MYSQLCollector.class);
     private static final String VERSION = "VERSION";
+    private static final int MAX_ATTEMPTS = 10;
 
     public MYSQLCollector(String oriDBUrl, String username, String password) {
-        String dbUrl = oriDBUrl.substring(0, oriDBUrl.lastIndexOf('/'));
+    	Connection conn = connect(oriDBUrl, username, password);
+    	assert(conn != null);
+    	
+    	getGlobalVars(conn);
+    	assert(!dbConf.isEmpty());
+    	
+    	getGlobalStatus(conn);
+    	assert(!dbStatus.isEmpty());
+    }
+    
+    private void getGlobalVars(Connection conn) {
+    	int failed_attempts = 0;
+    	while (dbConf.isEmpty() && failed_attempts < MAX_ATTEMPTS) {
+	    	try {
+	    		assert(!conn.isClosed());
+	    		Statement s = conn.createStatement();
+	            ResultSet out = s.executeQuery("SELECT * FROM GLOBAL_VARIABLES;");
+	            while(out.next()) {
+	                dbConf.put(out.getString("VARIABLE_NAME"), out.getString("VARIABLE_VALUE"));
+	            }
+	    	} catch (SQLException e) {
+	    		LOG.debug("Error while collecting DB parameters: " + e.getMessage());
+	    	}
+	    	failed_attempts++;
+    	}
+    	
+    	if (dbConf.isEmpty()) {
+    		LOG.error("Error while collecting DB configuration parameters.");
+    		System.exit(ErrorCodes.DB_ERROR);
+    	}
+    }
+    
+    private void getGlobalStatus(Connection conn) {
+    	int failed_attempts = 0;
+    	while (dbStatus.isEmpty() && failed_attempts < MAX_ATTEMPTS) {
+	    	try {
+	    		assert(!conn.isClosed());
+	    		Statement s = conn.createStatement();
+	            ResultSet out = s.executeQuery("SELECT * FROM GLOBAL_STATUS;");
+	            while(out.next()) {
+	                dbStatus.put(out.getString("VARIABLE_NAME"), out.getString("VARIABLE_VALUE"));
+	            }
+	    	} catch (SQLException e) {
+	    		LOG.debug("Error while collecting DB parameters: " + e.getMessage());
+	    	}
+	    	failed_attempts++;
+    	}
+    	
+    	if (dbStatus.isEmpty()) {
+    		LOG.error("Error while collecting DB status parameters.");
+    		System.exit(ErrorCodes.DB_ERROR);
+    	}
+    }
+    
+    private Connection connect(String oriDBUrl, String username, String password) {
+    	String dbUrl = oriDBUrl.substring(0, oriDBUrl.lastIndexOf('/'));
         dbUrl = dbUrl + "/information_schema";
-        try {
-            Connection conn = DriverManager.getConnection(dbUrl, username, password);
-            Catalog.setSeparator(conn);
-            Statement s = conn.createStatement();
-            ResultSet out = s.executeQuery("SELECT * FROM GLOBAL_VARIABLES;");
-            while(out.next()) {
-                dbConf.put(out.getString("VARIABLE_NAME"), out.getString("VARIABLE_VALUE"));
-            }
-        } catch (SQLException e) {
-            LOG.debug("Error while collecting DB parameters: " + e.getMessage());
+        Connection conn = null;
+        int failed_attempts = 0;
+        while (conn == null && failed_attempts < MAX_ATTEMPTS) {
+        	try {
+        		conn = DriverManager.getConnection(dbUrl, username, password);
+        		Catalog.setSeparator(conn);
+        	} catch (SQLException e) {
+        		LOG.debug("Error while collecting DB parameters: " + e.getMessage());
+        	}
+        	failed_attempts++;
         }
+        
+        if (conn == null) {
+        	LOG.error("Could not connect to database to collect DB parameters.");
+        	System.exit(ErrorCodes.NO_CONNECTION);
+        }
+        return conn;
     }
 
     @Override
