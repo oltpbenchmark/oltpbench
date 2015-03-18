@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<parameters>
+
+    <!-- Connection details -->
+    <dbtype>DBMS</dbtype>
+    <driver>DRIVER</driver>
+    <DBUrl>DBURL</DBUrl>
+    <username>USER</username>
+    <password>PASSWORD</password>
+    <isolation>TRANSACTION_SERIALIZABLE</isolation>
+    
+    <!-- Scalefactor in Epinions scales by *2000 the number of users-->
+    <scalefactor>SCALEFACTOR</scalefactor>
+
+    <!-- The workload -->
+    <terminals>TERMINALS</terminals>
+    <works>
+        <work>
+          <time>TIME</time>
+          <rate>RATE</rate>
+          <weights>WEIGHTS</weights>
+        </work>
+    </works>
+
+    <!-- Epinions Procedures Declaration -->
+    <transactiontypes>
+        <transactiontype>
+            <name>GetReviewItemById</name>
+        </transactiontype>
+        <transactiontype>
+            <name>GetReviewsByUser</name>
+        </transactiontype>
+        <transactiontype>
+            <name>GetAverageRatingByTrustedUser</name>
+        </transactiontype>
+        <transactiontype>
+            <name>GetItemAverageRating</name>
+        </transactiontype>
+        <transactiontype>
+            <name>GetItemReviewsByTrustedUser</name>
+        </transactiontype>
+        <transactiontype>
+            <name>UpdateUserName</name>
+        </transactiontype>
+        <transactiontype>
+            <name>UpdateItemTitle</name>
+        </transactiontype>
+        <transactiontype>
+            <name>UpdateReviewRating</name>
+        </transactiontype>
+        <transactiontype>
+            <name>UpdateTrustRating</name>
+        </transactiontype>
+    </transactiontypes>	
+</parameters>

@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<parameters>
+
+    <!-- Connection details -->
+    <dbtype>DBMS</dbtype>
+    <driver>DRIVER</driver>
+    <DBUrl>DBURL</DBUrl>
+    <username>USER</username>
+    <password>PASSWORD</password>
+
+    <isolation>TRANSACTION_SERIALIZABLE</isolation>
+          
+    <!-- Scalefactor in Twitter scales by *500 the number of users-->
+    <scalefactor>SCALEFACTOR</scalefactor>
+    
+    
+	<!-- Trace files for Twitter -->
+    <tracefile>config/traces/tweets.txt</tracefile>
+    <tracefile2>config/traces/users.txt</tracefile2>
+    <base_ip>10.1.</base_ip>
+    
+    <!-- The workload -->
+    <terminals>TERMINALS</terminals>
+    <works>
+        <work>
+            <time>TIME</time>
+            <rate>RATE</rate>
+            <weights>WEIGHTS</weights>
+        </work>
+    </works>
+   
+    <!-- Twitter Procedures declaration -->
+    <transactiontypes>
+        <transactiontype>
+                <name>GetTweet</name>
+        </transactiontype>
+        <transactiontype>
+                <name>GetTweetsFromFollowing</name>
+        </transactiontype>
+        <transactiontype>
+                <name>GetFollowers</name>
+        </transactiontype>
+        <transactiontype>
+                <name>GetUserTweets</name>
+        </transactiontype>
+        <transactiontype>
+                <name>InsertTweet</name>
+        </transactiontype>
+    </transactiontypes>
+</parameters>

@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<parameters>
+
+    <!-- Connection details -->
+    <dbtype>DBMS</dbtype>
+    <driver>DRIVER</driver>
+    <DBUrl>DBURL</DBUrl>
+    <username>USER</username>
+    <password>PASSWORD</password>
+    <isolation>TRANSACTION_SERIALIZABLE</isolation>
+    
+    <scalefactor>SCALEFACTOR</scalefactor>
+    
+    <!-- The workload -->
+    <terminals>TERMINALS</terminals>
+    <works>
+        <work>
+          <time>TIME</time>
+          <rate>RATE</rate>
+          <weights>WEIGHTS</weights>
+        </work>
+    </works>
+
+    <!-- SIBENCH Procedures declaration -->
+    <transactiontypes>
+        <transactiontype>
+                <name>MinRecord</name>
+        </transactiontype>
+        <transactiontype>
+                <name>UpdateRecord</name>
+        </transactiontype>
+    </transactiontypes>
+</parameters>
