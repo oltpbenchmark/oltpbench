@@ -30,7 +30,7 @@ public class Phase {
     public final String benchmarkName;
     public final int id;
     public final int time;
-    public final int rate;
+    public int rate;
     public final Arrival arrival;
 
 

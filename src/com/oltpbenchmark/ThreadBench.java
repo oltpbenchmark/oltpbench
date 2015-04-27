@@ -43,16 +43,20 @@ import com.oltpbenchmark.util.StringUtil;
 public class ThreadBench implements Thread.UncaughtExceptionHandler {
     private static final Logger LOG = Logger.getLogger(ThreadBench.class);
 
-    
     private static BenchmarkState testState;
     private final List<? extends Worker> workers;
     private final ArrayList<Thread> workerThreads;
-    // private File profileFile;
     private List<WorkloadConfiguration> workConfs;
     private List<WorkloadState> workStates;
     ArrayList<LatencyRecord.Sample> samples = new ArrayList<LatencyRecord.Sample>();
     private int intervalMonitor = 0;
+    private boolean dynamicMode = false;
+    private Phase dynamicPhase;
 
+    private ThreadBench(List<? extends Worker> workers) {
+        this(workers, null, null);
+    }
+    
     private ThreadBench(List<? extends Worker> workers, List<WorkloadConfiguration> workConfs) {
         this(workers, null, workConfs);
     }
@@ -247,6 +251,43 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
         }
     } // CLASS
 
+    private class RateReaderThread extends Thread {
+        private ThreadBench bench;
+        {
+            this.setDaemon(true);
+        }
+        RateReaderThread(ThreadBench bench) {
+            this.bench = bench;
+        }
+        /*
+         * This is gonna communicate with System.in
+         */
+        @Override
+        public void run() {
+            LOG.info("Starting RateReaderThread");
+            System.out.println("Increase: " + this.bench);
+            while (true) {
+                try {
+                    if ( System.in.available() != 0 ) {
+                        int c = System.in.read();
+                        if ( c == 'j' ) {
+                           this.bench.dynamicPhase.rate  += 10;
+                           System.out.println("Increase: " + bench.dynamicPhase.rate);
+                        } else if (c == 'f') {
+                            if(this.bench.dynamicPhase.rate > 10) {
+                                this.bench.dynamicPhase.rate -= 10;
+                                System.out.println("Decrease: " + bench.dynamicPhase.rate);
+                            }
+                        }
+                    };
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            } // WHILE
+        }
+    } // CLASS
+    
     private class MonitorThread extends Thread {
         private final int intervalMonitor;
         {
@@ -286,12 +327,17 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
      * bench.runRateLimitedFromFile(); }
      */
 
-    public static Results runRateLimitedBenchmark(List<Worker> workers, List<WorkloadConfiguration> workConfs, int intervalMonitoring) throws QueueLimitException, IOException {
+    public static Results runRateLimitedBenchmark(List<Worker> workers, List<WorkloadConfiguration> workConfs, int intervalMonitoring, boolean dynamic) throws QueueLimitException, IOException {
         ThreadBench bench = new ThreadBench(workers, workConfs);
         bench.intervalMonitor = intervalMonitoring;
-        return bench.runRateLimitedMultiPhase();
+        bench.dynamicMode = dynamic;
+        if(dynamic) {
+            return bench.runRateDynamic();
+        } else {
+            return bench.runRateLimitedMultiPhase();
+        }
     }
-
+    
     public Results runRateLimitedMultiPhase() throws QueueLimitException, IOException {
         assert testState == null;
         testState = new BenchmarkState(workers.size() + 1);
@@ -333,11 +379,11 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
         long delta = phase.time * 1000000000L;
         boolean lastEntry = false;
 
-        // Initialize the Monitor
+        // Initialize the Interval Monitor
         if(this.intervalMonitor > 0 ) {
             new MonitorThread(this.intervalMonitor).start();
         }
-
+              
         // Main Loop
         while (true) {           
             // posting new work... and reseting the queue in case we have new
@@ -534,7 +580,265 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
             throw new RuntimeException(e);
         }
     }
+   
+    public Results runRateDynamic() throws QueueLimitException, IOException {
+        assert testState == null;
+        testState = new BenchmarkState(workers.size() + 1);
+        workStates = new ArrayList<WorkloadState>();
 
+        for (WorkloadConfiguration workState : this.workConfs) {
+            workStates.add(workState.initializeState(testState));
+        }
+
+        this.createWorkerThreads();
+        testState.blockForStart();
+
+        // long measureStart = start;
+
+        long start = System.nanoTime();
+        long measureEnd = -1;
+        // used to determine the longest sleep interval
+        int lowestRate = Integer.MAX_VALUE;
+
+        Phase phase = null;
+
+        for (WorkloadState workState : this.workStates) {
+            workState.switchToNextPhase();
+            phase = workState.getCurrentPhase();
+            LOG.info(phase.currentPhaseString());
+            if (phase.rate < lowestRate) {
+                lowestRate = phase.rate;
+            }
+        }
+
+        long intervalNs = getInterval(lowestRate, phase.arrival);
+
+        long nextInterval = start + intervalNs;
+        int nextToAdd = 1;
+        int rateFactor;
+
+        boolean resetQueues = true;
+
+        long delta = phase.time * 1000000000L;
+        boolean lastEntry = false;
+
+        // Initialize the Interval Monitor
+        if(this.intervalMonitor > 0 ) {
+            new MonitorThread(this.intervalMonitor).start();
+        }
+        
+        this.dynamicPhase = phase;
+        System.out.println("here -> " + this.dynamicPhase);
+        for (WorkloadState workState : this.workStates) {
+            System.out.println(workState.getCurrentPhase());
+            System.out.println(workState.getCurrentPhase().rate);
+        }
+     
+        // Initialize the Input Reader
+        if(this.dynamicMode) {
+            new RateReaderThread(this).start();
+        }
+              
+        // Main Loop
+        while (true) {
+            lowestRate = phase.rate;
+            // posting new work... and reseting the queue in case we have new
+            // portion of the workload...
+
+            for (WorkloadState workState : this.workStates) {
+                if (workState.getCurrentPhase() != null) {
+                    rateFactor = workState.getCurrentPhase().rate / lowestRate;
+                } else {
+                    rateFactor = 1;
+                }
+                workState.addToQueue(nextToAdd * rateFactor, resetQueues);
+            }
+            resetQueues = false;
+
+            // Wait until the interval expires, which may be "don't wait"
+            long now = System.nanoTime();
+            long diff = nextInterval - now;
+            while (diff > 0) { // this can wake early: sleep multiple times to
+                               // avoid that
+                long ms = diff / 1000000;
+                diff = diff % 1000000;
+                try {
+                    Thread.sleep(ms, (int) diff);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                now = System.nanoTime();
+                diff = nextInterval - now;
+            }
+            assert diff <= 0;
+
+            boolean phaseComplete = false;
+            if (phase != null) {
+                TraceReader tr = workConfs.get(0).getTraceReader();
+                if (tr != null) {
+                    // If a trace script is present, the phase complete iff the
+                    // trace reader has no more 
+                    for (WorkloadConfiguration workConf : workConfs) {
+                        phaseComplete = false;
+                        tr = workConf.getTraceReader();
+                        assert workConf.getTraceReader() != null;
+                        if (!workConf.getWorkloadState().getScriptPhaseComplete()) {
+                            break;
+                        }
+                        phaseComplete = true;
+                    }
+                }
+                else if (phase.isLatencyRun())
+                    // Latency runs (serial run through each query) have their own
+                    // state to mark completion
+                    phaseComplete = testState.getState()
+                                    == State.LATENCY_COMPLETE;
+                else
+                    phaseComplete = testState.getState() == State.MEASURE
+                                    && (start + delta <= now);
+            }
+
+            // Go to next phase if this one is complete
+            if (phaseComplete && !lastEntry) {
+                System.out.println("New: " + lowestRate);
+                // enters here after each phase of the test
+                // reset the queues so that the new phase is not affected by the
+                // queue of the previous one
+                resetQueues = true;
+
+                // Fetch a new Phase
+                synchronized (testState) {
+                    if (phase.isLatencyRun()) {
+                        testState.ackLatencyComplete();
+                    }
+                    for (WorkloadState workState : workStates) {
+                        synchronized (workState) {
+                            workState.switchToNextPhase();
+                            lowestRate = Integer.MAX_VALUE;
+                            phase = workState.getCurrentPhase();
+                            interruptWorkers();
+                            if (phase == null && !lastEntry) {
+                                // Last phase
+                                lastEntry = true;
+                                testState.startCoolDown();
+                                measureEnd = now;
+                                LOG.info("[Terminate] Waiting for all terminals to finish ..");
+                            } else if (phase != null) {
+                                phase.resetSerial();
+                                LOG.info(phase.currentPhaseString());
+                            if (phase.rate < lowestRate) {
+                                lowestRate = phase.rate;
+                            }
+                        }
+                    }
+                    }
+                    if (phase != null) {
+                        // update frequency in which we check according to
+                        // wakeup
+                        // speed
+                        // intervalNs = (long) (1000000000. / (double)
+                        // lowestRate + 0.5);
+                        delta += phase.time * 1000000000L;
+                    }
+                }
+            }
+
+            // Compute the next interval
+            // and how many messages to deliver
+            if (phase != null) {
+                intervalNs = 0;
+                nextToAdd = 0;
+                do {
+                    intervalNs += getInterval(lowestRate, phase.arrival);
+                    nextToAdd++;
+                } while ((-diff) > intervalNs && !lastEntry);
+                nextInterval += intervalNs;
+            }
+
+            // Update the test state appropriately
+            State state = testState.getState();
+            if (state == State.WARMUP && now >= start) {
+                synchronized(testState) {
+                    if (phase != null && phase.isLatencyRun())
+                        testState.startColdQuery();
+                    else
+                testState.startMeasure();
+                    interruptWorkers();
+                }
+                start = now;
+                LOG.info("[Measure] Warmup complete, starting measurements.");
+                // measureEnd = measureStart + measureSeconds * 1000000000L;
+
+                // For serial executions, we want to do every query exactly
+                // once, so we need to restart in case some of the queries
+                // began during the warmup phase.
+                // If we're not doing serial executions, this function has no
+                // effect and is thus safe to call regardless.
+                phase.resetSerial();
+            } else if (state == State.EXIT) {
+                // All threads have noticed the done, meaning all measured
+                // requests have definitely finished.
+                // Time to quit.
+                break;
+            }
+        }
+
+        try {
+            int requests = finalizeWorkers(this.workerThreads);
+
+            // Combine all the latencies together in the most disgusting way
+            // possible: sorting!
+            for (Worker w : workers) {
+                for (LatencyRecord.Sample sample : w.getLatencyRecords()) {
+                    samples.add(sample);
+                }
+            }
+            Collections.sort(samples);
+
+            // Compute stats on all the latencies
+            int[] latencies = new int[samples.size()];
+            for (int i = 0; i < samples.size(); ++i) {
+                latencies[i] = samples.get(i).latencyUs;
+            }
+            DistributionStatistics stats = DistributionStatistics.computeStatistics(latencies);
+
+            Results results = new Results(measureEnd - start, requests, stats, samples);
+
+            // Compute transaction histogram
+            Set<TransactionType> txnTypes = new HashSet<TransactionType>();
+            for (WorkloadConfiguration workConf : workConfs) {
+                txnTypes.addAll(workConf.getTransTypes());
+            }
+            txnTypes.remove(TransactionType.INVALID);
+
+            results.txnSuccess.putAll(txnTypes, 0);
+            results.txnRetry.putAll(txnTypes, 0);
+            results.txnAbort.putAll(txnTypes, 0);
+            results.txnErrors.putAll(txnTypes, 0);
+
+            for (Worker w : workers) {
+                results.txnSuccess.putHistogram(w.getTransactionSuccessHistogram());
+                results.txnRetry.putHistogram(w.getTransactionRetryHistogram());
+                results.txnAbort.putHistogram(w.getTransactionAbortHistogram());
+                results.txnErrors.putHistogram(w.getTransactionErrorHistogram());
+
+                for (Entry<TransactionType, Histogram<String>> e : w.getTransactionAbortMessageHistogram().entrySet()) {
+                    Histogram<String> h = results.txnAbortMessages.get(e.getKey());
+                    if (h == null) {
+                        h = new Histogram<String>(true);
+                        results.txnAbortMessages.put(e.getKey(), h);
+                    }
+                    h.putHistogram(e.getValue());
+                } // FOR
+            } // FOR
+
+            return (results);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }    
+    
+    
     private long getInterval(int lowestRate, Phase.Arrival arrival) {
         // TODO Auto-generated method stub
         if (arrival == Phase.Arrival.POISSON)
@@ -542,205 +846,6 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
         else
             return (long) (1000000000. / (double) lowestRate + 0.5);
     }
-
-    // public Results runPoissonMultiPhase() throws QueueLimitException,
-    // IOException {
-    // assert testState == null;
-    // testState = new BenchmarkState(workers.size() + 1);
-    // workStates = new ArrayList<WorkloadState>();
-    //
-    // for (WorkloadConfiguration workState : this.workConfs) {
-    // workStates.add(workState.initializeState(testState));
-    // }
-    //
-    // this.createWorkerThreads();
-    // testState.blockForStart();
-    //
-    // long start = System.nanoTime();
-    // long measureEnd = -1;
-    //
-    // //used to determine the longest sleep interval
-    // int lowestRate = Integer.MAX_VALUE;
-    //
-    // Phase phase = null;
-    //
-    //
-    // for (WorkloadState workState : this.workStates) {
-    // workState.switchToNextPhase();
-    // phase = workState.getCurrentPhase();
-    // LOG.info(phase.currentPhaseString());
-    // if (phase.rate < lowestRate) {
-    // lowestRate = phase.rate;
-    // }
-    // }
-    //
-    // long intervalNs = getInterval(lowestRate);
-    //
-    // long nextInterval = start + intervalNs;
-    // int nextToAdd = 1;
-    // int rateFactor;
-    //
-    // boolean resetQueues = true;
-    //
-    // long delta = phase.time * 1000000000L;
-    // boolean lastEntry = false;
-    // int submitted=0;
-    // while (true) {
-    // // System.out.println(intervalNs);
-    // // posting new work... and reseting the queue in case we have new
-    // // portion of the workload...
-    // submitted+=nextToAdd;
-    // for (WorkloadState workState : this.workStates) {
-    // if (workState.getCurrentPhase() != null) {
-    // rateFactor = workState.getCurrentPhase().rate / lowestRate;
-    // } else {
-    // rateFactor = 1;
-    // }
-    // workState.addToQueue(nextToAdd * rateFactor, resetQueues);
-    // }
-    // resetQueues = false;
-    //
-    //
-    // // Wait until the interval expires, which may be "don't wait"
-    // long now = System.nanoTime();
-    // long diff = nextInterval - now;
-    // while (diff > 0) { // this can wake early: sleep multiple times to
-    // // avoid that
-    // long ms = diff / 1000000;
-    // diff = diff % 1000000;
-    // try {
-    // Thread.sleep(ms, (int) diff);
-    // } catch (InterruptedException e) {
-    // throw new RuntimeException(e);
-    // }
-    // now = System.nanoTime();
-    // diff = nextInterval - now;
-    // }
-    // assert diff <= 0;
-    //
-    // // End of Phase
-    // if (start + delta < System.nanoTime() && !lastEntry) {
-    // // enters here after each phase of the test
-    // // reset the queues so that the new phase is not affected by the
-    // // queue of the previous one
-    // resetQueues = true;
-    //
-    // // Fetch a new Phase
-    // synchronized (testState) {
-    // for (WorkloadState workState : workStates) {
-    // workState.switchToNextPhase();
-    // lowestRate = Integer.MAX_VALUE;
-    // phase = workState.getCurrentPhase();
-    // if (phase == null) {
-    // // Last phase
-    // lastEntry = true;
-    // break;
-    // } else {
-    // LOG.info(phase.currentPhaseString());
-    // if (phase.rate < lowestRate) {
-    // lowestRate = phase.rate;
-    // }
-    // }
-    // }
-    // if (phase != null) {
-    // // update frequency in which we check according to wakeup
-    // // speed
-    // // intervalNs = (long) (1000000000. / (double) lowestRate + 0.5);
-    // delta += phase.time * 1000000000L;
-    // }
-    // }
-    // }
-    //
-    // // Compute the next interval and how many messages to deliver
-    // if(phase != null)
-    // {
-    // intervalNs=0;
-    // nextToAdd = 0;
-    // do
-    // {
-    // intervalNs += getInterval(lowestRate);;
-    // nextToAdd ++;
-    // } while ( (-diff) > intervalNs && !lastEntry);
-    // nextInterval += intervalNs;
-    // assert nextToAdd > 0;
-    // }
-    // // Update the test state appropriately
-    // State state = testState.getState();
-    // if (state == State.WARMUP && now >= start) {
-    // testState.startMeasure();
-    // start = now;
-    // // measureEnd = measureStart + measureSeconds * 1000000000L;
-    // } else if (state == State.MEASURE && lastEntry && now >= start + delta) {
-    // System.out.println("### ToTal: "+ submitted);
-    // testState.startCoolDown();
-    // LOG.info("[Terminate] Waiting for all terminals to finish ..");
-    // measureEnd = now;
-    // } else if (state == State.EXIT) {
-    // // All threads have noticed the done, meaning all measured
-    // // requests have definitely finished.
-    // // Time to quit.
-    // break;
-    // }
-    // }
-    //
-    // try {
-    // int requests = finalizeWorkers(this.workerThreads);
-    //
-    // // Combine all the latencies together in the most disgusting way
-    // // possible: sorting!
-    // for (Worker w : workers) {
-    // for (LatencyRecord.Sample sample : w.getLatencyRecords()) {
-    // samples.add(sample);
-    // }
-    // }
-    // Collections.sort(samples);
-    //
-    // // Compute stats on all the latencies
-    // int[] latencies = new int[samples.size()];
-    // for (int i = 0; i < samples.size(); ++i) {
-    // latencies[i] = samples.get(i).latencyUs;
-    // }
-    // DistributionStatistics stats =
-    // DistributionStatistics.computeStatistics(latencies);
-    //
-    // Results results = new Results(measureEnd - start, requests, stats,
-    // samples);
-    //
-    // // Compute transaction histogram
-    // Set<TransactionType> txnTypes = new HashSet<TransactionType>();
-    // for (WorkloadConfiguration workConf : workConfs) {
-    // txnTypes.addAll(workConf.getTransTypes());
-    // }
-    // txnTypes.remove(TransactionType.INVALID);
-    //
-    // results.txnSuccess.putAll(txnTypes, 0);
-    // results.txnRetry.putAll(txnTypes, 0);
-    // results.txnAbort.putAll(txnTypes, 0);
-    // results.txnErrors.putAll(txnTypes, 0);
-    //
-    //
-    // for (Worker w : workers) {
-    // results.txnSuccess.putHistogram(w.getTransactionSuccessHistogram());
-    // results.txnRetry.putHistogram(w.getTransactionRetryHistogram());
-    // results.txnAbort.putHistogram(w.getTransactionAbortHistogram());
-    // results.txnErrors.putHistogram(w.getTransactionErrorHistogram());
-    //
-    // for (Entry<TransactionType, Histogram<String>> e :
-    // w.getTransactionAbortMessageHistogram().entrySet()) {
-    // Histogram<String> h = results.txnAbortMessages.get(e.getKey());
-    // if (h == null) {
-    // h = new Histogram<String>(true);
-    // results.txnAbortMessages.put(e.getKey(), h);
-    // }
-    // h.putHistogram(e.getValue());
-    // } // FOR
-    // } // FOR
-    //
-    // return (results);
-    // } catch (InterruptedException e) {
-    // throw new RuntimeException(e);
-    // }
-    // }
 
     @Override
     public void uncaughtException(Thread t, Throwable e) {

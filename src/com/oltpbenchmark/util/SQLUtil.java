@@ -120,6 +120,7 @@ public abstract class SQLUtil {
         else if (obj instanceof Date) {
             return new Timestamp(((Date)obj).getTime());
         }
+        //FIXME: oracle drive error
         else if (obj instanceof oracle.sql.TIMESTAMP) {
             try {
                 return ((oracle.sql.TIMESTAMP)obj).timestampValue();

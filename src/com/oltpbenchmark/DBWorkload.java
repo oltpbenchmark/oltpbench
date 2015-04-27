@@ -128,6 +128,7 @@ public class DBWorkload {
         options.addOption("h", "help", false, "Print this help");
         options.addOption("s", "sample", true, "Sampling window");
         options.addOption("im", "interval-monitor", true, "Throughput Monitoring Interval in seconds");
+        options.addOption("dyn", "dynamic", false, "Dynamic Control of workload via input interface");
         options.addOption("ss", false, "Verbose Sampling per Transaction");
         options.addOption("o", "output", true, "Output file (default System.out)");
         options.addOption("d", "directory", true, "Base directory for the result files, default is current directory");
@@ -166,6 +167,11 @@ public class DBWorkload {
         int intervalMonitor = 0;
         if (argsLine.hasOption("im")) {
             intervalMonitor = Integer.parseInt(argsLine.getOptionValue("im"));
+        }
+
+        boolean dynamic = false;
+        if (argsLine.hasOption("dyn")) {
+            dynamic = true;
         }
         
         // -------------------------------------------------------------------
@@ -443,8 +449,8 @@ public class DBWorkload {
                               weight_strings,
                               rateLimited,
                               disabled,
-                        serial,
-                        timed,
+                              serial,
+                              timed,
                               activeTerminals,
                               arrival);
             } // FOR
@@ -544,7 +550,7 @@ public class DBWorkload {
             // Bombs away!
             Results r = null;
             try {
-                r = runWorkload(benchList, verbose, intervalMonitor);
+                r = runWorkload(benchList, verbose, intervalMonitor, dynamic);
             } catch (Throwable ex) {
                 LOG.error("Unexpected error when running benchmarks.", ex);
                 System.exit(1);
@@ -690,7 +696,7 @@ public class DBWorkload {
         bench.loadDatabase();
     }
 
-    private static Results runWorkload(List<BenchmarkModule> benchList, boolean verbose, int intervalMonitor) throws QueueLimitException, IOException {
+    private static Results runWorkload(List<BenchmarkModule> benchList, boolean verbose, int intervalMonitor, boolean dynamic) throws QueueLimitException, IOException {
         List<Worker> workers = new ArrayList<Worker>();
         List<WorkloadConfiguration> workConfs = new ArrayList<WorkloadConfiguration>();
         for (BenchmarkModule bench : benchList) {
@@ -702,7 +708,7 @@ public class DBWorkload {
             workConfs.add(bench.getWorkloadConfiguration());
             
         }
-        Results r = ThreadBench.runRateLimitedBenchmark(workers, workConfs, intervalMonitor);
+        Results r = ThreadBench.runRateLimitedBenchmark(workers, workConfs, intervalMonitor, dynamic);        
         LOG.info(SINGLE_LINE);
         LOG.info("Rate limited reqs/s: " + r);
         return r;
