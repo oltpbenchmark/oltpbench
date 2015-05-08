@@ -10,6 +10,7 @@
     <property name="src.dir"                    location="src" />
     <property name="tests.dir"                  location="tests" />
     <property name="lib.dir"                    location="lib" />
+	<property name="benchpresslib.dir"          location="benchpress-lib" />
     <property name="build.dir"                  location="build" />
     <property name="build.tests.dir"            location="${build.dir}/tests" />
     <property name='build.testoutput.dir'       location='${build.dir}/testoutput' />
@@ -21,6 +22,9 @@
             <include name='*.jar' />
             <include name='hibernate/*.jar' />
             <exclude name='ant.jar' />
+        </fileset>
+        <fileset dir='${benchpresslib.dir}'>
+            <include name='*.jar' />
         </fileset>
         <pathelement path="${java.class.path}"/>
     </path>
@@ -100,6 +104,42 @@
             <arg line="--load ${load}" />
             <arg line="--execute ${execute}" />
             <arg line="${extra}" />
+            <classpath refid='project.classpath' />
+            <assertions><enable/></assertions>
+        </java>
+    </target>
+	
+    <target name="benchpress" description="Run the BenchPress game">
+   <!-- <condition property="benchmark" value="">
+            <not><isset property="benchmark"/></not>
+        </condition>
+        <condition property="config" value="">
+            <not><isset property="config"/></not>
+        </condition>
+        <condition property="create" value="false">
+            <not><isset property="create"/></not>
+        </condition>
+    	<condition property="clear" value="false">
+            <not><isset property="clear"/></not>
+        </condition>
+        <condition property="load" value="false">
+            <not><isset property="load"/></not>
+        </condition>
+        <condition property="extra" value="">
+            <not><isset property="extra"/></not>
+        </condition> -->
+        
+        <java fork="yes" failonerror="true" classname="com.oltpbenchmark.benchpress.BenchPress">
+            <jvmarg value="-Xmx2048m" />
+            <jvmarg value="-Dlog4j.configuration=${basedir}/log4j.properties"/>
+            <jvmarg value="-client" />
+       <!-- <arg line="-b ${benchmark}" />
+            <arg line="-c ${config}" />
+            <arg line="- -create ${create}" />
+            <arg line="- -clear ${clear}" />
+            <arg line="- -load ${load}" />
+            <arg line="- -execute ${execute}" />
+            <arg line="${extra}" /> -->
             <classpath refid='project.classpath' />
             <assertions><enable/></assertions>
         </java>
