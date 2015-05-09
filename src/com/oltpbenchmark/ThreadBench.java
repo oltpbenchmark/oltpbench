@@ -35,6 +35,7 @@ import org.apache.log4j.Logger;
 import com.oltpbenchmark.LatencyRecord.Sample;
 import com.oltpbenchmark.api.TransactionType;
 import com.oltpbenchmark.api.Worker;
+import com.oltpbenchmark.benchpress.BenchPress;
 import com.oltpbenchmark.types.State;
 import com.oltpbenchmark.util.Histogram;
 import com.oltpbenchmark.util.QueueLimitException;
@@ -253,11 +254,13 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
 
     private class RateReaderThread extends Thread {
         private ThreadBench bench;
+        private int prevRate;
         {
             this.setDaemon(true);
         }
         RateReaderThread(ThreadBench bench) {
             this.bench = bench;
+            this.prevRate = bench.dynamicPhase.rate;
         }
         /*
          * This is gonna communicate with System.in
@@ -267,23 +270,30 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
             LOG.info("Starting RateReaderThread");
             System.out.println("Increase: " + this.bench);
             while (true) {
-                try {
-                    if ( System.in.available() != 0 ) {
-                        int c = System.in.read();
-                        if ( c == 'j' ) {
-                           this.bench.dynamicPhase.rate  += 10;
-                           System.out.println("Increase: " + bench.dynamicPhase.rate);
-                        } else if (c == 'f') {
-                            if(this.bench.dynamicPhase.rate > 10) {
-                                this.bench.dynamicPhase.rate -= 10;
-                                System.out.println("Decrease: " + bench.dynamicPhase.rate);
-                            }
-                        }
-                    };
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+//                try {
+//                    if ( System.in.available() != 0 ) {
+//                        int c = System.in.read();
+//                        if ( c == 'j' ) {
+//                           this.bench.dynamicPhase.rate  += 10;
+//                           System.out.println("Increase: " + bench.dynamicPhase.rate);
+//                        } else if (c == 'f') {
+//                            if(this.bench.dynamicPhase.rate > 10) {
+//                                this.bench.dynamicPhase.rate -= 10;
+//                                System.out.println("Decrease: " + bench.dynamicPhase.rate);
+//                            }
+//                        }
+//                    };
+//              } catch (IOException e) {
+//              // TODO Auto-generated catch block
+//              e.printStackTrace();
+//          }
+                this.bench.dynamicPhase.rate  = BenchPress.targetHeight;
+                if (BenchPress.targetHeight > bench.dynamicPhase.rate) {
+                    System.out.println("Increase: " + bench.dynamicPhase.rate);
+                } else if (BenchPress.targetHeight < bench.dynamicPhase.rate) {
+                    System.out.println("Decrease: " + bench.dynamicPhase.rate);
                 }
+
             } // WHILE
         }
     } // CLASS
@@ -315,6 +325,7 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
                     }
                 }
                 double tps = (double) measuredRequests / (double) this.intervalMonitor;
+                BenchPress.actualHeight = (int)tps;
                 LOG.info("Throughput: " + tps + " Tps");
             } // WHILE
         }

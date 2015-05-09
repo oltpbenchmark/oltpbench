@@ -70,8 +70,8 @@ public class BenchPress {
     private static final int defaultHeight = 200;
     private static Timer timer = null;
 
-    private static int targetHeight = defaultHeight;
-    private static int actualHeight = defaultHeight;
+    public static int targetHeight = defaultHeight;
+    public static int actualHeight = defaultHeight;
     
     /**
      * @param args
@@ -155,8 +155,8 @@ public class BenchPress {
                         + data.toString() + "\n");
                 if (!data.isValid()) {
                     data.setDefaults();
-                    System.out.println("Unrecognized config: " + data.getDbms() + ", " + data.getBenchmark() +
-                            ". Starting game with default config: Mysql, YCSB");
+                    System.out.println("Unrecognized config: " + data.getDbms() + ", " + 
+                            data.getBenchmark() + ". Starting game with default config: MySQL, YCSB");
                 }
                 try {
                     Thread.sleep(3000);     // Fake setup delay (3 sec)
@@ -203,7 +203,7 @@ public class BenchPress {
                 } else if (data.equals("menu")) {
                     System.out.println("Returning to menu (stop db)\n");
                     // TODO: stop db
-            if (timer != null) {
+                    if (timer != null) {
                         timer.cancel();
                         timer.purge();
                         timer = null;
@@ -217,7 +217,6 @@ public class BenchPress {
         });
 
         server.start();
-        //server.stop();
     }
     
     public static void runLevel(DBConfig data) {
