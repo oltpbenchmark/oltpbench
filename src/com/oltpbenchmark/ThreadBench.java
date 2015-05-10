@@ -36,6 +36,9 @@ import com.oltpbenchmark.LatencyRecord.Sample;
 import com.oltpbenchmark.api.TransactionType;
 import com.oltpbenchmark.api.Worker;
 import com.oltpbenchmark.benchpress.BenchPress;
+import com.oltpbenchmark.benchpress.BenchPressService;
+import com.oltpbenchmark.benchpress.GameThread;
+import com.oltpbenchmark.benchpress.ServerCallback;
 import com.oltpbenchmark.types.State;
 import com.oltpbenchmark.util.Histogram;
 import com.oltpbenchmark.util.QueueLimitException;
@@ -44,7 +47,8 @@ import com.oltpbenchmark.util.StringUtil;
 public class ThreadBench implements Thread.UncaughtExceptionHandler {
     private static final Logger LOG = Logger.getLogger(ThreadBench.class);
 
-    private static BenchmarkState testState;
+    //private static BenchmarkState testState;
+    private BenchmarkState testState;
     private final List<? extends Worker> workers;
     private final ArrayList<Thread> workerThreads;
     private List<WorkloadConfiguration> workConfs;
@@ -66,6 +70,8 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
         this.workers = workers;
         this.workConfs = workConfs;
         this.workerThreads = new ArrayList<Thread>(workers.size());
+        if (BenchPressService.GAME_BEHAVIOR)
+            testState = null;
     }
 
     public static final class TimeBucketIterable implements Iterable<DistributionStatistics> {
@@ -199,13 +205,14 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
     }
 
     private int finalizeWorkers(ArrayList<Thread> workerThreads) throws InterruptedException {
-        assert testState.getState() == State.DONE || testState.getState() == State.EXIT;
+        if (!BenchPressService.GAME_BEHAVIOR)
+            assert testState.getState() == State.DONE || testState.getState() == State.EXIT;
         int requests = 0;
 
         new WatchDogThread().start();
 
         for (int i = 0; i < workerThreads.size(); ++i) {
-
+            
             // FIXME not sure this is the best solution... ensure we don't hang
             // forever, however we might ignore 
             // problems
@@ -241,7 +248,7 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
                 } catch (InterruptedException ex) {
                     return;
                 }
-                if (testState == null)
+                if (!BenchPressService.GAME_BEHAVIOR && testState == null)
                     return;
                 m.clear();
                 for (Thread t : workerThreads) {
@@ -254,13 +261,11 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
 
     private class RateReaderThread extends Thread {
         private ThreadBench bench;
-        private int prevRate;
         {
             this.setDaemon(true);
         }
         RateReaderThread(ThreadBench bench) {
             this.bench = bench;
-            this.prevRate = bench.dynamicPhase.rate;
         }
         /*
          * This is gonna communicate with System.in
@@ -287,10 +292,13 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
 //              // TODO Auto-generated catch block
 //              e.printStackTrace();
 //          }
-                this.bench.dynamicPhase.rate  = BenchPress.targetHeight;
-                if (BenchPress.targetHeight > bench.dynamicPhase.rate) {
+                if (BenchPressService.GAME_BEHAVIOR && BenchPressService.DONE)
+                    return;
+                int targetThroughput = BenchPress.getService().getTargetThroughput();
+                this.bench.dynamicPhase.rate = targetThroughput;
+                if (targetThroughput > bench.dynamicPhase.rate) {
                     System.out.println("Increase: " + bench.dynamicPhase.rate);
-                } else if (BenchPress.targetHeight < bench.dynamicPhase.rate) {
+                } else if (targetThroughput < bench.dynamicPhase.rate) {
                     System.out.println("Decrease: " + bench.dynamicPhase.rate);
                 }
 
@@ -317,6 +325,8 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
                 }
                 if (testState == null)
                     return;
+                if (BenchPressService.GAME_BEHAVIOR && BenchPressService.DONE)
+                    return;
                 // Compute the last throughput
                 long measuredRequests = 0;
                 synchronized (testState) {
@@ -325,7 +335,7 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
                     }
                 }
                 double tps = (double) measuredRequests / (double) this.intervalMonitor;
-                BenchPress.actualHeight = (int)tps;
+                BenchPress.getService().updateActualThroughput((int)tps);
                 LOG.info("Throughput: " + tps + " Tps");
             } // WHILE
         }
@@ -649,9 +659,15 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
         if(this.dynamicMode) {
             new RateReaderThread(this).start();
         }
-              
+
         // Main Loop
         while (true) {
+//            if (BenchPressService.GAME_BEHAVIOR) {
+//                GameThread thisThread = (GameThread)Thread.currentThread();
+//                if (thisThread.thread != thisThread) {
+//                    break;
+//                }
+//            }
             lowestRate = phase.rate;
             // posting new work... and reseting the queue in case we have new
             // portion of the workload...
@@ -728,7 +744,8 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
                             lowestRate = Integer.MAX_VALUE;
                             phase = workState.getCurrentPhase();
                             interruptWorkers();
-                            if (phase == null && !lastEntry) {
+                            if ((phase == null && !lastEntry) || 
+                                    (BenchPressService.GAME_BEHAVIOR && BenchPressService.DONE)) {
                                 // Last phase
                                 lastEntry = true;
                                 testState.startCoolDown();
@@ -786,64 +803,73 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
                 // If we're not doing serial executions, this function has no
                 // effect and is thus safe to call regardless.
                 phase.resetSerial();
+                
+                // Invoke game ready callback
+                for (ServerCallback c : ((GameThread)Thread.currentThread()).callbacks) {
+                    c.ready();
+                }
             } else if (state == State.EXIT) {
                 // All threads have noticed the done, meaning all measured
                 // requests have definitely finished.
                 // Time to quit.
+                System.out.println("In exit - all threads finishing up");
                 break;
             }
         }
 
         try {
             int requests = finalizeWorkers(this.workerThreads);
-
-            // Combine all the latencies together in the most disgusting way
-            // possible: sorting!
-            for (Worker w : workers) {
-                for (LatencyRecord.Sample sample : w.getLatencyRecords()) {
-                    samples.add(sample);
-                }
-            }
-            Collections.sort(samples);
-
-            // Compute stats on all the latencies
-            int[] latencies = new int[samples.size()];
-            for (int i = 0; i < samples.size(); ++i) {
-                latencies[i] = samples.get(i).latencyUs;
-            }
-            DistributionStatistics stats = DistributionStatistics.computeStatistics(latencies);
-
-            Results results = new Results(measureEnd - start, requests, stats, samples);
-
-            // Compute transaction histogram
-            Set<TransactionType> txnTypes = new HashSet<TransactionType>();
-            for (WorkloadConfiguration workConf : workConfs) {
-                txnTypes.addAll(workConf.getTransTypes());
-            }
-            txnTypes.remove(TransactionType.INVALID);
-
-            results.txnSuccess.putAll(txnTypes, 0);
-            results.txnRetry.putAll(txnTypes, 0);
-            results.txnAbort.putAll(txnTypes, 0);
-            results.txnErrors.putAll(txnTypes, 0);
-
-            for (Worker w : workers) {
-                results.txnSuccess.putHistogram(w.getTransactionSuccessHistogram());
-                results.txnRetry.putHistogram(w.getTransactionRetryHistogram());
-                results.txnAbort.putHistogram(w.getTransactionAbortHistogram());
-                results.txnErrors.putHistogram(w.getTransactionErrorHistogram());
-
-                for (Entry<TransactionType, Histogram<String>> e : w.getTransactionAbortMessageHistogram().entrySet()) {
-                    Histogram<String> h = results.txnAbortMessages.get(e.getKey());
-                    if (h == null) {
-                        h = new Histogram<String>(true);
-                        results.txnAbortMessages.put(e.getKey(), h);
+            if (BenchPressService.GAME_BEHAVIOR) {
+                return null;
+            } else {
+                // Combine all the latencies together in the most disgusting way
+                // possible: sorting!
+                for (Worker w : workers) {
+                    for (LatencyRecord.Sample sample : w.getLatencyRecords()) {
+                        samples.add(sample);
                     }
-                    h.putHistogram(e.getValue());
+                }
+                Collections.sort(samples);
+    
+                // Compute stats on all the latencies
+                int[] latencies = new int[samples.size()];
+                for (int i = 0; i < samples.size(); ++i) {
+                    latencies[i] = samples.get(i).latencyUs;
+                }
+                DistributionStatistics stats = DistributionStatistics.computeStatistics(latencies);
+    
+                Results results = new Results(measureEnd - start, requests, stats, samples);
+    
+                // Compute transaction histogram
+                Set<TransactionType> txnTypes = new HashSet<TransactionType>();
+                for (WorkloadConfiguration workConf : workConfs) {
+                    txnTypes.addAll(workConf.getTransTypes());
+                }
+                txnTypes.remove(TransactionType.INVALID);
+    
+                results.txnSuccess.putAll(txnTypes, 0);
+                results.txnRetry.putAll(txnTypes, 0);
+                results.txnAbort.putAll(txnTypes, 0);
+                results.txnErrors.putAll(txnTypes, 0);
+    
+                for (Worker w : workers) {
+                    results.txnSuccess.putHistogram(w.getTransactionSuccessHistogram());
+                    results.txnRetry.putHistogram(w.getTransactionRetryHistogram());
+                    results.txnAbort.putHistogram(w.getTransactionAbortHistogram());
+                    results.txnErrors.putHistogram(w.getTransactionErrorHistogram());
+    
+                    for (Entry<TransactionType, Histogram<String>> e : w.getTransactionAbortMessageHistogram().entrySet()) {
+                        Histogram<String> h = results.txnAbortMessages.get(e.getKey());
+                        if (h == null) {
+                            h = new Histogram<String>(true);
+                            results.txnAbortMessages.put(e.getKey(), h);
+                        }
+                        h.putHistogram(e.getValue());
+                    } // FOR
                 } // FOR
-            } // FOR
-
-            return (results);
+                
+                return (results);
+            }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

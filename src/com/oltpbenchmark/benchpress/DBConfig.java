@@ -42,7 +42,7 @@ public class DBConfig {
     }
     
     public void setDefaults() {
-        benchmark = "tpcc";
+        benchmark = "ycsb";
         dbms = "mysql";
     }
 
