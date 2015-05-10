@@ -70,18 +70,7 @@ public class BenchPressService implements ServerCallback {
             System.out.println("Unrecognized config: " + data.getDbms() + ", " + 
                     data.getBenchmark() + ". Starting game with default config: MySQL, YCSB");
         }
-//        if (gthread != null) {
-//            try {
-//                System.out.println("Waiting to join with game thread");
-//                gthread.join();
-//                System.out.println("Joined with game thread");
-//            } catch (InterruptedException e) {
-//                // TODO Auto-generated catch block
-//                e.printStackTrace();
-//            }
-//        }
-        // Start the game thread 
-        
+        // Start the game thread - this executes the benchmark
         gthread = new GameThread(data);
         gthread.registerCallback(this);
         DONE = false;
@@ -114,22 +103,12 @@ public class BenchPressService implements ServerCallback {
             }
         } else if (data.equals("menu")) {
             System.out.println("Returning to menu (stop db)\n");
-            // TODO: stop db
             if (timer != null) {
                 timer.cancel();
                 timer.purge();
                 timer = null;
             }
             DONE = true;
-            //gthread.stopThread();
-//            try {
-//                
-//                gthread.join();
-//            } catch (InterruptedException e) {
-//                // TODO Auto-generated catch block
-//                e.printStackTrace();
-//            }
-            //gthread = null;
             
         } else {
             System.out.println("Unrecognized gameover option: " + data + "\n");

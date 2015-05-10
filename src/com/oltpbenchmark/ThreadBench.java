@@ -307,19 +307,25 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
     } // CLASS
     
     private class MonitorThread extends Thread {
+        
         private final int intervalMonitor;
+        private final int intervalSlice;
+        private int intervalsCompleted;
         {
             this.setDaemon(true);
         }
         MonitorThread(int interval) {
             this.intervalMonitor = interval;
+            this.intervalSlice = interval * 1000 / 10;
+            this.intervalsCompleted = 0;
         }
         @Override
         public void run() {
             LOG.info("Starting MonitorThread Interval[" + this.intervalMonitor + " seconds]");
             while (true) {
                 try {
-                    Thread.sleep(this.intervalMonitor * 1000);
+                    //Thread.sleep(this.intervalMonitor * 1000);
+                    Thread.sleep(this.intervalSlice);
                 } catch (InterruptedException ex) {
                     return;
                 }
@@ -327,16 +333,27 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
                     return;
                 if (BenchPressService.GAME_BEHAVIOR && BenchPressService.DONE)
                     return;
+                intervalsCompleted++;
+                double timeElapsed = (double)intervalSlice * intervalsCompleted / 1000.0;
+                boolean reset = Double.compare(timeElapsed, intervalMonitor) == 0;
                 // Compute the last throughput
                 long measuredRequests = 0;
                 synchronized (testState) {
                     for (Worker w : workers) {
-                        measuredRequests += w.getAndResetIntervalRequests();
+                        if (reset)
+                            measuredRequests += w.getAndResetIntervalRequests();
+                        else
+                            measuredRequests += w.getIntervalRequests();
                     }
                 }
-                double tps = (double) measuredRequests / (double) this.intervalMonitor;
+                
+                //double tps = (double) measuredRequests / (double) this.intervalMonitor;
+                double tps = (double) measuredRequests / timeElapsed;
                 BenchPress.getService().updateActualThroughput((int)tps);
                 LOG.info("Throughput: " + tps + " Tps");
+                
+                if (reset)
+                    intervalsCompleted = 0;
             } // WHILE
         }
     } // CLASS
@@ -662,12 +679,6 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
 
         // Main Loop
         while (true) {
-//            if (BenchPressService.GAME_BEHAVIOR) {
-//                GameThread thisThread = (GameThread)Thread.currentThread();
-//                if (thisThread.thread != thisThread) {
-//                    break;
-//                }
-//            }
             lowestRate = phase.rate;
             // posting new work... and reseting the queue in case we have new
             // portion of the workload...

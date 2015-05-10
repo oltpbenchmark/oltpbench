@@ -34,23 +34,19 @@ public class GameThread extends Thread {
     
     private static final String RATE_DISABLED = "disabled";
     private static final String RATE_UNLIMITED = "unlimited";
-    public volatile GameThread thread;
     
     private DBConfig data;
     public final List<ServerCallback> callbacks = new ArrayList<ServerCallback>();
-    
+    {
+        this.setDaemon(true);
+    }
     public GameThread(DBConfig data) {
         super();
         this.data = data;
-        thread = this;
     }
     
     public void registerCallback(ServerCallback callback) {
         callbacks.add(callback);
-    }
-
-    public void stopThread() {
-        thread = null;
     }
     
     @Override

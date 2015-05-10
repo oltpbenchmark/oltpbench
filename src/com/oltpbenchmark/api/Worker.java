@@ -142,6 +142,10 @@ public abstract class Worker implements Runnable {
         return intervalRequests.getAndSet(0);
     }
     
+    public final int getIntervalRequests() {
+        return intervalRequests.get();
+    }
+    
     public final Iterable<LatencyRecord.Sample> getLatencyRecords() {
         return latencies;
     }
