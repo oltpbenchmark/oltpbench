@@ -66,8 +66,8 @@ public class BenchPress {
                 "Print this help");
         
         // defaults
-        int port = 3000;
-        String hostname = "gs14445.sp.cs.cmu.edu";
+        int port = 3001;
+        String hostname = "localhost";
         
         // parse the command line arguments
         try {

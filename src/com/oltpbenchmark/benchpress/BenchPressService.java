@@ -2,6 +2,7 @@ package com.oltpbenchmark.benchpress;
 
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
 
@@ -15,11 +16,12 @@ import com.corundumstudio.socketio.annotation.OnEvent;
 public class BenchPressService implements ServerCallback {
     private static final Logger LOG = Logger.getLogger(BenchPressService.class);
     
-    private static final int DEFAULT_THROUGHPUT = 200;
+    private static final int MAX_HEIGHT = 600;
+    private static final int DEFAULT_THROUGHPUT = MAX_HEIGHT - 200;
     private static Timer timer = null;
 
-    private volatile int targetThroughput = DEFAULT_THROUGHPUT;
-    private volatile int actualThroughput = DEFAULT_THROUGHPUT;
+    private AtomicInteger targetThroughput;
+    private AtomicInteger actualThroughput;
     
     public static boolean GAME_BEHAVIOR = false;
     public static boolean DONE = true;
@@ -30,14 +32,19 @@ public class BenchPressService implements ServerCallback {
 
         @Override
         public void run() {
-            server.getBroadcastOperations().sendEvent(
-                    "height", Integer.valueOf(actualThroughput).toString());
+            int tp = MAX_HEIGHT - actualThroughput.get();
+            if (tp < 0)
+                tp = 0;
+            server.getBroadcastOperations().sendEvent("height", 
+                    new Integer(tp).toString());
         }
     }
     
     public BenchPressService(SocketIOServer server) {
         this.server = server;
         GAME_BEHAVIOR = true;
+        this.targetThroughput = new AtomicInteger(DEFAULT_THROUGHPUT);
+        this.actualThroughput = new AtomicInteger(DEFAULT_THROUGHPUT);
     }
 
     @Override
@@ -48,27 +55,30 @@ public class BenchPressService implements ServerCallback {
 
     @Override
     public void updateActualThroughput(int actualThroughput) {
-        this.actualThroughput = actualThroughput;
+        
+        this.actualThroughput.set(actualThroughput);
     }
 
     @Override
     public void updateTargetThroughput(int targetThroughput) {
-        this.targetThroughput = targetThroughput;
+        this.targetThroughput.set(targetThroughput);
     }
     
     @Override
     public int getTargetThroughput() {
-        return targetThroughput;
+        return targetThroughput.intValue();
     }
     
     @OnEvent("setup")
     public void setupHandler(SocketIOClient client, DBConfig data, AckRequest ackRequest) {
-        System.out.println("Received game configuration from client:\n"
-                + data.toString() + "\n");
+        //System.out.println("Received game configuration from client:\n"
+                //+ data.toString() + "\n");
+        data.setBenchmark(data.getBenchmark().toLowerCase());
+        data.setDbms(data.getDbms().toLowerCase());
         if (!data.isValid()) {
-            data.setDefaults();
             System.out.println("Unrecognized config: " + data.getDbms() + ", " + 
                     data.getBenchmark() + ". Starting game with default config: MySQL, YCSB");
+            data.setDefaults();
         }
         // Start the game thread - this executes the benchmark
         gthread = new GameThread(data);
@@ -84,14 +94,20 @@ public class BenchPressService implements ServerCallback {
     
     @OnEvent("height")
     public void throughputHandler(SocketIOClient client, String data, AckRequest ackRequest) {
-        System.out.println("Received new height from client: " + data);    
-        targetThroughput = Integer.valueOf(data);
+        //System.out.println("Received new height from client: " + data);
+        int height = Integer.valueOf(data);
+        if (height > MAX_HEIGHT)
+            targetThroughput.set(0);
+        else
+            targetThroughput.set(MAX_HEIGHT - height);
     }
     
     @OnEvent("gameover")
     public void gameoverHandler(SocketIOClient client, String data, AckRequest ackRequest) {
-        targetThroughput = DEFAULT_THROUGHPUT;
-        if (data.equals("restart")) {
+        if (data.equals("crash")) {
+            LOG.info("received crash notice from client");
+            targetThroughput.set(DEFAULT_THROUGHPUT);
+        } else if (data.equals("restart")) {
             // Client wants to restart level with same db and benchmark.
             // Just reset height to default instead of restarting db.
             System.out.println("Restarting game\n");

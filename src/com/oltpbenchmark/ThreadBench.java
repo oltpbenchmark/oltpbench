@@ -307,10 +307,14 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
     } // CLASS
     
     private class MonitorThread extends Thread {
+        // Exponential-weighted moving average
+        private double ema;
         
         private final int intervalMonitor;
         private final int intervalSlice;
         private int intervalsCompleted;
+        
+        
         {
             this.setDaemon(true);
         }
@@ -318,6 +322,7 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
             this.intervalMonitor = interval;
             this.intervalSlice = interval * 1000 / 10;
             this.intervalsCompleted = 0;
+            this.ema = 0.0;
         }
         @Override
         public void run() {
@@ -347,10 +352,15 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
                     }
                 }
                 
-                //double tps = (double) measuredRequests / (double) this.intervalMonitor;
                 double tps = (double) measuredRequests / timeElapsed;
-                BenchPress.getService().updateActualThroughput((int)tps);
-                LOG.info("Throughput: " + tps + " Tps");
+                double target = BenchPress.getService().getTargetThroughput();
+                
+                // Alpha weights new values based on how close they are to the target tp
+                double alpha = Math.abs(target - tps) / target;
+                ema = alpha * ema + (1 - alpha) * tps;
+                BenchPress.getService().updateActualThroughput((int)ema);
+                //LOG.info("Throughput: " + tps + " Tps");
+                //LOG.info("Throughput (ema): " + ema + " Tps");
                 
                 if (reset)
                     intervalsCompleted = 0;

@@ -29,16 +29,9 @@ public class DBConfig {
         this.benchmark = benchmark;
     }
     
-    public boolean isValidDbms(String dbms) {
-        return benchmark.equals("mysql") || benchmark.equals("postgres");
-    }
-    
-    public boolean isValidBenchmark(String benchmark) {
-        return benchmark.equals("ycsb");
-    }
-    
     public boolean isValid() {
-        return isValidBenchmark(benchmark) && isValidDbms(dbms);
+        return (this.dbms.equals("mysql")) 
+                && (this.benchmark.equals("ycsb"));
     }
     
     public void setDefaults() {

@@ -5,8 +5,8 @@
     <dbtype>mysql</dbtype>
     <driver>com.mysql.jdbc.Driver</driver>
     <DBUrl>jdbc:mysql://localhost:3306/ycsb</DBUrl>
-    <username>root</username>
-    <password>db123experiments</password>
+    <username></username>
+    <password></password>
     <isolation>TRANSACTION_SERIALIZABLE</isolation>
     
     <!-- Scalefactor in YCSB is *1000 the number of rows in the USERTABLE-->
