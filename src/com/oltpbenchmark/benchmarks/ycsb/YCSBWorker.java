@@ -47,8 +47,9 @@ public class YCSBWorker extends Worker {
     
     public YCSBWorker(int id, BenchmarkModule benchmarkModule, int init_record_count) {
         super(benchmarkModule, id);
-        readRecord = new ZipfianGenerator(init_record_count);// pool for read keys
-        randScan = new ZipfianGenerator(YCSBConstants.MAX_SCAN);
+        double zipfianConstant = wrkld.getAllPhases().get(0).skew;
+        readRecord = new ZipfianGenerator(init_record_count, zipfianConstant);// pool for read keys
+        randScan = new ZipfianGenerator(YCSBConstants.MAX_SCAN, zipfianConstant);
         
         synchronized (YCSBWorker.class) {
             // We must know where to start inserting

@@ -43,6 +43,7 @@ import com.oltpbenchmark.api.BenchmarkModule;
 import com.oltpbenchmark.api.TransactionType;
 import com.oltpbenchmark.api.TransactionTypes;
 import com.oltpbenchmark.api.Worker;
+import com.oltpbenchmark.distributions.ZipfianGenerator;
 import com.oltpbenchmark.types.DatabaseType;
 import com.oltpbenchmark.util.ClassUtil;
 import com.oltpbenchmark.util.ErrorCodes;
@@ -443,16 +444,24 @@ public class DBWorkload {
                 else if (serial)
                     LOG.info("Timer enabled for serial run; will run queries"
                              + " serially in a loop until the timer expires.");
+                
+                double skew = work.getDouble("/skew", ZipfianGenerator.ZIPFIAN_CONSTANT);
+                if (Double.compare(skew, 0.0) < 0 || Double.compare(skew, 1.0) > 0) {
+                    LOG.warn("Invalid skew value: " + skew + ". The default skew value of " + 
+                            ZipfianGenerator.ZIPFIAN_CONSTANT + " will be used instead");
+                    skew = ZipfianGenerator.ZIPFIAN_CONSTANT;
+                }
 
                 wrkld.addWork(time,
                               rate,
                               weight_strings,
                               rateLimited,
                               disabled,
-                        serial,
-                        timed,
+                              serial,
+                              timed,
                               activeTerminals,
-                              arrival);
+                              arrival,
+                              skew);
             } // FOR
     
             // CHECKING INPUT PHASES

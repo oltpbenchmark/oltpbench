@@ -32,6 +32,7 @@ public class Phase {
     public final int time;
     public final int rate;
     public final Arrival arrival;
+    public final double skew;
 
 
     private final boolean rateLimited;
@@ -44,7 +45,7 @@ public class Phase {
     private int nextSerial;
     
 
-    Phase(String benchmarkName, int id, int t, int r, List<String> o, boolean rateLimited, boolean disabled, boolean serial, boolean timed, int activeTerminals, Arrival a) {
+    Phase(String benchmarkName, int id, int t, int r, List<String> o, boolean rateLimited, boolean disabled, boolean serial, boolean timed, int activeTerminals, Arrival a, double skew) {
         ArrayList<Double> w = new ArrayList<Double>();
         for (String s : o)
             w.add(Double.parseDouble(s));
@@ -62,6 +63,7 @@ public class Phase {
         this.nextSerial = 1;
         this.activeTerminals = activeTerminals;
         this.arrival=a;
+        this.skew = skew;
     }
     
     public boolean isRateLimited() {
@@ -186,7 +188,7 @@ public class Phase {
                 retString += "[Serial= " + (isSerial()? "true" : "false")
                              + "] [Time= " + time + "] ";
             }
-            retString += "[Rate= " + (isRateLimited() ? rate : "unlimited") + "] [Arrival= " + arrival + "] [Ratios= " + getWeights() + "] [Active Workers=" + getActiveTerminals() + "]";
+            retString += "[Rate= " + (isRateLimited() ? rate : "unlimited") + "] [Arrival= " + arrival + "] [Ratios= " + getWeights() + "] [Active Workers= " + getActiveTerminals() + "] [Skew= " + skew + "]";
         }
         return retString;
     }
