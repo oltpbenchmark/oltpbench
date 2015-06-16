@@ -142,9 +142,11 @@ public class DBWorkload {
         options.addOption("ts", "tracescript", true, "Script of transactions to execute");
         options.addOption(null, "histograms", false, "Print txn histograms");
         options.addOption(null, "dialects-export", true, "Export benchmark SQL to a dialects file");
+        options.addOption(null, "get-config", true, "Output the DBMS configuration to a config file");
 
         // parse the command line arguments
         CommandLine argsLine = parser.parse(options, args);
+        
         if (argsLine.hasOption("h")) {
             printUsage(options);
             return;
@@ -190,6 +192,13 @@ public class DBWorkload {
         String configFile = argsLine.getOptionValue("c");
         XMLConfiguration xmlConfig = new XMLConfiguration(configFile);
         xmlConfig.setExpressionEngine(new XPathExpressionEngine());
+        
+        String configFilename = "";
+        if (argsLine.hasOption("get-config")) {
+            configFilename = argsLine.getOptionValue("get-config");
+            printConfig(xmlConfig, argsLine, configFilename);
+            return;
+        }
 
         // Load the configuration for each benchmark
         int lastTxnId = 0;
@@ -759,6 +768,19 @@ public class DBWorkload {
             return (val != null ? val.equalsIgnoreCase("true") : false);
         }
         return (false);
+    }
+    
+    private static void printConfig(XMLConfiguration config, CommandLine argsLine, String configFilename) {
+        ResultUploader ru = new ResultUploader(null, config, argsLine);
+        PrintStream ps = System.out;
+        if (configFilename != null && configFilename != "") {
+            try {
+                ps = new PrintStream(new File(configFilename));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        ru.writeDBParameters(ps);
     }
     
 }

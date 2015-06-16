@@ -80,9 +80,14 @@ public class ResultUploader {
         username = expConf.getString("username");
         password = expConf.getString("password");
         benchType = argsLine.getOptionValue("b");
-        windowSize = Integer.parseInt(argsLine.getOptionValue("s"));
         uploadCode = expConf.getString("uploadCode");
         uploadUrl = expConf.getString("uploadUrl");
+        
+        try {
+            windowSize = Integer.parseInt(argsLine.getOptionValue("s"));
+        } catch (NumberFormatException e) {
+            windowSize = 5;
+        }
 
         this.collector = DBParameterCollectorGen.getCollector(dbType, dbUrl, username, password);
     }
