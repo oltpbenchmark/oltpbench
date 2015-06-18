@@ -104,9 +104,13 @@ public abstract class BenchmarkModule {
      * @throws SQLException
      */
     protected final Connection makeConnection() throws SQLException {
-        Connection conn = DriverManager.getConnection(workConf.getDBConnection(),
+        String connString = workConf.getDBConnection() + "&autoReconnect=true&failOverReadOnly=false&maxReconnects=10";
+        LOG.info("Connection string: " + connString);
+        //Connection conn = DriverManager.getConnection(workConf.getDBConnection(),
+        Connection conn = DriverManager.getConnection(connString,
                 workConf.getDBUsername(),
                 workConf.getDBPassword());
+
         Catalog.setSeparator(conn);
         this.last_connection = conn;
         return (conn);
