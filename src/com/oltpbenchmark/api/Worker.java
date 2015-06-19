@@ -84,13 +84,6 @@ public abstract class Worker implements Runnable {
 		    conn.setTransactionIsolation(this.wrkld.getIsolationMode());
 		} catch (SQLException ex) {
 		    throw new RuntimeException("Failed to connect to database", ex);
-		} finally {
-		    try {
-                this.conn.close();
-            } catch (SQLException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            }
 		}
 		
 		// Generate all the Procedures that we're going to need
