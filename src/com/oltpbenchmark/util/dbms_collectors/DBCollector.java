@@ -16,16 +16,20 @@
 
 package com.oltpbenchmark.util.dbms_collectors;
 
-import com.oltpbenchmark.catalog.Catalog;
-import org.apache.log4j.Logger;
-
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
+import org.apache.log4j.Logger;
 
 class DBCollector implements DBParameterCollector {
     private static final Logger LOG = Logger.getLogger(DBCollector.class);
     protected final Map<String, String> dbConf = new TreeMap<String, String>();
     protected final Map<String, String> dbStatus = new TreeMap<String, String>();
+    protected final List<Map<String, String>> dbTable = new LinkedList<Map<String, String>>();
+    
+    protected String dbName;
 
     @Override
     public String collectConfigParameters() {
@@ -35,6 +39,11 @@ class DBCollector implements DBParameterCollector {
     @Override
     public String collectStatusParameters() {
         return collectMap(dbStatus);
+    }
+    
+    @Override
+    public String collectTableParameters() {
+        return collectList(dbTable);
     }
     
     @Override
@@ -49,6 +58,14 @@ class DBCollector implements DBParameterCollector {
                        .append("=")
                        .append(kv.getValue().toLowerCase())
                        .append("\n");
+        }
+        return builder.toString();
+    }
+    
+    private static String collectList(List<Map<String,String>> dbList) {
+        StringBuilder builder = new StringBuilder();
+        for (Map<String,String> map : dbList) {
+            builder.append(collectMap(map)).append("\n");
         }
         return builder.toString();
     }

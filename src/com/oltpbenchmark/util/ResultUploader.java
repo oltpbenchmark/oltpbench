@@ -101,6 +101,11 @@ public class ResultUploader {
         String dbConf = collector.collectStatusParameters();
         os.print(dbConf);
     }
+    
+    public void writeDBTables(PrintStream os) {
+        String dbConf = collector.collectTableParameters();
+        os.print(dbConf);
+    }
 
     public void writeBenchmarkConf(PrintStream os) throws ConfigurationException {
         XMLConfiguration outputConf = (XMLConfiguration) expConf.clone();
@@ -131,6 +136,7 @@ public class ResultUploader {
             File summaryFile = File.createTempFile("summary", ".tmp");
             File dbConfFile = File.createTempFile("dbConf", ".tmp");
             File dbStatusFile = File.createTempFile("dbStatus", ".tmp");
+            File dbTableFile = File.createTempFile("dbTbls", ".tmp");
             File rawDataFile = null;
             if (includeRawData) {
             	rawDataFile = File.createTempFile("raw", ".gz");
@@ -155,6 +161,10 @@ public class ResultUploader {
             confOut = new PrintStream(new FileOutputStream(dbStatusFile));
             writeDBStatus(confOut);
             confOut.close();
+            
+            confOut = new PrintStream(new FileOutputStream(dbTableFile));
+            writeDBTables(confOut);
+            confOut.close();
 
             if (includeRawData) {
             	confOut = new PrintStream(new GZIPOutputStream(new FileOutputStream(rawDataFile)));
@@ -170,6 +180,7 @@ public class ResultUploader {
                     .addPart("sample_data", new FileBody(sampleFile))
                     .addPart("db_conf_data", new FileBody(dbConfFile))
                     .addPart("db_status_data", new FileBody(dbStatusFile))
+                    .addPart("db_table_data", new FileBody(dbTableFile))
                     .addPart("benchmark_conf_data", new FileBody(expConfFile))
                     .addPart("summary_data", new FileBody(summaryFile));
             

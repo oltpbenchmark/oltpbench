@@ -630,6 +630,12 @@ public class DBWorkload {
                 LOG.info("Output benchmark config into file: " + nextName);
                 if (ru != null) ru.writeBenchmarkConf(ss);
                 ss.close();
+                
+                nextName = FileUtil.getNextFilename(FileUtil.joinPath(outputDirectory, baseFile + ".tbls"));
+                ss = new PrintStream(new File(nextName));
+                LOG.info("Output table information into file: " + nextName);
+                if (ru != null) ru.writeDBTables(ss);
+                ss.close();
             } else if (LOG.isDebugEnabled()) {
                 LOG.debug("No output file specified");
             }
