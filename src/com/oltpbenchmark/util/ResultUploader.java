@@ -36,7 +36,6 @@ import org.apache.log4j.Logger;
 
 import java.io.*;
 import java.util.Date;
-import java.util.Map;
 import java.util.TimeZone;
 import java.util.zip.GZIPOutputStream;
 
