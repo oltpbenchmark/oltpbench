@@ -21,6 +21,8 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -36,20 +38,15 @@ class MYSQLCollector extends DBCollector {
         
     	Connection conn = connect(oriDBUrl, username, password);
     	assert(conn != null);
-    	try {
-    	    conn.setCatalog("information_schema");
-    	} catch (SQLException e) {
-    	    raiseException("Error while switching to information_schema.", e, ErrorCodes.DB_ERROR);
-    	}
     	
     	getGlobalVars(conn);
     	assert(!dbConf.isEmpty());
     	
     	getGlobalStatus(conn);
-    	assert(!dbStatus.isEmpty());
+    	assert(!dbGlobalStats.isEmpty());
     	
     	getTableInfo(conn);
-        assert(!dbTable.isEmpty());
+        assert(!dbTableStats.isEmpty());
         
         try {
             conn.close();
@@ -65,7 +62,7 @@ class MYSQLCollector extends DBCollector {
 	    	try {
 	    		assert(!conn.isClosed());
 	    		s = conn.createStatement();
-	            ResultSet out = s.executeQuery("SELECT * FROM GLOBAL_VARIABLES;");
+	            ResultSet out = s.executeQuery("SELECT * FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES;");
 	            while(out.next()) {
 	                dbConf.put(out.getString("VARIABLE_NAME"), out.getString("VARIABLE_VALUE"));
 	            }
@@ -90,14 +87,14 @@ class MYSQLCollector extends DBCollector {
     private void getGlobalStatus(Connection conn) {
         SQLException ex = null;
         int failed_attempts = 0;
-        while (dbStatus.isEmpty() && failed_attempts < MAX_ATTEMPTS) {
+        while (dbGlobalStats.isEmpty() && failed_attempts < MAX_ATTEMPTS) {
             Statement s = null;
             try {
                 assert(!conn.isClosed());
                 s = conn.createStatement();
-                ResultSet out = s.executeQuery("SELECT * FROM GLOBAL_STATUS;");
+                ResultSet out = s.executeQuery("SELECT * FROM INFORMATION_SCHEMA.GLOBAL_STATUS;");
                 while(out.next()) {
-                    dbStatus.put(out.getString("VARIABLE_NAME"), out.getString("VARIABLE_VALUE"));
+                    dbGlobalStats.put(out.getString("VARIABLE_NAME"), out.getString("VARIABLE_VALUE"));
                 }
             } catch (SQLException e) {
                 LOG.debug("Error while collecting DB parameters: " + e.getMessage());
@@ -112,7 +109,7 @@ class MYSQLCollector extends DBCollector {
             failed_attempts++;
         }
         
-        if (dbStatus.isEmpty()) {
+        if (dbGlobalStats.isEmpty()) {
             raiseException("Error while collecting DB status parameters.", ex, ErrorCodes.DB_ERROR);
         }
     }
@@ -120,37 +117,53 @@ class MYSQLCollector extends DBCollector {
     private void getTableInfo(Connection conn) {
         SQLException ex = null;
         int failed_attempts = 0;
-        while (dbTable.isEmpty() && failed_attempts < MAX_ATTEMPTS) {
+        while (dbTableStats.isEmpty() && failed_attempts < MAX_ATTEMPTS) {
             Statement s = null;
             try {
                 assert(!conn.isClosed());
                 s = conn.createStatement();
-                ResultSet out = s.executeQuery("SELECT * FROM TABLES WHERE TABLE_SCHEMA='" + 
+                ResultSet out = s.executeQuery("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='" + 
                         databaseName + "' ORDER BY TABLE_NAME;");
-                while(out.next()) {
-                    Map<String,String> map = new TreeMap<String,String>();
-                    ResultSetMetaData metadata = out.getMetaData();
-                    int numColumns = metadata.getColumnCount();
-                    for (int i = 1; i <= numColumns; ++i) {
-                        String value = out.getString(i) == null ? "" : out.getString(i);
-                        map.put(metadata.getColumnName(i), value);
+                
+                List<String> columnNames = new ArrayList<String>();
+                ResultSetMetaData metadata = out.getMetaData();
+                int numColumns = metadata.getColumnCount();
+                int tableNameIndex = -1;
+                for (int i = 1; i <= numColumns; ++i) {
+                    String columnName = metadata.getColumnName(i);
+                    if (columnName.toLowerCase().equals("table_name")) {
+                        tableNameIndex = i;
                     }
-                    dbTable.add(map);
+                    columnNames.add(columnName);
                 }
+                
+                assert(columnNames.size() == tableNames.size());
+                while (out.next()) {
+                    String tableName = out.getString(tableNameIndex);
+                    assert(tableNames.contains(tableName));
+                    Map<String, String> map = new TreeMap<String, String>();
+                    for (int i = 1; i <= numColumns; ++i) {
+                        String columnName = columnNames.get(i);
+                        String value = out.getString(i) == null ? "" : out.getString(i);
+                        
+                        map.put(columnName, value);
+                    }
+                    
+                    dbTableStats.put(tableName, map);
+                }
+                assert !dbTableStats.isEmpty();
             } catch (SQLException e) {
                 ex = e;
                 LOG.debug("Error while collecting DB parameters: " + e.getMessage());
             } finally {
                 try {
                     s.close();
-                } catch(SQLException e2) { 
-                }
-                    
+                } catch(SQLException e2) { }  
             }
             failed_attempts++;
         }
         
-        if (dbStatus.isEmpty()) {
+        if (dbGlobalStats.isEmpty()) {
             raiseException("Error while collecting DB status parameters.", ex, ErrorCodes.DB_ERROR);
         }
     }

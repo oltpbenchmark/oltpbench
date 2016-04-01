@@ -21,8 +21,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -39,7 +37,6 @@ class POSTGRESCollector extends DBCollector {
         "pg_stat_user_indexes",
         "pg_statio_user_indexes"
     };
-    private final Map<String, Map<String, String>> pgDbTable = new TreeMap<String, Map<String, String>>();
 
     public POSTGRESCollector(String oriDBUrl, String username, String password) {
         this.versionKey = "server_version";
@@ -51,26 +48,15 @@ class POSTGRESCollector extends DBCollector {
         assert(!dbConf.isEmpty());
         
         getGlobalStatus(conn);
-        assert(!dbStatus.isEmpty());
+        assert(!dbGlobalStats.isEmpty());
         
         getTableInfo(conn);
-        assert(!pgDbTable.isEmpty());
+        assert(!dbTableStats.isEmpty());
         
         try {
             conn.close();
         } catch (SQLException e) {
         }
-    }
-    
-    @Override
-    public String collectTableParameters() {
-        StringBuilder builder = new StringBuilder();
-        for (Map.Entry<String, Map<String, String>> entry : pgDbTable.entrySet()) {
-            builder.append(String.format("[%s]\n", entry.getKey()));
-            builder.append(DBCollector.collectMap(entry.getValue())).append("\n");
-        }
-        System.out.println();
-        return builder.toString();
     }
     
     private void getGlobalVars(Connection conn) {
@@ -106,17 +92,17 @@ class POSTGRESCollector extends DBCollector {
         SQLException ex = null;
         int failed_attempts = 0;
 
-        while (dbStatus.isEmpty() && failed_attempts < MAX_ATTEMPTS) {
+        while (dbGlobalStats.isEmpty() && failed_attempts < MAX_ATTEMPTS) {
             Statement s = null;
             ResultSet out = null;
             try {
                 assert(!conn.isClosed());
                 s = conn.createStatement();
                 out = s.executeQuery("SELECT * FROM pg_stat_bgwriter;");
-                resultHelper(out, dbStatus, "pg_stat_bgwriter");
+                resultHelper(out, dbGlobalStats, "pg_stat_bgwriter");
                 
                 out = s.executeQuery("SELECT * FROM pg_stat_database WHERE datname=\'" + databaseName + "\';");
-                resultHelper(out, dbStatus, "pg_stat_database");
+                resultHelper(out, dbGlobalStats, "pg_stat_database");
                 s.close();
             } catch (SQLException e) {
                 LOG.debug("Error while collecting DB parameters: " + e.getMessage());
@@ -131,7 +117,7 @@ class POSTGRESCollector extends DBCollector {
             failed_attempts++;
         }
         
-        if (dbStatus.isEmpty()) {
+        if (dbGlobalStats.isEmpty()) {
             raiseException("Error while collecting DB status parameters.", ex, ErrorCodes.DB_ERROR);
         }
     }
@@ -140,26 +126,23 @@ class POSTGRESCollector extends DBCollector {
         SQLException ex = null;
         int failed_attempts = 0;
 
-        while (pgDbTable.isEmpty() && failed_attempts < MAX_ATTEMPTS) {
+        while (dbTableStats.isEmpty() && failed_attempts < MAX_ATTEMPTS) {
             Statement s = null;
             ResultSet out = null;
-            List<String> tables = new LinkedList<String>();
             try {
                 assert(!conn.isClosed());
-                s = conn.createStatement();
-                out = s.executeQuery("SELECT table_name from information_schema.tables WHERE table_schema='public';");
-                while (out.next()) {
-                    tables.add(out.getString(1));
-                }
-                System.out.println("Tables: " + tables.toString());
                 
-                for (String tablename : tables) {
+                for (String tablename : this.tableNames) {
                     Map<String, String> tmap = new TreeMap<String, String>();
                     for (String view : TABLE_STAT_VIEWS) {
-                        out = s.executeQuery(String.format("SELECT * FROM %s WHERE relname=\'%s\'", view, tablename));
+                        s = conn.createStatement();
+                        out = s.executeQuery(String.format(
+                                "SELECT * FROM %s WHERE relname=\'%s\'",
+                                view,
+                                tablename));
                         resultHelper(out, tmap, view);
                     }
-                    pgDbTable.put(tablename, tmap);
+                    dbTableStats.put(tablename, tmap);
                 }
                 s.close();
             } catch (SQLException e) {
@@ -175,7 +158,7 @@ class POSTGRESCollector extends DBCollector {
             failed_attempts++;
         }
         
-        if (pgDbTable.isEmpty()) {
+        if (dbTableStats.isEmpty()) {
             raiseException("Error while collecting DB status parameters.", ex, ErrorCodes.DB_ERROR);
         }
     }

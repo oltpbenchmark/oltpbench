@@ -16,9 +16,13 @@
 
 package com.oltpbenchmark.util;
 
+import com.oltpbenchmark.DistributionStatistics;
 import com.oltpbenchmark.Results;
 import com.oltpbenchmark.util.dbms_collectors.DBParameterCollector;
 import com.oltpbenchmark.util.dbms_collectors.DBParameterCollectorGen;
+import com.oltpbenchmark.util.json.JSONException;
+import com.oltpbenchmark.util.json.JSONStringer;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration.ConfigurationException;
@@ -97,13 +101,13 @@ public class ResultUploader {
     }
     
     public void writeDBStatus(PrintStream os) {
-        String dbConf = collector.collectStatusParameters();
+        String dbConf = collector.collectStats();
         os.print(dbConf);
     }
     
     public void writeDBTables(PrintStream os) {
-        String dbConf = collector.collectTableParameters();
-        os.print(dbConf);
+        //String dbConf = collector.collectTableParameters();
+        os.print("");
     }
 
     public void writeBenchmarkConf(PrintStream os) throws ConfigurationException {
@@ -117,15 +121,53 @@ public class ResultUploader {
     public void writeSummary(PrintStream os) {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         Date now = new Date();
-        os.println(now.getTime() / 1000L);
-        os.println(dbType);
-        os.println(collector.collectVersion());
-        os.println(benchType);
-        os.println(results.latencyDistribution.toString());
-        os.println(results.getRequestsPerSecond());
-        for (String field: BENCHMARK_KEY_FIELD) {
-            os.println(field + "=" + expConf.getString(field));
+        JSONStringer stringer = new JSONStringer();
+        DistributionStatistics ld = results.latencyDistribution;
+        final double SECONDS_FACTOR = 1e6;
+        try {
+            stringer.object()
+                    .key("timestamp_utc_sec")
+                    .value(now.getTime() / 1000L)
+                    .key("dbms")
+                    .value(dbType)
+                    .key("dbms_version")
+                    .value(collector.collectVersion())
+                    .key("dbms_info")
+                    .value("TODO")
+                    .key("benchmark")
+                    .value(benchType);
+            for (String field: BENCHMARK_KEY_FIELD) {
+                stringer.key(field)
+                        .value(expConf.getString(field));
+            }
+            stringer.key("latency_sec")
+                        .object()
+                        .key("25th_percentile")
+                        .value(ld.get25thPercentile() / SECONDS_FACTOR)
+                        .key("75th_percentile")
+                        .value(ld.get75thPercentile() / SECONDS_FACTOR)
+                        .key("90th_percentile")
+                        .value(ld.get90thPercentile() / SECONDS_FACTOR)
+                        .key("95th_percentile")
+                        .value(ld.get95thPercentile() / SECONDS_FACTOR)
+                        .key("99th_percentile")
+                        .value(ld.get99thPercentile() / SECONDS_FACTOR)
+                        .key("average")
+                        .value(ld.getAverage() / SECONDS_FACTOR)
+                        .key("max")
+                        .value(ld.getMaximum() / SECONDS_FACTOR)
+                        .key("median")
+                        .value(ld.getMedian() / SECONDS_FACTOR)
+                        .key("min")
+                        .value(ld.getMinimum() / SECONDS_FACTOR)
+                        .key("standard_deviation")
+                        .value(ld.getStandardDeviation() / SECONDS_FACTOR)
+                        .endObject()
+                    .endObject();
+        } catch(JSONException e) {
+            e.printStackTrace();
         }
+        os.println(JSONUtil.format(stringer.toString()));
     }
 
     public void uploadResult(boolean includeRawData) throws ParseException {

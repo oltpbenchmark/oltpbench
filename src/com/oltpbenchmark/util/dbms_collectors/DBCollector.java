@@ -17,41 +17,125 @@
 package com.oltpbenchmark.util.dbms_collectors;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
 
 import com.oltpbenchmark.catalog.Catalog;
 import com.oltpbenchmark.util.ErrorCodes;
+import com.oltpbenchmark.util.JSONUtil;
+import com.oltpbenchmark.util.json.JSONException;
+import com.oltpbenchmark.util.json.JSONStringer;
 
 class DBCollector implements DBParameterCollector {
     private static final Logger LOG = Logger.getLogger(DBCollector.class);
+    
     protected static final int MAX_ATTEMPTS = 10;
+    
     protected final Map<String, String> dbConf = new TreeMap<String, String>();
-    protected final Map<String, String> dbStatus = new TreeMap<String, String>();
-    protected final List<Map<String, String>> dbTable = new LinkedList<Map<String, String>>();
+    
+    protected final Map<String, String> dbGlobalStats = 
+            new TreeMap<String, String>();
+    
+    protected final Map<String, String> dbDatabaseStats = 
+            new TreeMap<String, String>();
+    
+    protected final Map<String, Map<String, String>> dbTableStats = 
+            new TreeMap<String, Map<String, String>>();
     
     protected String versionKey;
+    
     protected String databaseName;
+    
+    protected final Set<String> tableNames = new TreeSet<String>();
 
     @Override
     public String collectConfigParameters() {
-        return collectMap(dbConf);
+        JSONStringer stringer = new JSONStringer();
+        try {
+            stringer.object()
+                    .key("system_variables")
+                    .array();
+            for (Map.Entry<String, String> kv : dbConf.entrySet()) {
+                stringer.object()
+                        .key("variable_name")
+                        .value(kv.getKey())
+                        .key("variable_value")
+                        .value(kv.getValue())
+                        .endObject();
+            }
+            stringer.endArray()
+                    .endObject();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return JSONUtil.format(stringer.toString());
     }
     
     @Override
-    public String collectStatusParameters() {
-        return collectMap(dbStatus);
-    }
-    
-    @Override
-    public String collectTableParameters() {
-        return collectList(dbTable);
+    public String collectStats() {
+        JSONStringer stringer = new JSONStringer();
+        try {
+            stringer.object()
+                    .key("statistics")
+                    .object()
+                    .key("global")
+                    .array();
+            for (Map.Entry<String, String> kv : dbGlobalStats.entrySet()) {
+                stringer.object()
+                        .key("variable_name")
+                        .value(kv.getKey())
+                        .key("variable_value")
+                        .value(kv.getValue())
+                        .endObject();
+            }
+            stringer.endArray()
+                    .key("database")
+                    .array();
+            for (Map.Entry<String, String> kv : dbDatabaseStats.entrySet()) {
+                stringer.object()
+                        .key("variable_name")
+                        .value(kv.getKey())
+                        .key("variable_value")
+                        .value(kv.getValue())
+                        .endObject();
+            }
+            stringer.endArray()
+                    .key("table")
+                    .array();
+            for (Entry<String, Map<String, String>> tablemap : dbTableStats.entrySet()) {
+                stringer.object()
+                        .key("tablename")
+                        .value(tablemap.getKey())
+                        .key("tablestats")
+                        .array();
+                for (Map.Entry<String, String> kv : tablemap.getValue().entrySet()) {
+                    stringer.object()
+                            .key("variable_name")
+                            .value(kv.getKey())
+                            .key("variable_value")
+                            .value(kv.getValue())
+                            .endObject();
+                }
+                stringer.endArray()
+                        .endObject();
+            }
+            stringer.endArray()
+                    .endObject()
+                    .endObject();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        System.out.println(stringer.toString() == null);
+        return JSONUtil.format(stringer.toString());
     }
     
     @Override
@@ -71,6 +155,13 @@ class DBCollector implements DBParameterCollector {
                 conn = DriverManager.getConnection(oriDBUrl, username, password);
                 Catalog.setSeparator(conn);
                 this.databaseName = conn.getCatalog();
+                DatabaseMetaData dbmd = conn.getMetaData();
+                String[] types = {"TABLE"};
+                ResultSet rs = dbmd.getTables(null, null, "%", types);
+                while (rs.next()) {
+                    this.tableNames.add(rs.getString("TABLE_NAME"));
+                }
+                assert(tableNames.size() > 0);
             } catch (SQLException e) {
                 ex = e;
                 LOG.debug("Error while collecting DB parameters: " + e.getMessage());
@@ -79,28 +170,10 @@ class DBCollector implements DBParameterCollector {
         }
         
         if (conn == null) {
-            raiseException("Could not connect to database to collect DB parameters.", ex, ErrorCodes.NO_CONNECTION);
+            raiseException("Could not connect to database to collect DB parameters.",
+                    ex, ErrorCodes.NO_CONNECTION);
         }
         return conn;
-    }
-    
-    protected static String collectMap(Map<String,String> dbMap) {
-    	StringBuilder builder = new StringBuilder();
-        for (Map.Entry<String, String> kv : dbMap.entrySet()) {
-            builder.append(kv.getKey().toLowerCase())
-                       .append("=")
-                       .append(kv.getValue().toLowerCase())
-                       .append("\n");
-        }
-        return builder.toString();
-    }
-    
-    private static String collectList(List<Map<String,String>> dbList) {
-        StringBuilder builder = new StringBuilder();
-        for (Map<String,String> map : dbList) {
-            builder.append(collectMap(map)).append("\n");
-        }
-        return builder.toString();
     }
     
     protected static void raiseException(String msg, Exception e, int errorCode) {
