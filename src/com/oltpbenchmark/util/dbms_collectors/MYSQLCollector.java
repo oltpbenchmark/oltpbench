@@ -18,162 +18,70 @@ package com.oltpbenchmark.util.dbms_collectors;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 import org.apache.log4j.Logger;
 
-import com.oltpbenchmark.util.ErrorCodes;
-
 class MYSQLCollector extends DBCollector {
     private static final Logger LOG = Logger.getLogger(MYSQLCollector.class);
-
-    public MYSQLCollector(String oriDBUrl, String username, String password) {
-        this.versionKey = "VERSION";
-        
-    	Connection conn = connect(oriDBUrl, username, password);
-    	assert(conn != null);
-    	
-    	getGlobalVars(conn);
-    	assert(!dbConf.isEmpty());
-    	
-    	getGlobalStatus(conn);
-    	assert(!dbGlobalStats.isEmpty());
-    	
-    	getTableInfo(conn);
-        assert(!dbTableStats.isEmpty());
-        
-        try {
-            conn.close();
-        } catch (SQLException e) {
-        }
-    }
     
-    private void getGlobalVars(Connection conn) {
-        SQLException ex = null;
-    	int failed_attempts = 0;
-    	while (dbConf.isEmpty() && failed_attempts < MAX_ATTEMPTS) {
-    	    Statement s = null;
-	    	try {
-	    		assert(!conn.isClosed());
-	    		s = conn.createStatement();
-	            ResultSet out = s.executeQuery("SELECT * FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES;");
-	            while(out.next()) {
-	                dbConf.put(out.getString("VARIABLE_NAME"), out.getString("VARIABLE_VALUE"));
-	            }
-	    	} catch (SQLException e) {
-	    	    ex = e;
-	    		LOG.debug("Error while collecting DB parameters: " + e.getMessage());
-	    	} finally {
-                try {
-                    s.close();
-                } catch(SQLException e2) { 
-                }
-            }
-	    	failed_attempts++;
-    	}
-    	
-    	if (dbConf.isEmpty()) {
-    		raiseException("Error while collecting DB configuration parameters.", ex, ErrorCodes.DB_ERROR);
-    	}
-    }
-
-    
-    private void getGlobalStatus(Connection conn) {
-        SQLException ex = null;
-        int failed_attempts = 0;
-        while (dbGlobalStats.isEmpty() && failed_attempts < MAX_ATTEMPTS) {
-            Statement s = null;
-            try {
-                assert(!conn.isClosed());
-                s = conn.createStatement();
-                ResultSet out = s.executeQuery("SELECT * FROM INFORMATION_SCHEMA.GLOBAL_STATUS;");
-                while(out.next()) {
-                    dbGlobalStats.put(out.getString("VARIABLE_NAME"), out.getString("VARIABLE_VALUE"));
-                }
-            } catch (SQLException e) {
-                LOG.debug("Error while collecting DB parameters: " + e.getMessage());
-                ex = e;
-            } finally {
-                try {
-                    s.close();
-                } catch(SQLException e2) { 
-                    Thread.dumpStack();
-                }
-            }
-            failed_attempts++;
+    @Override
+    protected void getGlobalParameters(Connection conn) throws SQLException {
+		assert(!conn.isClosed());
+		Statement s = conn.createStatement();
+        ResultSet out = s.executeQuery("SELECT * FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES;");
+        while(out.next()) {
+            dbParams.put(out.getString(1).toLowerCase(), out.getString(2));
         }
-        
-        if (dbGlobalStats.isEmpty()) {
-            raiseException("Error while collecting DB status parameters.", ex, ErrorCodes.DB_ERROR);
-        }
-    }
-    
-    private void getTableInfo(Connection conn) {
-        SQLException ex = null;
-        int failed_attempts = 0;
-        while (dbTableStats.isEmpty() && failed_attempts < MAX_ATTEMPTS) {
-            Statement s = null;
-            try {
-                assert(!conn.isClosed());
-                s = conn.createStatement();
-                ResultSet out = s.executeQuery("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='" + 
-                        databaseName + "' ORDER BY TABLE_NAME;");
-                
-                List<String> columnNames = new ArrayList<String>();
-                ResultSetMetaData metadata = out.getMetaData();
-                int numColumns = metadata.getColumnCount();
-                int tableNameIndex = -1;
-                for (int i = 1; i <= numColumns; ++i) {
-                    String columnName = metadata.getColumnName(i);
-                    if (columnName.toLowerCase().equals("table_name")) {
-                        tableNameIndex = i;
-                    }
-                    columnNames.add(columnName);
-                }
-                
-                assert(columnNames.size() == tableNames.size());
-                while (out.next()) {
-                    String tableName = out.getString(tableNameIndex);
-                    assert(tableNames.contains(tableName));
-                    Map<String, String> map = new TreeMap<String, String>();
-                    for (int i = 1; i <= numColumns; ++i) {
-                        String columnName = columnNames.get(i);
-                        String value = out.getString(i) == null ? "" : out.getString(i);
-                        
-                        map.put(columnName, value);
-                    }
-                    
-                    dbTableStats.put(tableName, map);
-                }
-                assert !dbTableStats.isEmpty();
-            } catch (SQLException e) {
-                ex = e;
-                LOG.debug("Error while collecting DB parameters: " + e.getMessage());
-            } finally {
-                try {
-                    s.close();
-                } catch(SQLException e2) { }  
-            }
-            failed_attempts++;
-        }
-        
-        if (dbGlobalStats.isEmpty()) {
-            raiseException("Error while collecting DB status parameters.", ex, ErrorCodes.DB_ERROR);
-        }
+        assert(!dbParams.isEmpty());
     }
 
     @Override
-    public String collectVersion() {
-        String dbVersion = dbConf.get(versionKey);
-        int verIdx = dbVersion.indexOf('-');
+    protected void getGlobalStats(Connection conn) throws SQLException {
+        assert(!conn.isClosed());
+        Statement s = conn.createStatement();
+        ResultSet out = s.executeQuery("SELECT * FROM INFORMATION_SCHEMA.GLOBAL_STATUS;");
+        while(out.next()) {
+            dbGlobalStats.put(out.getString(1).toLowerCase(), out.getString(2));
+        }
+        assert(!dbGlobalStats.isEmpty());
+    }
+    
+    @Override
+    protected void getTableStats(Connection conn) throws SQLException {
+        assert(!conn.isClosed());
+        Statement s = conn.createStatement();
+        ResultSet out = s.executeQuery("SELECT * FROM INFORMATION_SCHEMA.TABLES" +
+                " WHERE TABLE_SCHEMA='" + databaseName + "' ORDER BY TABLE_NAME;");
+        resultHelper(out, dbTableStats, "table_name", false);
+        assert(!dbTableStats.isEmpty());
+    }
+    
+    @Override
+    protected void getVersionInfo(Connection conn) throws SQLException {
+        super.getVersionInfo(conn);
+        
+        // Include only DBMS version info here
+        int verIdx = this.versionInfo.version.indexOf('-');
         if (verIdx >= 0)
-	        dbVersion = dbVersion.substring(0, verIdx);
-        return dbVersion;
+            this.versionInfo.version = this.versionInfo.version.substring(0, verIdx);
+        
+        Statement s = conn.createStatement();
+        ResultSet out = s.executeQuery("SELECT * FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES"
+                + " WHERE VARIABLE_NAME LIKE 'version_%'");
+        while (out.next()) {
+            String name = out.getString(1).toLowerCase();
+            String value = out.getString(2);
+            if (name.equals("version_comment")) {
+                value = value.replaceAll("[()]", "");
+                this.versionInfo.osName = value.toLowerCase();
+            } else if (name.equals("version_compile_machine")) {
+                this.versionInfo.architecture = value.toLowerCase();
+            } else {
+                continue;
+            }
+        }
+        
     }
 }

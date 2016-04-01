@@ -17,14 +17,20 @@
 package com.oltpbenchmark.util.dbms_collectors;
 
 public class DBParameterCollectorGen {
-    public static DBParameterCollector getCollector(String dbType, String dbUrl, String username, String password) {
+    public static DBParameterCollector getCollector(String dbType, 
+                                                    String dbUrl,
+                                                    String username,
+                                                    String password) {
         String db = dbType.toLowerCase();
+        DBParameterCollector collector = null;
         if (db.equals("mysql")) {
-            return new MYSQLCollector(dbUrl, username, password);
+            collector = new MYSQLCollector();
         } else if (db.equals("postgres")) {
-            return new POSTGRESCollector(dbUrl, username, password);
+            collector = new POSTGRESCollector();
         } else {
-            return new DBCollector();
+            collector = new DBCollector();
         }
+        collector.collect(dbUrl, username, password);
+        return collector;
     }
 }

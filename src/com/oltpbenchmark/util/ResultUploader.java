@@ -40,7 +40,9 @@ import org.apache.log4j.Logger;
 
 import java.io.*;
 import java.util.Date;
+import java.util.Map;
 import java.util.TimeZone;
+import java.util.TreeMap;
 import java.util.zip.GZIPOutputStream;
 
 public class ResultUploader {
@@ -57,9 +59,8 @@ public class ResultUploader {
     };
 
     private static String[] BENCHMARK_KEY_FIELD = {
-            "isolation",
             "scalefactor",
-            "terminals"
+            "terminals",
     };
 
     XMLConfiguration expConf;
@@ -89,7 +90,7 @@ public class ResultUploader {
         try {
             windowSize = Integer.parseInt(argsLine.getOptionValue("s"));
         } catch (NumberFormatException e) {
-            windowSize = 5;
+            windowSize = 1;
         }
 
         this.collector = DBParameterCollectorGen.getCollector(dbType, dbUrl, username, password);
@@ -106,7 +107,6 @@ public class ResultUploader {
     }
     
     public void writeDBTables(PrintStream os) {
-        //String dbConf = collector.collectTableParameters();
         os.print("");
     }
 
@@ -119,11 +119,37 @@ public class ResultUploader {
     }
 
     public void writeSummary(PrintStream os) {
+        
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         Date now = new Date();
         JSONStringer stringer = new JSONStringer();
+        
+        // Comput latency statistics
         DistributionStatistics ld = results.latencyDistribution;
         final double SECONDS_FACTOR = 1e6;
+        Map<String, String> latencyMap = new TreeMap<String, String>();
+        latencyMap.put("25th_percentile", Double.toString(
+                ld.get25thPercentile() / SECONDS_FACTOR));
+        latencyMap.put("75th_percentile", Double.toString(
+                ld.get75thPercentile() / SECONDS_FACTOR));
+        latencyMap.put("90th_percentile", Double.toString(
+                ld.get90thPercentile() / SECONDS_FACTOR));
+        latencyMap.put("95th_percentile", Double.toString(
+                ld.get95thPercentile() / SECONDS_FACTOR));
+        latencyMap.put("99th_percentile", Double.toString(
+                ld.get99thPercentile() / SECONDS_FACTOR));
+        latencyMap.put("average", Double.toString(
+                ld.getAverage() / SECONDS_FACTOR));
+        latencyMap.put("max", Double.toString(
+                ld.getMaximum() / SECONDS_FACTOR));
+        latencyMap.put("min", Double.toString(
+                ld.getMinimum() / SECONDS_FACTOR));
+        latencyMap.put("median", Double.toString(
+                ld.getMedian() / SECONDS_FACTOR));
+        latencyMap.put("standard_deviation", Double.toString(
+                ld.getStandardDeviation() / SECONDS_FACTOR));
+        
+        // Convert all fields into a JSON string
         try {
             stringer.object()
                     .key("timestamp_utc_sec")
@@ -132,37 +158,33 @@ public class ResultUploader {
                     .value(dbType)
                     .key("dbms_version")
                     .value(collector.collectVersion())
-                    .key("dbms_info")
-                    .value("TODO")
+                    .key("os_name")
+                    .value(collector.collectOSName())
+                    .key("architecture")
+                    .value(collector.collectArchitecture())
+                    .key("database")
+                    .value(collector.collectDatabaseName())
+                    .key("isolation_level")
+                    .value(collector.collectIsolationLevel())
                     .key("benchmark")
                     .value(benchType);
             for (String field: BENCHMARK_KEY_FIELD) {
+                String value = expConf.getString(field) == null ?
+                        "" : expConf.getString(field).toLowerCase();
                 stringer.key(field)
-                        .value(expConf.getString(field));
+                        .value(value);
             }
-            stringer.key("latency_sec")
-                        .object()
-                        .key("25th_percentile")
-                        .value(ld.get25thPercentile() / SECONDS_FACTOR)
-                        .key("75th_percentile")
-                        .value(ld.get75thPercentile() / SECONDS_FACTOR)
-                        .key("90th_percentile")
-                        .value(ld.get90thPercentile() / SECONDS_FACTOR)
-                        .key("95th_percentile")
-                        .value(ld.get95thPercentile() / SECONDS_FACTOR)
-                        .key("99th_percentile")
-                        .value(ld.get99thPercentile() / SECONDS_FACTOR)
-                        .key("average")
-                        .value(ld.getAverage() / SECONDS_FACTOR)
-                        .key("max")
-                        .value(ld.getMaximum() / SECONDS_FACTOR)
-                        .key("median")
-                        .value(ld.getMedian() / SECONDS_FACTOR)
-                        .key("min")
-                        .value(ld.getMinimum() / SECONDS_FACTOR)
-                        .key("standard_deviation")
-                        .value(ld.getStandardDeviation() / SECONDS_FACTOR)
-                        .endObject()
+            stringer.key("time_sec")
+                    .value(results.nanoSeconds / 1e9)
+                    .key("throughput_req_per_sec")
+                    .value(results.getRequestsPerSecond())
+                    .key("latency_sec")
+                    .object();
+            for (Map.Entry<String, String> kv : latencyMap.entrySet()) {
+                stringer.key(kv.getKey())
+                        .value(kv.getValue());
+            }
+            stringer.endObject()
                     .endObject();
         } catch(JSONException e) {
             e.printStackTrace();

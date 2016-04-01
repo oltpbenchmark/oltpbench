@@ -18,170 +18,117 @@ package com.oltpbenchmark.util.dbms_collectors;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
-
-import com.oltpbenchmark.util.ErrorCodes;
 
 class POSTGRESCollector extends DBCollector {
     private static final Logger LOG = Logger.getLogger(POSTGRESCollector.class);
 
-    private static final String[] TABLE_STAT_VIEWS = {
-        "pg_stat_user_tables",
-        "pg_statio_user_tables",
-        "pg_stat_user_indexes",
-        "pg_statio_user_indexes"
+    private static final String[] TABLE_STAT_QUERIES = {
+        "SELECT * FROM pg_stat_user_tables;",
+        "SELECT * FROM pg_statio_user_tables;",
     };
-
-    public POSTGRESCollector(String oriDBUrl, String username, String password) {
-        this.versionKey = "server_version";
-
-        Connection conn = connect(oriDBUrl, username, password);
-        assert(conn != null);
         
-        getGlobalVars(conn);
-        assert(!dbConf.isEmpty());
-        
-        getGlobalStatus(conn);
+    private static final String[] INDEX_STAT_QUERIES = {
+        "SELECT * FROM pg_stat_user_indexes;",
+        "SELECT * FROM pg_statio_user_indexes;"
+    };
+    
+    @Override
+    protected void getGlobalParameters(Connection conn) throws SQLException {
+        assert(!conn.isClosed());
+        Statement s = conn.createStatement();
+        ResultSet out = s.executeQuery("SELECT name, setting FROM pg_settings;");
+        while(out.next()) {
+            dbParams.put(out.getString(1).toLowerCase(), out.getString(2));
+        }
+        assert(!dbParams.isEmpty());
+    }
+    
+    @Override
+    protected void getGlobalStats(Connection conn) throws SQLException {
+        assert(!conn.isClosed());
+        Statement s = conn.createStatement();
+        ResultSet out = s.executeQuery("SELECT * FROM pg_stat_bgwriter;");
+        resultHelper(out, dbGlobalStats, false);
+        s.close();
         assert(!dbGlobalStats.isEmpty());
+    }
+    
+    @Override
+    protected void getDatabaseStats(Connection conn) throws SQLException {
+        assert(!conn.isClosed());
+        Statement s = conn.createStatement();
+        ResultSet out = s.executeQuery("SELECT * FROM pg_stat_database WHERE datname=\'" + databaseName + "\';");
+        resultHelper(out, dbDatabaseStats, "datname", false);
+        s.close();
         
-        getTableInfo(conn);
+        assert(!dbDatabaseStats.isEmpty());
+    }
+    
+    @Override
+    protected void getTableStats(Connection conn) throws SQLException {
+        assert(!conn.isClosed());
+        Statement s = null;
+        ResultSet out = null;
+        for (String query : TABLE_STAT_QUERIES) {
+            s = conn.createStatement();
+            out = s.executeQuery(query);
+            resultHelper(out, dbTableStats, "relname", true);
+        }
+        s.close();
+        if (!tableNames.equals(dbTableStats.keySet())) {
+            String error = "Table name mismatch.\n  Expected: " +
+                    this.tableNames.toString() + "\n  Actual: " +
+                    dbTableStats.keySet() + "\n";
+            throw new SQLException(error);
+        }
+        
         assert(!dbTableStats.isEmpty());
-        
-        try {
-            conn.close();
-        } catch (SQLException e) {
-        }
     }
     
-    private void getGlobalVars(Connection conn) {
-        SQLException ex = null;
-        int failed_attempts = 0;
-        while (dbConf.isEmpty() && failed_attempts < MAX_ATTEMPTS) {
-            Statement s = null;
-            try {
-                assert(!conn.isClosed());
-                s = conn.createStatement();
-                ResultSet out = s.executeQuery("SHOW ALL;");
-                while(out.next()) {
-                    dbConf.put(out.getString("name"), out.getString("setting"));
-                }
-            } catch (SQLException e) {
-                ex = e;
-                LOG.debug("Error while collecting DB parameters: " + e.getMessage());
-            } finally {
-                try {
-                    s.close();
-                } catch(SQLException e2) { 
-                }
-            }
-            failed_attempts++;
+    @Override
+    protected void getIndexStats(Connection conn) throws SQLException {
+        assert(!conn.isClosed());
+        Statement s = null;
+        ResultSet out = null;
+        for (String query : INDEX_STAT_QUERIES) {
+            s = conn.createStatement();
+            out = s.executeQuery(query);
+            resultHelper(out, dbIndexStats, "indexrelname", true);
         }
+        s.close();
         
-        if (dbConf.isEmpty()) {
-            raiseException("Error while collecting DB configuration parameters.", ex, ErrorCodes.DB_ERROR);
-        }
+        assert(!dbIndexStats.isEmpty());
     }
     
-    private void getGlobalStatus(Connection conn) {
-        SQLException ex = null;
-        int failed_attempts = 0;
-
-        while (dbGlobalStats.isEmpty() && failed_attempts < MAX_ATTEMPTS) {
-            Statement s = null;
-            ResultSet out = null;
-            try {
-                assert(!conn.isClosed());
-                s = conn.createStatement();
-                out = s.executeQuery("SELECT * FROM pg_stat_bgwriter;");
-                resultHelper(out, dbGlobalStats, "pg_stat_bgwriter");
-                
-                out = s.executeQuery("SELECT * FROM pg_stat_database WHERE datname=\'" + databaseName + "\';");
-                resultHelper(out, dbGlobalStats, "pg_stat_database");
-                s.close();
-            } catch (SQLException e) {
-                LOG.debug("Error while collecting DB parameters: " + e.getMessage());
-                ex = e;
-            } finally {
-                try {
-                    s.close();
-                } catch(SQLException e2) { 
-                    Thread.dumpStack();
-                }
-            }
-            failed_attempts++;
-        }
+    @Override
+    protected void getVersionInfo(Connection conn) throws SQLException {
+        super.getVersionInfo(conn);
         
-        if (dbGlobalStats.isEmpty()) {
-            raiseException("Error while collecting DB status parameters.", ex, ErrorCodes.DB_ERROR);
-        }
-    }
-    
-    private void getTableInfo(Connection conn) {
-        SQLException ex = null;
-        int failed_attempts = 0;
-
-        while (dbTableStats.isEmpty() && failed_attempts < MAX_ATTEMPTS) {
-            Statement s = null;
-            ResultSet out = null;
-            try {
-                assert(!conn.isClosed());
-                
-                for (String tablename : this.tableNames) {
-                    Map<String, String> tmap = new TreeMap<String, String>();
-                    for (String view : TABLE_STAT_VIEWS) {
-                        s = conn.createStatement();
-                        out = s.executeQuery(String.format(
-                                "SELECT * FROM %s WHERE relname=\'%s\'",
-                                view,
-                                tablename));
-                        resultHelper(out, tmap, view);
-                    }
-                    dbTableStats.put(tablename, tmap);
-                }
-                s.close();
-            } catch (SQLException e) {
-                LOG.debug("Error while collecting DB parameters: " + e.getMessage());
-                ex = e;
-            } finally {
-                try {
-                    s.close();
-                } catch(SQLException e2) { 
-                    Thread.dumpStack();
-                }
-            }
-            failed_attempts++;
-        }
+        final Pattern COMPILE_PATTERN = Pattern.compile("\\S+-\\S+-\\S+-[^,]+");
+        final Pattern OS_PATTERN = Pattern.compile("(?<=\\()\\S+");
         
-        if (dbTableStats.isEmpty()) {
-            raiseException("Error while collecting DB status parameters.", ex, ErrorCodes.DB_ERROR);
+        Statement s = conn.createStatement();
+        ResultSet out = s.executeQuery("SELECT version();");
+        String result = null;
+        while (out.next()) {
+            result = out.getString(1);
         }
-    }
-    
-    private void resultHelper(ResultSet out, Map<String, String> destMap, String keyPrefix) {
-        try {
-            while(out.next()) {
-                ResultSetMetaData metadata;
-                metadata = out.getMetaData();
-                int numColumns = metadata.getColumnCount();
-                for (int i = 1; i <= numColumns; ++i) {
-                    String value = out.getString(i) == null ? "" : out.getString(i);
-                    String key;
-                    if (keyPrefix != null) {
-                        key = keyPrefix + "__" + metadata.getColumnName(i);
-                    } else {
-                        key = metadata.getColumnName(i);
-                    }
-                    destMap.put(key, value);
-                }
+        if (result != null) {
+            Matcher m = COMPILE_PATTERN.matcher(result);
+            if (m.find()) {
+                this.versionInfo.architecture = m.group()
+                        .split("-", 2)[0].toLowerCase();
             }
-        } catch (SQLException e) {
-            LOG.debug("Error while collecting DB parameters: " + e.getMessage());
+            m = OS_PATTERN.matcher(result);
+            if (m.find()) {
+                this.versionInfo.osName = m.group().toLowerCase();
+            }
         }
     }
 

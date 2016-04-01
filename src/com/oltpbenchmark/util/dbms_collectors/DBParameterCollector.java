@@ -17,7 +17,12 @@
 package com.oltpbenchmark.util.dbms_collectors;
 
 public interface DBParameterCollector {
+    void collect(String oriDBUrl, String username, String password);
     String collectConfigParameters();
+    String collectDatabaseName();
+    String collectIsolationLevel();
     String collectStats();
     String collectVersion();
+    String collectOSName();
+    String collectArchitecture();
 }
