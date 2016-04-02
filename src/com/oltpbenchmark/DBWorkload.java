@@ -584,7 +584,7 @@ public class DBWorkload {
             
             // Special result uploader
             ResultUploader ru = new ResultUploader(r, xmlConfig, argsLine);
-            boolean includeRawData = !isBooleanOptionSet(argsLine, "exclude-raw");
+            boolean includeRawData = isBooleanOptionSet(argsLine, "exclude-raw");
             
             if (argsLine.hasOption("o")) {
                 // Check if directory needs to be created
@@ -630,12 +630,7 @@ public class DBWorkload {
                 LOG.info("Output benchmark config into file: " + nextName);
                 if (ru != null) ru.writeBenchmarkConf(ss);
                 ss.close();
-                
-                nextName = FileUtil.getNextFilename(FileUtil.joinPath(outputDirectory, baseFile + ".tbls"));
-                ss = new PrintStream(new File(nextName));
-                LOG.info("Output table information into file: " + nextName);
-                if (ru != null) ru.writeDBTables(ss);
-                ss.close();
+
             } else if (LOG.isDebugEnabled()) {
                 LOG.debug("No output file specified");
             }
@@ -643,7 +638,8 @@ public class DBWorkload {
             if (argsLine.hasOption("s")) {
                 int windowSize = Integer.parseInt(argsLine.getOptionValue("s"));
                 LOG.info("Grouped into Buckets of " + windowSize + " seconds");
-                r.writeCSV(windowSize, ps);
+                //r.writeCSV(windowSize, ps);
+                if (ru != null) ru.writeResultStats(ps);
 
                 if (isBooleanOptionSet(argsLine, "upload") && ru != null) {
                     ru.uploadResult(includeRawData);
@@ -661,7 +657,8 @@ public class DBWorkload {
                             String prepended = outputDirectory + timestampValue;
                             String nextName = FileUtil.getNextFilename(FileUtil.joinPath(outputDirectory, baseFile + ".res")); 
                             ts = new PrintStream(new File(nextName));
-                            r.writeCSV(windowSize, ts, t);
+                            //r.writeCSV(windowSize, ts, t);
+                            if (ru != null) ru.writeResultStats(ps, t);
                             ts.close();
                         }
                     }

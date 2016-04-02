@@ -19,6 +19,7 @@ package com.oltpbenchmark.util;
 import com.oltpbenchmark.DistributionStatistics;
 import com.oltpbenchmark.Results;
 import com.oltpbenchmark.Results.ResultIterable;
+import com.oltpbenchmark.api.TransactionType;
 import com.oltpbenchmark.util.dbms_collectors.DBParameterCollector;
 import com.oltpbenchmark.util.dbms_collectors.DBParameterCollectorGen;
 import com.oltpbenchmark.util.json.JSONException;
@@ -107,11 +108,6 @@ public class ResultUploader {
         String dbConf = collector.collectStats();
         os.print(dbConf);
     }
-    
-    public void writeDBTables(PrintStream os) {
-        //os.print("");
-        writeResultStats(os);
-    }
 
     public void writeBenchmarkConf(PrintStream os) throws ConfigurationException {
         XMLConfiguration outputConf = (XMLConfiguration) expConf.clone();
@@ -122,35 +118,17 @@ public class ResultUploader {
     }
 
     public void writeSummary(PrintStream os) {
+        ResultIterable res = new ResultIterable(this.results, 0,
+                ResultIterable.SECONDS_FACTOR,
+                new String[]{"time_sec",
+                "throughput_req_per_sec_scaled"});
+       String[] statLabels = res.getResultLabels();
+       int statsLength = statLabels.length;
+       Iterator<double[]> iter = res.iterator();
         
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         Date now = new Date();
         JSONStringer stringer = new JSONStringer();
-        
-        // Comput latency statistics
-        DistributionStatistics ld = results.latencyDistribution;
-        final double SECONDS_FACTOR = 1e6;
-        Map<String, String> latencyMap = new TreeMap<String, String>();
-        latencyMap.put("25th_percentile", Double.toString(
-                ld.get25thPercentile() / SECONDS_FACTOR));
-        latencyMap.put("75th_percentile", Double.toString(
-                ld.get75thPercentile() / SECONDS_FACTOR));
-        latencyMap.put("90th_percentile", Double.toString(
-                ld.get90thPercentile() / SECONDS_FACTOR));
-        latencyMap.put("95th_percentile", Double.toString(
-                ld.get95thPercentile() / SECONDS_FACTOR));
-        latencyMap.put("99th_percentile", Double.toString(
-                ld.get99thPercentile() / SECONDS_FACTOR));
-        latencyMap.put("average", Double.toString(
-                ld.getAverage() / SECONDS_FACTOR));
-        latencyMap.put("max", Double.toString(
-                ld.getMaximum() / SECONDS_FACTOR));
-        latencyMap.put("min", Double.toString(
-                ld.getMinimum() / SECONDS_FACTOR));
-        latencyMap.put("median", Double.toString(
-                ld.getMedian() / SECONDS_FACTOR));
-        latencyMap.put("standard_deviation", Double.toString(
-                ld.getStandardDeviation() / SECONDS_FACTOR));
         
         // Convert all fields into a JSON string
         try {
@@ -178,17 +156,15 @@ public class ResultUploader {
                         .value(value);
             }
             stringer.key("time_sec")
-                    .value(results.nanoSeconds / 1e9)
-                    .key("throughput_req_per_sec")
-                    .value(results.getRequestsPerSecond())
-                    .key("latency_sec")
-                    .object();
-            for (Map.Entry<String, String> kv : latencyMap.entrySet()) {
-                stringer.key(kv.getKey())
-                        .value(kv.getValue());
+                    .value(results.nanoSeconds / 1e9);
+            while (iter.hasNext()) {
+                double[] stats = iter.next();
+                for (int i = 0; i < statsLength; ++i) {
+                    stringer.key(statLabels[i])
+                            .value(stats[i]);
+                }
             }
-            stringer.endObject()
-                    .endObject();
+            stringer.endObject();
         } catch(JSONException e) {
             e.printStackTrace();
         }
@@ -196,11 +172,15 @@ public class ResultUploader {
     }
     
     public void writeResultStats(PrintStream os) {
+        writeResultStats(os, TransactionType.INVALID);
+    }
+    
+    public void writeResultStats(PrintStream os, TransactionType txId) {
         // The last param tells the iterator to ignore results with
         // that (stat) name
         ResultIterable res = new ResultIterable(this.results, 
-                ResultIterable.MILLISECONDS_FACTOR, this.windowSize,
-                new String[]{"stdev_lat"});
+                 this.windowSize, ResultIterable.MILLISECONDS_FACTOR,
+                new String[]{"stdev_lat"}, txId);
         String[] statLabels = res.getResultLabels();
         int statsLength = statLabels.length;
         Iterator<double[]> iter = res.iterator();
@@ -239,7 +219,6 @@ public class ResultUploader {
             File summaryFile = File.createTempFile("summary", ".tmp");
             File dbConfFile = File.createTempFile("dbConf", ".tmp");
             File dbStatusFile = File.createTempFile("dbStatus", ".tmp");
-            File dbTableFile = File.createTempFile("dbTbls", ".tmp");
             File rawDataFile = null;
             if (includeRawData) {
             	rawDataFile = File.createTempFile("raw", ".gz");
@@ -254,8 +233,7 @@ public class ResultUploader {
             confOut.close();
 
             confOut = new PrintStream(new FileOutputStream(sampleFile));
-            results.writeCSV(windowSize, confOut);
-            //writeResultStats(confOut);
+            writeResultStats(confOut);
             confOut.close();
 
             confOut = new PrintStream(new FileOutputStream(summaryFile));
@@ -264,10 +242,6 @@ public class ResultUploader {
             
             confOut = new PrintStream(new FileOutputStream(dbStatusFile));
             writeDBStats(confOut);
-            confOut.close();
-            
-            confOut = new PrintStream(new FileOutputStream(dbTableFile));
-            writeDBTables(confOut);
             confOut.close();
 
             if (includeRawData) {
@@ -284,7 +258,6 @@ public class ResultUploader {
                     .addPart("sample_data", new FileBody(sampleFile))
                     .addPart("db_conf_data", new FileBody(dbConfFile))
                     .addPart("db_status_data", new FileBody(dbStatusFile))
-                    .addPart("db_table_data", new FileBody(dbTableFile))
                     .addPart("benchmark_conf_data", new FileBody(expConfFile))
                     .addPart("summary_data", new FileBody(summaryFile));
             

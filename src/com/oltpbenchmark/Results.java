@@ -150,8 +150,7 @@ public final class Results {
         private final Results results;
         private final double windowSizeSeconds;
         private final BitSet mask;
-        private final boolean globalStats;
-
+        private final TransactionType txId;
         
         /**
          * The latency samples are given in microseconds. These samples are
@@ -161,21 +160,15 @@ public final class Results {
         private final double conversionFactor;
         
         public ResultIterable(Results results, int windowSizeSeconds,
-                double conversionFactor, String[] ignoreLabels) {
+                double conversionFactor, String[] ignoreLabels,
+                TransactionType txId) {
             assert(windowSizeSeconds >= 0);
             
             this.results = results;
             this.conversionFactor = conversionFactor;
-            
-            if (windowSizeSeconds == NO_WINDOW) {
-                this.globalStats = true;
-                this.windowSizeSeconds = results.nanoSeconds / 1e6;
-            } else {
-                this.globalStats = false;
-                this.windowSizeSeconds = windowSizeSeconds;
-            }
+            this.txId = txId;
+            this.windowSizeSeconds = windowSizeSeconds;
 
-            
             this.mask = getMask();
             if (ignoreLabels.length > 0) {
                 int numLabels = LABELS.length;
@@ -193,28 +186,31 @@ public final class Results {
         public ResultIterable(Results results, int windowSizeSeconds,
                 TransactionType txType) {
             this(results, windowSizeSeconds, MILLISECONDS_FACTOR,
-                    new String[0]);
+                    new String[0], TransactionType.INVALID);
         }
         
         public ResultIterable(Results results, double conversionFormat,
                 String[] ignoreLabels) {
-            this(results, NO_WINDOW, conversionFormat, ignoreLabels);
+            this(results, NO_WINDOW, conversionFormat, ignoreLabels,
+                    TransactionType.INVALID);
         }
         
-        public ResultIterable(Results results, double conversionFormat,
-                int windowSize, String[] ignoreLabels) {
-            this(results, windowSize, conversionFormat, ignoreLabels);
+        public ResultIterable(Results results, int windowSize,
+                double conversionFormat, String[] ignoreLabels) {
+            this(results, windowSize, conversionFormat, ignoreLabels,
+                    TransactionType.INVALID);
         }
         
         @Override
         public Iterator<double[]> iterator() {
             Iterator<DistributionStatistics> iter = null;
-            if (this.globalStats) {
+            if (this.windowSizeSeconds != NO_WINDOW) {
                 iter = (new TimeBucketIterable(results.latencySamples,
-                        (int) windowSizeSeconds, TransactionType.INVALID))
+                        (int) windowSizeSeconds, this.txId))
                         .iterator();
+                return new ResultIterator(iter, this.windowSizeSeconds,
+                        this.conversionFactor, this.mask);
             } else {
-            
                 iter = new Iterator<DistributionStatistics>() {
                     
                             private final DistributionStatistics stats =
@@ -242,10 +238,9 @@ public final class Results {
                             }
                     
                 };
+                return new ResultIterator(iter, 1, this.conversionFactor,
+                        this.mask);
             }
-
-            return new ResultIterator(iter, this.windowSizeSeconds,
-                    this.conversionFactor, this.mask);
         }
         
         private String getUnitString() {
