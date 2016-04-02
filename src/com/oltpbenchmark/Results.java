@@ -19,10 +19,14 @@ package com.oltpbenchmark;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import com.oltpbenchmark.LatencyRecord.Sample;
 import com.oltpbenchmark.ThreadBench.TimeBucketIterable;
@@ -128,6 +132,235 @@ public final class Results {
     
     public boolean valid() {
     	return getRequestsPerSecond() != 0.0;
+    }
+    
+    public static final class ResultIterable implements Iterable<double[]> {
+        
+        public static final String LABELS[] = {"time_sec",
+                "throughput_req_per_sec", "avg_lat", "min_lat",
+                "25th_lat", "median_lat", "75th_lat", "90th_lat",
+                "95th_lat", "99th_lat", "max_lat", "stdev_lat", 
+                "throughput_req_per_sec_scaled"};
+        
+        public static final double SECONDS_FACTOR = 1e6;
+        public static final double MILLISECONDS_FACTOR = 1e3;
+        public static final double MICROSECONDS_FACTOR = 1.0;
+        public static final int NO_WINDOW = 0;
+
+        private final Results results;
+        private final double windowSizeSeconds;
+        private final BitSet mask;
+        private final boolean globalStats;
+
+        
+        /**
+         * The latency samples are given in microseconds. These samples are
+         * converted to milliseconds by default, but conversionFactor can
+         * optionally be set to convert to a different unit.
+         */
+        private final double conversionFactor;
+        
+        public ResultIterable(Results results, int windowSizeSeconds,
+                double conversionFactor, String[] ignoreLabels) {
+            assert(windowSizeSeconds >= 0);
+            
+            this.results = results;
+            this.conversionFactor = conversionFactor;
+            
+            if (windowSizeSeconds == NO_WINDOW) {
+                this.globalStats = true;
+                this.windowSizeSeconds = results.nanoSeconds / 1e6;
+            } else {
+                this.globalStats = false;
+                this.windowSizeSeconds = windowSizeSeconds;
+            }
+
+            
+            this.mask = getMask();
+            if (ignoreLabels.length > 0) {
+                int numLabels = LABELS.length;
+                for (int i = 0; i < numLabels; ++i) {
+                    for (int j = 0; j < ignoreLabels.length; ++j) {
+                        if (LABELS[i].equals(ignoreLabels[j])) {
+                            this.mask.clear(i);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        public ResultIterable(Results results, int windowSizeSeconds,
+                TransactionType txType) {
+            this(results, windowSizeSeconds, MILLISECONDS_FACTOR,
+                    new String[0]);
+        }
+        
+        public ResultIterable(Results results, double conversionFormat,
+                String[] ignoreLabels) {
+            this(results, NO_WINDOW, conversionFormat, ignoreLabels);
+        }
+        
+        public ResultIterable(Results results, double conversionFormat,
+                int windowSize, String[] ignoreLabels) {
+            this(results, windowSize, conversionFormat, ignoreLabels);
+        }
+        
+        @Override
+        public Iterator<double[]> iterator() {
+            Iterator<DistributionStatistics> iter = null;
+            if (this.globalStats) {
+                iter = (new TimeBucketIterable(results.latencySamples,
+                        (int) windowSizeSeconds, TransactionType.INVALID))
+                        .iterator();
+            } else {
+            
+                iter = new Iterator<DistributionStatistics>() {
+                    
+                            private final DistributionStatistics stats =
+                                    ResultIterable.this.results.latencyDistribution;
+                            
+                            private boolean done = false;
+    
+                            @Override
+                            public boolean hasNext() {
+                                return !done;
+                            }
+    
+                            @Override
+                            public DistributionStatistics next() {
+                                if (!hasNext()) {
+                                    throw new NoSuchElementException();
+                                }
+                                done = true;
+                                return stats;
+                            }
+    
+                            @Override
+                            public void remove() {
+                                throw new UnsupportedOperationException("unsupported");
+                            }
+                    
+                };
+            }
+
+            return new ResultIterator(iter, this.windowSizeSeconds,
+                    this.conversionFactor, this.mask);
+        }
+        
+        private String getUnitString() {
+            String unit = null;
+            if (this.conversionFactor == MICROSECONDS_FACTOR) {
+                unit = "_us";
+            } else if (this.conversionFactor == MILLISECONDS_FACTOR) {
+                unit = "_ms";
+            } else if (this.conversionFactor == SECONDS_FACTOR) {
+                unit = "_sec";
+            } else{
+                unit = "";
+            }
+            return unit;
+        }
+        
+        public String[] getResultLabels() {
+            String unit = getUnitString();
+            int numLabels = LABELS.length;
+            
+            if (unit.equals("") && mask.cardinality() == numLabels) {
+                return Arrays.copyOf(LABELS, numLabels);
+            }
+            
+            String[] result = new String[mask.cardinality()];
+            int resIdx = 0;
+            for (int i = 0; i < numLabels; ++i) {
+                if (mask.get(i)) {
+                    String next = LABELS[i];
+                    if (next.endsWith("_lat")) {
+                        next += unit;
+                    }
+                    result[resIdx++] = next;
+                }
+            }
+            return result;
+        }
+        
+        private static BitSet getMask() {
+            // Returns a bitset with all bits set to true
+            BitSet mask = new BitSet(LABELS.length);
+            mask.set(0, LABELS.length, true);
+            return mask;
+        }
+    }
+    
+    public static final class ResultIterator implements Iterator<double[]> {
+
+        private Iterator<DistributionStatistics> statsIter;
+        private final BitSet statMask;
+        private double windowSizeSeconds;
+        private int elapsedSeconds;
+        private double conversionFactor;
+        
+        public ResultIterator(Iterator<DistributionStatistics> statsIter,
+                double windowSizeSeconds, double conversionFactor,
+                BitSet statMask) {
+            assert(conversionFactor > 0);
+            this.conversionFactor = conversionFactor;
+            this.windowSizeSeconds = windowSizeSeconds;
+            this.elapsedSeconds = 0;
+            this.statsIter = statsIter;
+            this.statMask = statMask;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return statsIter.hasNext();
+        }
+
+        @Override
+        public double[] next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            DistributionStatistics stat = statsIter.next();
+            int numStats = statMask.cardinality();
+            int totalStats = statMask.size();
+
+            double[] fullResult = {
+                    (double) elapsedSeconds,
+                    (double) stat.getCount() / windowSizeSeconds,
+                    stat.getAverage() / conversionFactor,
+                    stat.getMinimum() / conversionFactor,
+                    stat.get25thPercentile() / conversionFactor,
+                    stat.getMedian() / conversionFactor,
+                    stat.get75thPercentile() / conversionFactor,
+                    stat.get90thPercentile() / conversionFactor,
+                    stat.get95thPercentile() / conversionFactor,
+                    stat.get99thPercentile() / conversionFactor,
+                    stat.getMaximum() / conversionFactor,
+                    stat.getStandardDeviation() / conversionFactor,
+                    conversionFactor / stat.getAverage(),
+            };
+            assert(totalStats == fullResult.length);
+            if (numStats == totalStats) {
+                return fullResult;
+            }
+
+            int resIdx = 0;
+            double[] nextResult = new double[numStats];
+            for (int i = 0; i < totalStats; ++i) {
+                if (statMask.get(i)) {
+                    nextResult[resIdx++] = fullResult[i];
+                }
+            }
+            
+            elapsedSeconds += windowSizeSeconds;
+            return nextResult;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("unsupported");
+        }
     }
 
 }

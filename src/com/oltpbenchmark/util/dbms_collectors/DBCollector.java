@@ -295,7 +295,6 @@ class DBCollector implements DBParameterCollector {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        System.out.println(stringer.toString() == null);
         return JSONUtil.format(stringer.toString());
     }
     

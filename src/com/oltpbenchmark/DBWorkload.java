@@ -622,7 +622,7 @@ public class DBWorkload {
                 nextName = FileUtil.getNextFilename(FileUtil.joinPath(outputDirectory, baseFile + ".db.status"));
                 ss = new PrintStream(new File(nextName));
                 LOG.info("Output db status into file: " + nextName);
-                if (ru != null) ru.writeDBStatus(ss);
+                if (ru != null) ru.writeDBStats(ss);
                 ss.close();
 
                 nextName = FileUtil.getNextFilename(FileUtil.joinPath(outputDirectory, baseFile + ".ben.cnf"));

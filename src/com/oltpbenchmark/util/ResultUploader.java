@@ -18,6 +18,7 @@ package com.oltpbenchmark.util;
 
 import com.oltpbenchmark.DistributionStatistics;
 import com.oltpbenchmark.Results;
+import com.oltpbenchmark.Results.ResultIterable;
 import com.oltpbenchmark.util.dbms_collectors.DBParameterCollector;
 import com.oltpbenchmark.util.dbms_collectors.DBParameterCollectorGen;
 import com.oltpbenchmark.util.json.JSONException;
@@ -40,6 +41,7 @@ import org.apache.log4j.Logger;
 
 import java.io.*;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -101,13 +103,14 @@ public class ResultUploader {
         os.print(dbConf);
     }
     
-    public void writeDBStatus(PrintStream os) {
+    public void writeDBStats(PrintStream os) {
         String dbConf = collector.collectStats();
         os.print(dbConf);
     }
     
     public void writeDBTables(PrintStream os) {
-        os.print("");
+        //os.print("");
+        writeResultStats(os);
     }
 
     public void writeBenchmarkConf(PrintStream os) throws ConfigurationException {
@@ -191,6 +194,43 @@ public class ResultUploader {
         }
         os.println(JSONUtil.format(stringer.toString()));
     }
+    
+    public void writeResultStats(PrintStream os) {
+        // The last param tells the iterator to ignore results with
+        // that (stat) name
+        ResultIterable res = new ResultIterable(this.results, 
+                ResultIterable.MILLISECONDS_FACTOR, this.windowSize,
+                new String[]{"stdev_lat"});
+        String[] statLabels = res.getResultLabels();
+        int statsLength = statLabels.length;
+        Iterator<double[]> iter = res.iterator();
+        
+        JSONStringer stringer = new JSONStringer();
+        try {
+            stringer.object()
+                    .key("statlabels")
+                    .array();
+            for (int i = 0; i < statsLength; ++i) {
+                stringer.value(statLabels[i]);
+            }
+            stringer.endArray()
+                    .key("samples")
+                    .array();
+            while (iter.hasNext()) {
+                double[] stats = iter.next();
+                stringer.array();
+                for (int i = 0; i < statsLength; ++i) {
+                    stringer.value(Double.toString(stats[i]));
+                }
+                stringer.endArray();
+            }
+            stringer.endArray()
+                    .endObject();
+        } catch(JSONException e) {
+            e.printStackTrace();
+        }
+        os.println(JSONUtil.format(stringer.toString()));
+    }
 
     public void uploadResult(boolean includeRawData) throws ParseException {
         try {
@@ -215,6 +255,7 @@ public class ResultUploader {
 
             confOut = new PrintStream(new FileOutputStream(sampleFile));
             results.writeCSV(windowSize, confOut);
+            //writeResultStats(confOut);
             confOut.close();
 
             confOut = new PrintStream(new FileOutputStream(summaryFile));
@@ -222,7 +263,7 @@ public class ResultUploader {
             confOut.close();
             
             confOut = new PrintStream(new FileOutputStream(dbStatusFile));
-            writeDBStatus(confOut);
+            writeDBStats(confOut);
             confOut.close();
             
             confOut = new PrintStream(new FileOutputStream(dbTableFile));
