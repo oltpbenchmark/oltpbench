@@ -22,9 +22,12 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -32,14 +35,13 @@ import java.util.TreeSet;
 import org.apache.log4j.Logger;
 
 import com.oltpbenchmark.catalog.Catalog;
-import com.oltpbenchmark.util.ErrorCodes;
-import com.oltpbenchmark.util.JSONUtil;
-import com.oltpbenchmark.util.json.JSONException;
-import com.oltpbenchmark.util.json.JSONStringer;
+import com.oltpbenchmark.util.JSONSerializable;
+import com.oltpbenchmark.util.ResultObject.DBCollection;
+import com.oltpbenchmark.util.ResultObject.DBEntry;
 
 class DBCollector implements DBParameterCollector {
     
-    public class VersionInfo {
+    public static final class VersionInfo {
         String version = "";
         String osName = "";
         String architecture = "";
@@ -54,34 +56,51 @@ class DBCollector implements DBParameterCollector {
     }
     
     
-    private static final Logger LOG = Logger.getLogger(DBCollector.class);
+    public enum MapKeys {
+        VARNAMES ("variable_names"),
+        VARVALS ("variable_values"),
+        GLOBAL ("global"),
+        DATABASE ("database"),
+        TABLE ("table"),
+        INDEX ("index"),
+        GLBNAME ("global_name"),
+        GLBSTATS ("global_stats"),
+        GLBVARS ("global_variables"),
+        DATNAME ("database_name"),
+        DATSTATS ("database_stats"),
+        TABNAME ("table_name"),
+        TABSTATS ("table_stats"),
+        IDXNAME ("index_name"),
+        IDXSTATS ("index_stats");
         
-    protected static final int MAX_ATTEMPTS = 10;
+        public String key;
+        
+        private MapKeys(String key) {
+            this.key = key;
+        }
+        
+        @Override
+        public String toString() {
+            return key;
+        }
+    }
+        
+    private static final Logger LOG = Logger.getLogger(DBCollector.class);
+    private static final int MAX_ATTEMPTS = 10;
     
-    protected final Map<String, String> dbParams;
-    
-    protected final Map<String, String> dbGlobalStats;
-    
-    protected final Map<String, Map<String, String>> dbDatabaseStats;
-    
-    protected final Map<String, Map<String, String>> dbTableStats;
-    
+    protected final DBCollection dbParams;
+    protected final DBCollection dbStats;
     protected final Map<String, Map<String, String>> dbIndexStats;
-
+    
     protected final Set<String> tableNames;
-
     protected final VersionInfo versionInfo;
-    
     protected String databaseName;
-    
     protected String isolationLevel;
     
     
     public DBCollector() {
-        this.dbParams = new TreeMap<String, String>();
-        this.dbGlobalStats = new TreeMap<String, String>();
-        this.dbDatabaseStats = new TreeMap<String, Map<String, String>>();
-        this.dbTableStats = new TreeMap<String, Map<String, String>>();
+        this.dbParams = new DBCollection();
+        this.dbStats = new DBCollection();
         this.dbIndexStats = new TreeMap<String, Map<String, String>>();
         this.tableNames = new TreeSet<String>();
         this.versionInfo = new VersionInfo();
@@ -138,164 +157,94 @@ class DBCollector implements DBParameterCollector {
     }
     
     protected void getDatabaseName(Connection conn) throws SQLException {
-        this.databaseName = conn.getCatalog().toLowerCase();
+        try {
+            this.databaseName = conn.getCatalog().toLowerCase();
+        } catch(SQLException e) {
+            printSQLException(e, true);
+            this.databaseName = "";
+        }
     }
     
     protected void getVersionInfo(Connection conn) throws SQLException {
-        DatabaseMetaData metadata = conn.getMetaData();
-        this.versionInfo.version = metadata.getDatabaseProductVersion().toLowerCase();
+        try {
+            DatabaseMetaData metadata = conn.getMetaData();
+            this.versionInfo.version = metadata.
+                    getDatabaseProductVersion().toLowerCase();
+        } catch(SQLException e) {
+            printSQLException(e, true);
+        }
     }
     
     protected void getIsolationLevel(Connection conn) throws SQLException {
-        int isolation = conn.getTransactionIsolation();
-        switch(isolation) {
-            case Connection.TRANSACTION_SERIALIZABLE:
-                this.isolationLevel = "serializable";
-                break;
-            case Connection.TRANSACTION_REPEATABLE_READ:
-                this.isolationLevel = "repeatable_read";
-                break;
-            case Connection.TRANSACTION_READ_COMMITTED:
-                this.isolationLevel = "read_committed";
-                break;
-            case Connection.TRANSACTION_READ_UNCOMMITTED:
-                this.isolationLevel = "read_uncommitted";
-                break;
-            case Connection.TRANSACTION_NONE:
-            default:
-                this.isolationLevel = "none";
-        }
+        try {
+            int isolation = conn.getTransactionIsolation();
+            switch(isolation) {
+                case Connection.TRANSACTION_SERIALIZABLE:
+                    this.isolationLevel = "serializable";
+                    break;
+                case Connection.TRANSACTION_REPEATABLE_READ:
+                    this.isolationLevel = "repeatable_read";
+                    break;
+                case Connection.TRANSACTION_READ_COMMITTED:
+                    this.isolationLevel = "read_committed";
+                    break;
+                case Connection.TRANSACTION_READ_UNCOMMITTED:
+                    this.isolationLevel = "read_uncommitted";
+                    break;
+                case Connection.TRANSACTION_NONE:
+                default:
+                    this.isolationLevel = "none";
+            }
+        } catch(SQLException e) {
+            printSQLException(e, true);
+            this.isolationLevel = "";
+        } 
     }
     
     protected void getTables(Connection conn) throws SQLException {
-        DatabaseMetaData metadata = conn.getMetaData();
-        String[] types = {"TABLE"};
-        ResultSet rs = metadata.getTables(null, null, "%", types);
-        while (rs.next()) {
-            this.tableNames.add(rs.getString("table_name").toLowerCase());
+        try {
+            DatabaseMetaData metadata = conn.getMetaData();
+            String[] types = {"TABLE"};
+            ResultSet rs = metadata.getTables(null, null, "%", types);
+            while (rs.next()) {
+                this.tableNames.add(rs.getString("table_name").toLowerCase());
+            }
+            assert(tableNames.size() > 0);
+        } catch(SQLException e) {
+            printSQLException(e, true);
         }
-        assert(tableNames.size() > 0);
     }
     
     protected void getDatabaseVersionInfo(Connection conn) throws SQLException { }
     
-    protected void getGlobalParameters(Connection conn) throws SQLException { }
+    protected void getGlobalParameters(Connection conn) throws SQLException {
+        dbParams.add(new DBEntry(MapKeys.GLOBAL.toString(), Collections.EMPTY_LIST));
+    }
     
-    protected void getGlobalStats(Connection conn) throws SQLException { }
+    protected void getGlobalStats(Connection conn) throws SQLException {
+        dbStats.add(new DBEntry(MapKeys.GLOBAL.toString(), Collections.EMPTY_LIST));
+    }
     
-    protected void getDatabaseStats(Connection conn) throws SQLException { }
+    protected void getDatabaseStats(Connection conn) throws SQLException {
+        dbStats.add(new DBEntry(MapKeys.DATABASE.toString(), Collections.EMPTY_LIST));
+    }
     
-    protected void getTableStats(Connection conn) throws SQLException { }
+    protected void getTableStats(Connection conn) throws SQLException {
+        dbStats.add(new DBEntry(MapKeys.TABLE.toString(), Collections.EMPTY_LIST));
+    }
     
-    protected void getIndexStats(Connection conn) throws SQLException { }
-
-    @Override
-    public String collectConfigParameters() {
-        JSONStringer stringer = new JSONStringer();
-        try {
-            stringer.object()
-                    .key("system_variables")
-                    .array();
-            for (Map.Entry<String, String> kv : dbParams.entrySet()) {
-                stringer.object()
-                        .key("variable_name")
-                        .value(kv.getKey())
-                        .key("variable_value")
-                        .value(kv.getValue())
-                        .endObject();
-            }
-            stringer.endArray()
-                    .endObject();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return JSONUtil.format(stringer.toString());
+    protected void getIndexStats(Connection conn) throws SQLException {
+        dbStats.add(new DBEntry(MapKeys.INDEX.toString(), Collections.EMPTY_LIST));
     }
     
     @Override
-    public String collectStats() {
-        JSONStringer stringer = new JSONStringer();
-        try {
-            stringer.object()
-                    .key("statistics")
-                    .object()
-                    .key("global")
-                    .array();
-            for (Map.Entry<String, String> kv : dbGlobalStats.entrySet()) {
-                stringer.object()
-                        .key("variable_name")
-                        .value(kv.getKey())
-                        .key("variable_value")
-                        .value(kv.getValue())
-                        .endObject();
-            }
-            stringer.endArray()
-                    .key("database")
-                    .array();
-            for (Entry<String, Map<String, String>> dbmap : dbDatabaseStats.entrySet()) {
-                stringer.object()
-                        .key("dbname")
-                        .value(dbmap.getKey())
-                        .key("dbstats")
-                        .array();
-                for (Map.Entry<String, String> kv : dbmap.getValue().entrySet()) {
-                    stringer.object()
-                            .key("variable_name")
-                            .value(kv.getKey())
-                            .key("variable_value")
-                            .value(kv.getValue())
-                            .endObject();
-                }
-                stringer.endArray()
-                .endObject();
-            }
-            stringer.endArray()
-                    .key("table")
-                    .array();
-            for (Entry<String, Map<String, String>> tablemap : dbTableStats.entrySet()) {
-                stringer.object()
-                        .key("tablename")
-                        .value(tablemap.getKey())
-                        .key("tablestats")
-                        .array();
-                for (Map.Entry<String, String> kv : tablemap.getValue().entrySet()) {
-                    stringer.object()
-                            .key("variable_name")
-                            .value(kv.getKey())
-                            .key("variable_value")
-                            .value(kv.getValue())
-                            .endObject();
-                }
-                stringer.endArray()
-                        .endObject();
-            }
-            stringer.endArray()
-                    .key("index")
-                    .array();
-            for (Entry<String, Map<String, String>> indexmap : dbIndexStats.entrySet()) {
-                stringer.object()
-                        .key("indexname")
-                        .value(indexmap.getKey())
-                        .key("indexstats")
-                        .array();
-                for (Map.Entry<String, String> kv : indexmap.getValue().entrySet()) {
-                    stringer.object()
-                            .key("variable_name")
-                            .value(kv.getKey())
-                            .key("variable_value")
-                            .value(kv.getValue())
-                            .endObject();
-                }
-                stringer.endArray()
-                        .endObject();
-            }
-            stringer.endArray()
-                    .endObject()
-                    .endObject();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return JSONUtil.format(stringer.toString());
+    public JSONSerializable collectConfigParameters() {
+        return dbParams;
+    }
+    
+    @Override
+    public JSONSerializable collectStats() {
+        return dbStats;
     }
     
     @Override
@@ -347,23 +296,76 @@ class DBCollector implements DBParameterCollector {
         }
     }
     
-    protected static void resultHelper(ResultSet out,Map<String, String> destMap,
+    protected static void resultHelper(ResultSet out, 
+            Map<String, String> destMap,
             boolean validateKeys) throws SQLException {
+
         ResultSetMetaData metadata;
         metadata = out.getMetaData();
         int numColumns = metadata.getColumnCount();
-        while(out.next()) {
-            for (int i = 1; i <= numColumns; ++i) {
-                String value = out.getString(i) == null ? "" : out.getString(i);
-                String key = metadata.getColumnName(i).toLowerCase();
-                String oldValue = destMap.put(key, value);
-                if (validateKeys && oldValue != null && !oldValue.equals(value)) {
-                    throw new IllegalArgumentException("Value overwritten."
-                            + "Two entries with the same key and different"
-                            + "values (" + value + ", " + oldValue + ")");
-                }
+        //while(out.next()) {
+        for (int i = 1; i <= numColumns; ++i) {
+            String value = out.getString(i) == null ? "" : out.getString(i);
+            String key = metadata.getColumnName(i).toLowerCase();
+            String oldValue = destMap.put(key, value);
+            if (validateKeys && oldValue != null && !oldValue.equals(value)) {
+                throw new IllegalArgumentException("Value overwritten."
+                        + "Two entries with the same key and different"
+                        + "values (" + value + ", " + oldValue + ")");
             }
         }
+    }
+    
+    protected static void getSimpleStats(Connection conn, String query,
+            String statTypeKey, String statNameKey, String statName,
+            String statKey, DBCollection dst) throws SQLException {
+        assert(!conn.isClosed());
+        Map<String, String> kvMap = new LinkedHashMap<String, String>();
+        Statement s = conn.createStatement();
+        ResultSet out = s.executeQuery(query);
+        while (out.next()) {
+            resultHelper(out, kvMap, false);
+        }
+        s.close();
+        DBCollection singleEntry = new DBCollection()
+                   .add(new DBEntry(statNameKey, statName))
+                   .add(new DBEntry(statKey, getBaseCollection(kvMap)));
+        List<DBCollection> list = new ArrayList<DBCollection>();
+        list.add(singleEntry);
+        
+        dst.add(new DBEntry(statTypeKey,
+                list));
+    }
+    
+    protected static void getKVStats(Connection conn, String query,
+            String statTypeKey, String statNameKey, String statName,
+            String statKey, DBCollection dst) throws SQLException {
+        assert(!conn.isClosed());
+        Statement s = conn.createStatement();
+        Map<String, String> kvMap = new LinkedHashMap<String, String>();
+        ResultSet out = s.executeQuery(query);
+        while(out.next()) {
+            kvMap.put(out.getString(1).toLowerCase(), out.getString(2));
+        }
+        assert(!kvMap.isEmpty());
+        
+      DBCollection singleEntry = new DBCollection()
+              .add(new DBEntry(statNameKey, statName))
+              .add(new DBEntry(statKey, getBaseCollection(kvMap)));
+      List<DBCollection> list = new ArrayList<DBCollection>();
+      list.add(singleEntry);
+
+      dst.add(new DBEntry(statTypeKey,
+              list));
+    }
+    
+    protected static DBCollection getBaseCollection(
+            Map<String, String> srcMap) throws SQLException {
+        DBCollection dest = new DBCollection();
+        DBEntry names = new DBEntry(MapKeys.VARNAMES.toString(), srcMap.keySet());
+        DBEntry values = new DBEntry(MapKeys.VARVALS.toString(), srcMap.values());
+        dest.add(names).add(values);
+        return dest;
     }
 
     public static void printSQLException(SQLException ex, boolean ignore) {
@@ -392,6 +394,7 @@ class DBCollector implements DBParameterCollector {
             }
         }
     }
+
     
     public static boolean ignoreSQLException(String sqlState) {
 

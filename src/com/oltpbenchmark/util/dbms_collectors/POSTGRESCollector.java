@@ -20,90 +20,112 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
+import com.oltpbenchmark.util.ResultObject.DBCollection;
+import com.oltpbenchmark.util.ResultObject.DBEntry;
+
 class POSTGRESCollector extends DBCollector {
     private static final Logger LOG = Logger.getLogger(POSTGRESCollector.class);
-
-    private static final String[] TABLE_STAT_QUERIES = {
-        "SELECT * FROM pg_stat_user_tables;",
-        "SELECT * FROM pg_statio_user_tables;",
-    };
-        
-    private static final String[] INDEX_STAT_QUERIES = {
-        "SELECT * FROM pg_stat_user_indexes;",
-        "SELECT * FROM pg_statio_user_indexes;"
-    };
+    
+    private static final String PARAM_QUERY = 
+            "SELECT name, setting FROM pg_settings;";
+    
+    private static final String GLOBAL_QUERY =
+            "SELECT * FROM pg_stat_bgwriter;";
+    
+    private static final String DATABASE_QUERY = 
+            "SELECT * FROM pg_stat_database WHERE datname='%s';";
+    
+    private static final String TABLE_QUERY = 
+            "select * from pg_stat_user_tables full outer join "
+            + "pg_statio_user_tables on pg_stat_user_tables.relid="
+            + "pg_statio_user_tables.relid order by "
+            + "pg_statio_user_tables.relname;";
+    
+    private static final String INDEX_QUERY = 
+            "select * from pg_stat_user_indexes full outer join "
+            + "pg_statio_user_indexes on pg_stat_user_indexes.indexrelid="
+            + "pg_statio_user_indexes.indexrelid order by "
+            + "pg_statio_user_indexes.indexrelname;";
     
     @Override
     protected void getGlobalParameters(Connection conn) throws SQLException {
-        assert(!conn.isClosed());
-        Statement s = conn.createStatement();
-        ResultSet out = s.executeQuery("SELECT name, setting FROM pg_settings;");
-        while(out.next()) {
-            dbParams.put(out.getString(1).toLowerCase(), out.getString(2));
-        }
-        assert(!dbParams.isEmpty());
+        getKVStats(conn, PARAM_QUERY,
+                MapKeys.GLOBAL.toString(), MapKeys.GLBNAME.toString(), "postgres",
+                MapKeys.GLBVARS.toString(), dbParams);
     }
     
     @Override
     protected void getGlobalStats(Connection conn) throws SQLException {
-        assert(!conn.isClosed());
-        Statement s = conn.createStatement();
-        ResultSet out = s.executeQuery("SELECT * FROM pg_stat_bgwriter;");
-        resultHelper(out, dbGlobalStats, false);
-        s.close();
-        assert(!dbGlobalStats.isEmpty());
+        getSimpleStats(conn, GLOBAL_QUERY,
+                MapKeys.GLOBAL.toString(), MapKeys.GLBNAME.toString(), "postgres",
+                MapKeys.GLBSTATS.toString(), dbStats);
     }
     
     @Override
     protected void getDatabaseStats(Connection conn) throws SQLException {
-        assert(!conn.isClosed());
-        Statement s = conn.createStatement();
-        ResultSet out = s.executeQuery("SELECT * FROM pg_stat_database WHERE datname=\'" + databaseName + "\';");
-        resultHelper(out, dbDatabaseStats, "datname", false);
-        s.close();
-        
-        assert(!dbDatabaseStats.isEmpty());
+        getSimpleStats(conn, String.format(DATABASE_QUERY, databaseName),
+                MapKeys.DATABASE.toString(), MapKeys.DATNAME.toString(),
+                databaseName,
+                MapKeys.DATSTATS.toString(), dbStats);
     }
     
     @Override
     protected void getTableStats(Connection conn) throws SQLException {
         assert(!conn.isClosed());
+        List<DBCollection> tableEntries = new ArrayList<DBCollection>();
         Statement s = null;
         ResultSet out = null;
-        for (String query : TABLE_STAT_QUERIES) {
-            s = conn.createStatement();
-            out = s.executeQuery(query);
-            resultHelper(out, dbTableStats, "relname", true);
+        s = conn.createStatement();
+        out = s.executeQuery(TABLE_QUERY);
+        while (out.next()) {
+            String tableName = out.getString("relname");
+            assert(tableNames.contains(tableName));
+            DBCollection tableEntry = new DBCollection();
+            Map<String, String> kvMap = new LinkedHashMap<String, String>();
+            tableEntry.add(new DBEntry(MapKeys.TABNAME.toString(),
+                    tableName));
+            resultHelper(out, kvMap, true);
+            assert(!kvMap.isEmpty());
+            tableEntry.add(new DBEntry(MapKeys.TABSTATS.toString(),
+                    getBaseCollection(kvMap)));
+            tableEntries.add(tableEntry);
         }
         s.close();
-        if (!tableNames.equals(dbTableStats.keySet())) {
-            String error = "Table name mismatch.\n  Expected: " +
-                    this.tableNames.toString() + "\n  Actual: " +
-                    dbTableStats.keySet() + "\n";
-            throw new SQLException(error);
-        }
-        
-        assert(!dbTableStats.isEmpty());
+        assert(tableEntries.size() == tableNames.size());
+        dbStats.add(new DBEntry(MapKeys.TABLE.toString(), tableEntries));
     }
     
     @Override
     protected void getIndexStats(Connection conn) throws SQLException {
         assert(!conn.isClosed());
+        List<DBCollection> indexEntries = new ArrayList<DBCollection>();
         Statement s = null;
         ResultSet out = null;
-        for (String query : INDEX_STAT_QUERIES) {
-            s = conn.createStatement();
-            out = s.executeQuery(query);
-            resultHelper(out, dbIndexStats, "indexrelname", true);
+        s = conn.createStatement();
+        out = s.executeQuery(INDEX_QUERY);
+        while (out.next()) {
+            String indexName = out.getString("indexrelname");
+            DBCollection indexEntry = new DBCollection();
+            Map<String, String> kvMap = new LinkedHashMap<String, String>();
+            indexEntry.add(new DBEntry(MapKeys.IDXNAME.toString(),
+                    indexName));
+            resultHelper(out, kvMap, true);
+            assert(!kvMap.isEmpty());
+            indexEntry.add(new DBEntry(MapKeys.IDXSTATS.toString(),
+                    getBaseCollection(kvMap)));
+            indexEntries.add(indexEntry);
         }
         s.close();
-        
-        assert(!dbIndexStats.isEmpty());
+        dbStats.add(new DBEntry(MapKeys.INDEX.toString(), indexEntries));
     }
     
     @Override

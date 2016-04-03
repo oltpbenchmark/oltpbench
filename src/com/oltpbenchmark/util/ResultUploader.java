@@ -41,6 +41,7 @@ import org.apache.log4j.Logger;
 import java.io.*;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.zip.GZIPOutputStream;
 
@@ -100,17 +101,25 @@ public class ResultUploader {
             prettyprint = false;
         }
 
-        this.collector = DBParameterCollectorGen.getCollector(dbType, dbUrl, username, password);
+        this.collector = DBParameterCollectorGen.getCollector(dbType, dbUrl,
+                username, password);
     }
 
     public void writeDBParameters(PrintStream os) {
-        String dbConf = collector.collectConfigParameters();
-        os.print(dbConf);
+        JSONSerializable dbParams = collector.collectConfigParameters();
+
+        if (prettyprint)
+            os.println(JSONUtil.format(dbParams.toJSONString()));
+        else
+            os.println(dbParams.toJSONString());
     }
     
     public void writeDBStats(PrintStream os) {
-        String dbConf = collector.collectStats();
-        os.print(dbConf);
+        JSONSerializable dbStats = collector.collectStats();
+        if (prettyprint)
+            os.println(JSONUtil.format(dbStats.toJSONString()));
+        else
+            os.println(dbStats.toJSONString());
     }
 
     public void writeBenchmarkConf(PrintStream os) throws ConfigurationException {

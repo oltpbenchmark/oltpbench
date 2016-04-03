@@ -16,12 +16,14 @@
 
 package com.oltpbenchmark.util.dbms_collectors;
 
+import com.oltpbenchmark.util.JSONSerializable;
+
 public interface DBParameterCollector {
     void collect(String oriDBUrl, String username, String password);
-    String collectConfigParameters();
+    JSONSerializable collectConfigParameters();
+    JSONSerializable collectStats();
     String collectDatabaseName();
     String collectIsolationLevel();
-    String collectStats();
     String collectVersion();
     String collectOSName();
     String collectArchitecture();
