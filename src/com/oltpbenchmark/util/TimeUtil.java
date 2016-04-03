@@ -20,6 +20,24 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 
 public abstract class TimeUtil {
+    
+    public enum TimeUnit {
+        SECONDS ("sec"),
+        MILLISECONDS ("ms"),
+        MICROSECONDS ("us"),
+        NANOSECONDS ("ns");
+        
+        private String abbrevName;
+        
+        private TimeUnit(String abbrevName) {
+            this.abbrevName = abbrevName;
+        }
+        
+        @Override
+        public String toString() {
+            return abbrevName;
+        }
+    }
 
     public final static SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     public final static SimpleDateFormat DATE_FORMAT_14 = new SimpleDateFormat("yyyyMMddHHmmss");

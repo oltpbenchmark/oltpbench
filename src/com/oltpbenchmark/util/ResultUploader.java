@@ -16,9 +16,7 @@
 
 package com.oltpbenchmark.util;
 
-import com.oltpbenchmark.DistributionStatistics;
 import com.oltpbenchmark.Results;
-import com.oltpbenchmark.Results.ResultIterable;
 import com.oltpbenchmark.api.TransactionType;
 import com.oltpbenchmark.util.dbms_collectors.DBParameterCollector;
 import com.oltpbenchmark.util.dbms_collectors.DBParameterCollectorGen;
@@ -42,10 +40,8 @@ import org.apache.log4j.Logger;
 
 import java.io.*;
 import java.util.Date;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.List;
 import java.util.TimeZone;
-import java.util.TreeMap;
 import java.util.zip.GZIPOutputStream;
 
 public class ResultUploader {
@@ -118,13 +114,9 @@ public class ResultUploader {
     }
 
     public void writeSummary(PrintStream os) {
-        ResultIterable res = new ResultIterable(this.results, 0,
-                ResultIterable.SECONDS_FACTOR,
-                new String[]{"time_sec",
-                "throughput_req_per_sec_scaled"});
-       String[] statLabels = res.getResultLabels();
-       int statsLength = statLabels.length;
-       Iterator<double[]> iter = res.iterator();
+        List<String> statLabels = Results.getResultLabels();
+        List<Double> stats = results.getSummaryResults(os);
+        int numStats = stats.size();
         
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         Date now = new Date();
@@ -155,14 +147,10 @@ public class ResultUploader {
                 stringer.key(field)
                         .value(value);
             }
-            stringer.key("time_sec")
-                    .value(results.nanoSeconds / 1e9);
-            while (iter.hasNext()) {
-                double[] stats = iter.next();
-                for (int i = 0; i < statsLength; ++i) {
-                    stringer.key(statLabels[i])
-                            .value(stats[i]);
-                }
+                
+            for (int i = 0; i < numStats; ++i) {
+                stringer.key(statLabels.get(i))
+                        .value(String.format("%.4f", stats.get(i)));
             }
             stringer.endObject();
         } catch(JSONException e) {
@@ -176,31 +164,28 @@ public class ResultUploader {
     }
     
     public void writeResultStats(PrintStream os, TransactionType txId) {
-        // The last param tells the iterator to ignore results with
-        // that (stat) name
-        ResultIterable res = new ResultIterable(this.results, 
-                 this.windowSize, ResultIterable.MILLISECONDS_FACTOR,
-                new String[]{"stdev_lat"}, txId);
-        String[] statLabels = res.getResultLabels();
-        int statsLength = statLabels.length;
-        Iterator<double[]> iter = res.iterator();
+        List<String> statLabels = Results.getResultLabels();
+        List<List<Double>> samples = results.getSampleResults(this.windowSize,
+                os, txId);
+        int numStats = statLabels.size();
         
         JSONStringer stringer = new JSONStringer();
         try {
             stringer.object()
                     .key("statlabels")
                     .array();
-            for (int i = 0; i < statsLength; ++i) {
-                stringer.value(statLabels[i]);
+            for (int i = 0; i < numStats; ++i) {
+                stringer.value(statLabels.get(i));
             }
             stringer.endArray()
                     .key("samples")
                     .array();
-            while (iter.hasNext()) {
-                double[] stats = iter.next();
+            int numSamples = samples.size();
+            for (int i = 0; i < numSamples; ++i) {
+                List<Double> stats = samples.get(i);
                 stringer.array();
-                for (int i = 0; i < statsLength; ++i) {
-                    stringer.value(Double.toString(stats[i]));
+                for (int j = 0; j < numStats; ++j) {
+                    stringer.value(String.format("%.4f", stats.get(j)));
                 }
                 stringer.endArray();
             }
@@ -209,7 +194,9 @@ public class ResultUploader {
         } catch(JSONException e) {
             e.printStackTrace();
         }
-        os.println(JSONUtil.format(stringer.toString()));
+        //os.println(JSONUtil.format(stringer.toString()));
+        os.println(stringer.toString());
+
     }
 
     public void uploadResult(boolean includeRawData) throws ParseException {

@@ -19,21 +19,78 @@ package com.oltpbenchmark;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 
 import com.oltpbenchmark.LatencyRecord.Sample;
 import com.oltpbenchmark.ThreadBench.TimeBucketIterable;
 import com.oltpbenchmark.api.TransactionType;
 import com.oltpbenchmark.util.Histogram;
+import com.oltpbenchmark.util.TimeUtil.TimeUnit;
 
 public final class Results {
+    
+    public enum ResultType {
+        TIME ("measured time", "time"),
+        REQUESTS ("measured requests", "requests", 1),
+        THROUGHPUT ("throughput", "throughput", 2),
+        AVG_LATENCY ("average latency","avg_lat"),
+        MIN_LATENCY ("minimum latency", "min_lat"),
+        P25_LATENCY ("25th percentile latency", "25th_lat"),
+        MED_LATENCY ("median latency", "med_lat"),
+        P75_LATENCY ("75th percentile latency", "75th_lat"),
+        P90_LATENCY ("90th percentile latency", "90th_lat"),
+        P95_LATENCY ("95th percentile latency", "95th_lat"),
+        P99_LATENCY ("99th percentile latency", "99th_lat"),
+        MAX_LATENCY ("maximum latency", "max_lat"),
+        STDEV_LATENCY ("latency standard deviation", "stdev_lat");
+
+        
+        public static final int UNIT_TIME = 0;
+        public static final int UNIT_REQUESTS = 1;
+        public static final int UNIT_THROUGHPUT = 2;
+        
+        private final String fullName;
+        private final String alias;
+        private final int unitType;
+        
+        private ResultType(String fullName, String alias, int unitType) {
+            this.fullName = fullName;
+            this.alias = alias;
+            this.unitType = unitType;
+        }
+        
+        private ResultType(String fullName, String alias) {
+            this(fullName, alias, UNIT_TIME);
+        }
+        
+        @Override
+        public String toString() {
+            return alias;
+        }
+        
+        public String toString(TimeUnit unit) {
+            return String.format(getFormatString(), unit);
+        }
+        
+        public String getFullName() {
+            return fullName;
+        }
+        
+        public String getFormatString() {
+            switch(unitType) {
+                case UNIT_THROUGHPUT:
+                    return alias + "_req_per_%s";
+                case UNIT_REQUESTS:
+                    return alias;
+                default:
+                    return alias + "_%s";
+            }
+        }
+    }
+
     public final long nanoSeconds;
     public final int measuredRequests;
     public final DistributionStatistics latencyDistribution;
@@ -105,6 +162,7 @@ public final class Results {
         }
     }
 
+
     public void writeAllCSV(PrintStream out) {
         long startNs = latencySamples.get(0).startNs;
         out.println("transaction type (index in config file), start time (microseconds),latency (microseconds)");
@@ -134,228 +192,103 @@ public final class Results {
     	return getRequestsPerSecond() != 0.0;
     }
     
-    public static final class ResultIterable implements Iterable<double[]> {
-        
-        public static final String LABELS[] = {"time_sec",
-                "throughput_req_per_sec", "avg_lat", "min_lat",
-                "25th_lat", "median_lat", "75th_lat", "90th_lat",
-                "95th_lat", "99th_lat", "max_lat", "stdev_lat", 
-                "throughput_req_per_sec_scaled"};
-        
-        public static final double SECONDS_FACTOR = 1e6;
-        public static final double MILLISECONDS_FACTOR = 1e3;
-        public static final double MICROSECONDS_FACTOR = 1.0;
-        public static final int NO_WINDOW = 0;
-
-        private final Results results;
-        private final double windowSizeSeconds;
-        private final BitSet mask;
-        private final TransactionType txId;
-        
-        /**
-         * The latency samples are given in microseconds. These samples are
-         * converted to milliseconds by default, but conversionFactor can
-         * optionally be set to convert to a different unit.
-         */
-        private final double conversionFactor;
-        
-        public ResultIterable(Results results, int windowSizeSeconds,
-                double conversionFactor, String[] ignoreLabels,
-                TransactionType txId) {
-            assert(windowSizeSeconds >= 0);
-            
-            this.results = results;
-            this.conversionFactor = conversionFactor;
-            this.txId = txId;
-            this.windowSizeSeconds = windowSizeSeconds;
-
-            this.mask = getMask();
-            if (ignoreLabels.length > 0) {
-                int numLabels = LABELS.length;
-                for (int i = 0; i < numLabels; ++i) {
-                    for (int j = 0; j < ignoreLabels.length; ++j) {
-                        if (LABELS[i].equals(ignoreLabels[j])) {
-                            this.mask.clear(i);
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        
-        public ResultIterable(Results results, int windowSizeSeconds,
-                TransactionType txType) {
-            this(results, windowSizeSeconds, MILLISECONDS_FACTOR,
-                    new String[0], TransactionType.INVALID);
-        }
-        
-        public ResultIterable(Results results, double conversionFormat,
-                String[] ignoreLabels) {
-            this(results, NO_WINDOW, conversionFormat, ignoreLabels,
-                    TransactionType.INVALID);
-        }
-        
-        public ResultIterable(Results results, int windowSize,
-                double conversionFormat, String[] ignoreLabels) {
-            this(results, windowSize, conversionFormat, ignoreLabels,
-                    TransactionType.INVALID);
-        }
-        
-        @Override
-        public Iterator<double[]> iterator() {
-            Iterator<DistributionStatistics> iter = null;
-            if (this.windowSizeSeconds != NO_WINDOW) {
-                iter = (new TimeBucketIterable(results.latencySamples,
-                        (int) windowSizeSeconds, this.txId))
-                        .iterator();
-                return new ResultIterator(iter, this.windowSizeSeconds,
-                        this.conversionFactor, this.mask);
-            } else {
-                iter = new Iterator<DistributionStatistics>() {
-                    
-                            private final DistributionStatistics stats =
-                                    ResultIterable.this.results.latencyDistribution;
-                            
-                            private boolean done = false;
-    
-                            @Override
-                            public boolean hasNext() {
-                                return !done;
-                            }
-    
-                            @Override
-                            public DistributionStatistics next() {
-                                if (!hasNext()) {
-                                    throw new NoSuchElementException();
-                                }
-                                done = true;
-                                return stats;
-                            }
-    
-                            @Override
-                            public void remove() {
-                                throw new UnsupportedOperationException("unsupported");
-                            }
-                    
-                };
-                return new ResultIterator(iter, 1, this.conversionFactor,
-                        this.mask);
-            }
-        }
-        
-        private String getUnitString() {
-            String unit = null;
-            if (this.conversionFactor == MICROSECONDS_FACTOR) {
-                unit = "_us";
-            } else if (this.conversionFactor == MILLISECONDS_FACTOR) {
-                unit = "_ms";
-            } else if (this.conversionFactor == SECONDS_FACTOR) {
-                unit = "_sec";
-            } else{
-                unit = "";
-            }
-            return unit;
-        }
-        
-        public String[] getResultLabels() {
-            String unit = getUnitString();
-            int numLabels = LABELS.length;
-            
-            if (unit.equals("") && mask.cardinality() == numLabels) {
-                return Arrays.copyOf(LABELS, numLabels);
-            }
-            
-            String[] result = new String[mask.cardinality()];
-            int resIdx = 0;
-            for (int i = 0; i < numLabels; ++i) {
-                if (mask.get(i)) {
-                    String next = LABELS[i];
-                    if (next.endsWith("_lat")) {
-                        next += unit;
-                    }
-                    result[resIdx++] = next;
-                }
-            }
-            return result;
-        }
-        
-        private static BitSet getMask() {
-            // Returns a bitset with all bits set to true
-            BitSet mask = new BitSet(LABELS.length);
-            mask.set(0, LABELS.length, true);
-            return mask;
-        }
+    public List<Double> getSummaryResults(PrintStream out) {
+        return getResults(out, this.latencyDistribution,
+                (double) nanoSeconds / 1e9, this.measuredRequests);
     }
     
-    public static final class ResultIterator implements Iterator<double[]> {
-
-        private Iterator<DistributionStatistics> statsIter;
-        private final BitSet statMask;
-        private double windowSizeSeconds;
-        private int elapsedSeconds;
-        private double conversionFactor;
+    public List<List<Double>> getSampleResults(int windowSizeSeconds,
+            PrintStream out) {
+        return getSampleResults(windowSizeSeconds, out,
+                TransactionType.INVALID);
+    }
+    
+    public List<List<Double>> getSampleResults(int windowSizeSeconds,
+            PrintStream out, TransactionType txType) {
+        List<List<Double>> results = new ArrayList<List<Double>>();
         
-        public ResultIterator(Iterator<DistributionStatistics> statsIter,
-                double windowSizeSeconds, double conversionFactor,
-                BitSet statMask) {
-            assert(conversionFactor > 0);
-            this.conversionFactor = conversionFactor;
-            this.windowSizeSeconds = windowSizeSeconds;
-            this.elapsedSeconds = 0;
-            this.statsIter = statsIter;
-            this.statMask = statMask;
+        int secondsElapsed = 0;
+        for (DistributionStatistics s :new TimeBucketIterable(latencySamples,
+                windowSizeSeconds, txType)) {
+            results.add(getResults(out, s, secondsElapsed, s.getCount()));
+            secondsElapsed += windowSizeSeconds;
         }
-
-        @Override
-        public boolean hasNext() {
-            return statsIter.hasNext();
-        }
-
-        @Override
-        public double[] next() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
+        return results;
+    }
+    
+    public static List<String> getResultLabels() {
+        ResultType[] values = ResultType.values();
+        int numValues = values.length;
+        List<String> results = new ArrayList<String>(numValues);
+        
+        for (int i = 0; i < numValues; ++i) {
+            ResultType type = values[i];
+            switch(type) {
+                case TIME:
+                case THROUGHPUT:
+                    results.add(type.toString(TimeUnit.SECONDS));
+                    break;
+                default:
+                    results.add(type.toString(TimeUnit.MILLISECONDS));
             }
-            DistributionStatistics stat = statsIter.next();
-            int numStats = statMask.cardinality();
-            int totalStats = statMask.size();
-
-            double[] fullResult = {
-                    (double) elapsedSeconds,
-                    (double) stat.getCount() / windowSizeSeconds,
-                    stat.getAverage() / conversionFactor,
-                    stat.getMinimum() / conversionFactor,
-                    stat.get25thPercentile() / conversionFactor,
-                    stat.getMedian() / conversionFactor,
-                    stat.get75thPercentile() / conversionFactor,
-                    stat.get90thPercentile() / conversionFactor,
-                    stat.get95thPercentile() / conversionFactor,
-                    stat.get99thPercentile() / conversionFactor,
-                    stat.getMaximum() / conversionFactor,
-                    stat.getStandardDeviation() / conversionFactor,
-                    conversionFactor / stat.getAverage(),
-            };
-            assert(totalStats == fullResult.length);
-            if (numStats == totalStats) {
-                return fullResult;
-            }
-
-            int resIdx = 0;
-            double[] nextResult = new double[numStats];
-            for (int i = 0; i < totalStats; ++i) {
-                if (statMask.get(i)) {
-                    nextResult[resIdx++] = fullResult[i];
-                }
-            }
-            
-            elapsedSeconds += windowSizeSeconds;
-            return nextResult;
         }
+        return results;
+    }
 
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException("unsupported");
+    public static List<Double> getResults(PrintStream out,
+            DistributionStatistics stats, double timeSec, int requests) {
+        ResultType[] values = ResultType.values();
+        int numValues = values.length;
+        double conversionFactor = 1e3;
+        
+        List<Double> results = new ArrayList<Double>(numValues);
+        for (int i = 0; i < numValues; ++i) {
+            ResultType resType = values[i];
+            switch(resType) {
+                case TIME:
+                    results.add((double) timeSec);
+                    break;
+                case REQUESTS:
+                    results.add((double) requests);
+                    break;
+                case THROUGHPUT:
+                    results.add((double) requests / timeSec);
+                    break;
+                case AVG_LATENCY:
+                    results.add(stats.getAverage() / conversionFactor);
+                    break;
+                case MIN_LATENCY:
+                    results.add(stats.getMinimum() / conversionFactor);
+                    break;
+                case P25_LATENCY:
+                    results.add(stats.get25thPercentile() / conversionFactor);
+                    break;
+                case MED_LATENCY:
+                    results.add(stats.getMedian() / conversionFactor);
+                    break;
+                case P75_LATENCY:
+                    results.add(stats.get75thPercentile() / conversionFactor);
+                    break;
+                case P90_LATENCY:
+                    results.add(stats.get90thPercentile() / conversionFactor);
+                    break;
+                case P95_LATENCY:
+                    results.add(stats.get95thPercentile() / conversionFactor);
+                    break;
+                case P99_LATENCY:
+                    results.add(stats.get99thPercentile() / conversionFactor);
+                    break;
+                case MAX_LATENCY:
+                    results.add(stats.getMaximum() / conversionFactor);
+                    break;
+                case STDEV_LATENCY:
+                    results.add(stats.getStandardDeviation() / conversionFactor);
+                    break;
+                default:
+                    /* Nothing */
+            }
         }
+        return results;
     }
 
 }
