@@ -131,6 +131,7 @@ public class DBWorkload {
         		true,
         		"Exclude raw data from the result files");
 
+
         options.addOption("v", "verbose", false, "Display Messages");
         options.addOption("h", "help", false, "Print this help");
         options.addOption("s", "sample", true, "Sampling window");
@@ -143,6 +144,7 @@ public class DBWorkload {
         options.addOption(null, "histograms", false, "Print txn histograms");
         options.addOption(null, "dialects-export", true, "Export benchmark SQL to a dialects file");
         options.addOption(null, "get-config", true, "Output the DBMS configuration to a config file");
+        options.addOption("pp", "prettyprint", false, "Pretty print the result files");
 
         // parse the command line arguments
         CommandLine argsLine = parser.parse(options, args);

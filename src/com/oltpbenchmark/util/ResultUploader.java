@@ -47,7 +47,7 @@ import java.util.zip.GZIPOutputStream;
 public class ResultUploader {
     private static final Logger LOG = Logger.getLogger(ResultUploader.class);
 
-    private static String[] IGNORE_CONF = {
+    private static final String[] IGNORE_CONF = {
             "dbtype",
             "driver",
             "DBUrl",
@@ -57,39 +57,47 @@ public class ResultUploader {
             "uploadUrl"
     };
 
-    private static String[] BENCHMARK_KEY_FIELD = {
+    private static final String[] BENCHMARK_KEY_FIELD = {
             "scalefactor",
             "terminals",
     };
+    
+    private static final int DEFAULT_WINDOW_SIZE = 1;
 
-    XMLConfiguration expConf;
-    Results results;
-    CommandLine argsLine;
-    DBParameterCollector collector;
+    private final XMLConfiguration expConf;
+    private final Results results;
+    private final DBParameterCollector collector;
 
-    String dbUrl, dbType;
-    String username, password;
-    String benchType;
-    int windowSize;
-    String uploadCode, uploadUrl;
+    private final String uploadCode, uploadUrl;
+    private final String dbUrl, dbType;
+    private final String username, password;
+    private final String benchType;
+    private int windowSize;
+    private boolean prettyprint;
+
 
     public ResultUploader(Results r, XMLConfiguration conf, CommandLine argsLine) {
         this.expConf = conf;
         this.results = r;
-        this.argsLine = argsLine;
 
-        dbUrl = expConf.getString("DBUrl");
-        dbType = expConf.getString("dbtype");
-        username = expConf.getString("username");
-        password = expConf.getString("password");
-        benchType = argsLine.getOptionValue("b");
-        uploadCode = expConf.getString("uploadCode");
-        uploadUrl = expConf.getString("uploadUrl");
+        this.dbUrl = expConf.getString("DBUrl");
+        this.dbType = expConf.getString("dbtype");
+        this.username = expConf.getString("username");
+        this.password = expConf.getString("password");
+        this.benchType = argsLine.getOptionValue("b");
+        this.uploadCode = expConf.getString("uploadCode");
+        this.uploadUrl = expConf.getString("uploadUrl");
         
-        try {
+        if (argsLine.hasOption("s")) {
             windowSize = Integer.parseInt(argsLine.getOptionValue("s"));
-        } catch (NumberFormatException e) {
-            windowSize = 1;
+        } else {
+            windowSize = DEFAULT_WINDOW_SIZE;
+        }
+        
+        if (argsLine.hasOption("pp")) {
+            prettyprint = true;
+        } else {
+            prettyprint = false;
         }
 
         this.collector = DBParameterCollectorGen.getCollector(dbType, dbUrl, username, password);
@@ -126,7 +134,7 @@ public class ResultUploader {
         try {
             stringer.object()
                     .key("timestamp_utc_sec")
-                    .value(now.getTime() / 1000L)
+                    .value(Long.toString(now.getTime() / 1000L))
                     .key("dbms")
                     .value(dbType)
                     .key("dbms_version")
@@ -194,9 +202,10 @@ public class ResultUploader {
         } catch(JSONException e) {
             e.printStackTrace();
         }
-        //os.println(JSONUtil.format(stringer.toString()));
-        os.println(stringer.toString());
-
+        if (prettyprint)
+            os.println(JSONUtil.format(stringer.toString()));
+        else
+            os.println(stringer.toString());
     }
 
     public void uploadResult(boolean includeRawData) throws ParseException {
