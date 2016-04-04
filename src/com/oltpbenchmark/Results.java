@@ -193,8 +193,10 @@ public final class Results {
     }
     
     public List<Double> getSummaryResults(PrintStream out) {
+        double time = (double) nanoSeconds / 1e9;
         return getResults(out, this.latencyDistribution,
-                (double) nanoSeconds / 1e9, this.measuredRequests);
+                time, this.measuredRequests,
+                this.measuredRequests / time);
     }
     
     public List<List<Double>> getSampleResults(int windowSizeSeconds,
@@ -210,7 +212,8 @@ public final class Results {
         int secondsElapsed = 0;
         for (DistributionStatistics s :new TimeBucketIterable(latencySamples,
                 windowSizeSeconds, txType)) {
-            results.add(getResults(out, s, secondsElapsed, s.getCount()));
+            results.add(getResults(out, s, secondsElapsed, s.getCount(),
+                    s.getCount() / windowSizeSeconds));
             secondsElapsed += windowSizeSeconds;
         }
         return results;
@@ -236,7 +239,8 @@ public final class Results {
     }
 
     public static List<Double> getResults(PrintStream out,
-            DistributionStatistics stats, double timeSec, int requests) {
+            DistributionStatistics stats, double timeSec, int requests,
+            double throughput) {
         ResultType[] values = ResultType.values();
         int numValues = values.length;
         double conversionFactor = 1e3;
@@ -252,7 +256,7 @@ public final class Results {
                     results.add((double) requests);
                     break;
                 case THROUGHPUT:
-                    results.add((double) requests / timeSec);
+                    results.add(throughput);
                     break;
                 case AVG_LATENCY:
                     results.add(stats.getAverage() / conversionFactor);
