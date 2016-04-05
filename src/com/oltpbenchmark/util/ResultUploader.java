@@ -41,7 +41,6 @@ import org.apache.log4j.Logger;
 import java.io.*;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.TimeZone;
 import java.util.zip.GZIPOutputStream;
 
@@ -145,14 +144,9 @@ public class ResultUploader {
                     .key("timestamp_utc_sec")
                     .value(Long.toString(now.getTime() / 1000L))
                     .key("dbms")
-                    .value(dbType)
-                    .key("dbms_version")
-                    .value(collector.collectVersion())
-                    .key("os_name")
-                    .value(collector.collectOSName())
-                    .key("architecture")
-                    .value(collector.collectArchitecture())
-                    .key("database")
+                    .value(dbType);
+            collector.collectVersionInfo().toJSON(stringer);
+            stringer.key("database")
                     .value(collector.collectDatabaseName())
                     .key("isolation_level")
                     .value(collector.collectIsolationLevel())

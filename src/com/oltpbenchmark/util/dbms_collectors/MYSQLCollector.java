@@ -19,18 +19,8 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.log4j.Logger;
-
-import com.oltpbenchmark.util.ResultObject.DBCollection;
-import com.oltpbenchmark.util.ResultObject.DBEntry;
 
 class MYSQLCollector extends DBCollector {
-    private static final Logger LOG = Logger.getLogger(MYSQLCollector.class);
     
     private static final String PARAM_QUERY = "SELECT * FROM "
             + "INFORMATION_SCHEMA.GLOBAL_VARIABLES ORDER BY VARIABLE_NAME;";
@@ -42,42 +32,20 @@ class MYSQLCollector extends DBCollector {
     
     @Override
     protected void getGlobalParameters(Connection conn) throws SQLException {
-        getKVStats(conn, PARAM_QUERY,
-                MapKeys.GLOBAL.toString(), MapKeys.GLBNAME.toString(), "mysql",
-                MapKeys.GLBVARS.toString(), dbParams);
+        getSimpleStats(conn, PARAM_QUERY, MapKeys.GLOBAL.toString(),
+                dbParams, true);
     }
 
     @Override
     protected void getGlobalStats(Connection conn) throws SQLException {
-        getKVStats(conn, GLOBAL_QUERY,
-                MapKeys.GLOBAL.toString(), MapKeys.GLBNAME.toString(), "mysql",
-                MapKeys.GLBSTATS.toString(), dbStats);
+        getSimpleStats(conn, GLOBAL_QUERY, MapKeys.GLOBAL.toString(),
+                dbStats, true);
     }
     
     @Override
     protected void getTableStats(Connection conn) throws SQLException {
-        assert(!conn.isClosed());
-        List<DBCollection> tableEntries = new ArrayList<DBCollection>();
-        Statement s = null;
-        ResultSet out = null;
-        s = conn.createStatement();
-        out = s.executeQuery(String.format(TABLE_QUERY, databaseName));
-        while (out.next()) {
-            String tableName = out.getString("table_name");
-            assert(tableNames.contains(tableName));
-            DBCollection tableEntry = new DBCollection();
-            Map<String, String> kvMap = new LinkedHashMap<String, String>();
-            tableEntry.add(new DBEntry(MapKeys.TABNAME.toString(),
-                    tableName));
-            resultHelper(out, kvMap, true);
-            assert(!kvMap.isEmpty());
-            tableEntry.add(new DBEntry(MapKeys.TABSTATS.toString(),
-                    getBaseCollection(kvMap)));
-            tableEntries.add(tableEntry);
-        }
-        s.close();
-        assert(tableEntries.size() == tableNames.size());
-        dbStats.add(new DBEntry(MapKeys.TABLE.toString(), tableEntries));
+        getSimpleStats(conn, String.format(TABLE_QUERY, databaseName),
+                MapKeys.TABLE.toString(), dbStats, false);
     }
     
     @Override

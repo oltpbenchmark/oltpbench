@@ -22,9 +22,7 @@ public interface DBParameterCollector {
     void collect(String oriDBUrl, String username, String password);
     JSONSerializable collectConfigParameters();
     JSONSerializable collectStats();
+    JSONSerializable collectVersionInfo();
     String collectDatabaseName();
     String collectIsolationLevel();
-    String collectVersion();
-    String collectOSName();
-    String collectArchitecture();
 }

@@ -20,20 +20,10 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
-
-import com.oltpbenchmark.util.ResultObject.DBCollection;
-import com.oltpbenchmark.util.ResultObject.DBEntry;
-
 class POSTGRESCollector extends DBCollector {
-    private static final Logger LOG = Logger.getLogger(POSTGRESCollector.class);
     
     private static final String PARAM_QUERY = 
             "SELECT name, setting FROM pg_settings;";
@@ -58,74 +48,32 @@ class POSTGRESCollector extends DBCollector {
     
     @Override
     protected void getGlobalParameters(Connection conn) throws SQLException {
-        getKVStats(conn, PARAM_QUERY,
-                MapKeys.GLOBAL.toString(), MapKeys.GLBNAME.toString(), "postgres",
-                MapKeys.GLBVARS.toString(), dbParams);
+        getSimpleStats(conn, PARAM_QUERY, MapKeys.GLOBAL.toString(),
+                dbParams, true);
     }
     
     @Override
     protected void getGlobalStats(Connection conn) throws SQLException {
-        getSimpleStats(conn, GLOBAL_QUERY,
-                MapKeys.GLOBAL.toString(), MapKeys.GLBNAME.toString(), "postgres",
-                MapKeys.GLBSTATS.toString(), dbStats);
+        getSimpleStats(conn, GLOBAL_QUERY, MapKeys.GLOBAL.toString(),
+                dbStats, false);
     }
     
     @Override
     protected void getDatabaseStats(Connection conn) throws SQLException {
         getSimpleStats(conn, String.format(DATABASE_QUERY, databaseName),
-                MapKeys.DATABASE.toString(), MapKeys.DATNAME.toString(),
-                databaseName,
-                MapKeys.DATSTATS.toString(), dbStats);
+                MapKeys.DATABASE.toString(), dbStats, false);
     }
     
     @Override
     protected void getTableStats(Connection conn) throws SQLException {
-        assert(!conn.isClosed());
-        List<DBCollection> tableEntries = new ArrayList<DBCollection>();
-        Statement s = null;
-        ResultSet out = null;
-        s = conn.createStatement();
-        out = s.executeQuery(TABLE_QUERY);
-        while (out.next()) {
-            String tableName = out.getString("relname");
-            assert(tableNames.contains(tableName));
-            DBCollection tableEntry = new DBCollection();
-            Map<String, String> kvMap = new LinkedHashMap<String, String>();
-            tableEntry.add(new DBEntry(MapKeys.TABNAME.toString(),
-                    tableName));
-            resultHelper(out, kvMap, true);
-            assert(!kvMap.isEmpty());
-            tableEntry.add(new DBEntry(MapKeys.TABSTATS.toString(),
-                    getBaseCollection(kvMap)));
-            tableEntries.add(tableEntry);
-        }
-        s.close();
-        assert(tableEntries.size() == tableNames.size());
-        dbStats.add(new DBEntry(MapKeys.TABLE.toString(), tableEntries));
+        getSimpleStats(conn, TABLE_QUERY, MapKeys.TABLE.toString(),
+                dbStats, false);
     }
     
     @Override
     protected void getIndexStats(Connection conn) throws SQLException {
-        assert(!conn.isClosed());
-        List<DBCollection> indexEntries = new ArrayList<DBCollection>();
-        Statement s = null;
-        ResultSet out = null;
-        s = conn.createStatement();
-        out = s.executeQuery(INDEX_QUERY);
-        while (out.next()) {
-            String indexName = out.getString("indexrelname");
-            DBCollection indexEntry = new DBCollection();
-            Map<String, String> kvMap = new LinkedHashMap<String, String>();
-            indexEntry.add(new DBEntry(MapKeys.IDXNAME.toString(),
-                    indexName));
-            resultHelper(out, kvMap, true);
-            assert(!kvMap.isEmpty());
-            indexEntry.add(new DBEntry(MapKeys.IDXSTATS.toString(),
-                    getBaseCollection(kvMap)));
-            indexEntries.add(indexEntry);
-        }
-        s.close();
-        dbStats.add(new DBEntry(MapKeys.INDEX.toString(), indexEntries));
+        getSimpleStats(conn, INDEX_QUERY, MapKeys.INDEX.toString(),
+                dbStats, false);
     }
     
     @Override
