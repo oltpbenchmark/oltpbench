@@ -164,12 +164,19 @@ public class ResultUploader {
                 stringer.key(field)
                         .value(value);
             }
-                
+            stringer.key("variable_names")
+                    .array();
             for (int i = 0; i < numStats; ++i) {
-                stringer.key(statLabels.get(i))
-                        .value(String.format("%.4f", stats.get(i)));
+                stringer.value(statLabels.get(i));
             }
-            stringer.endObject();
+            stringer.endArray()
+                    .key("variable_values")
+                    .array();
+            for (int i = 0; i < numStats; ++i) {
+                stringer.value(String.format("%.4f", stats.get(i)));
+            }
+            stringer.endArray()
+                    .endObject();
         } catch(JSONException e) {
             e.printStackTrace();
         }
