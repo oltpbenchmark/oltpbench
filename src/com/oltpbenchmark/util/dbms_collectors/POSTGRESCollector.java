@@ -25,8 +25,8 @@ import java.util.regex.Pattern;
 
 class POSTGRESCollector extends DBCollector {
     
-    private static final String PARAM_QUERY = 
-            "SELECT name, setting FROM pg_settings;";
+    private static final String PARAM_QUERY = "SHOW ALL";
+            //"SELECT name, setting FROM pg_settings;";
     
     private static final String GLOBAL_QUERY =
             "SELECT * FROM pg_stat_bgwriter;";
