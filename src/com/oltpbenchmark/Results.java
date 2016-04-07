@@ -231,6 +231,8 @@ public final class Results {
                 case THROUGHPUT:
                     results.add(type.toString(TimeUnit.SECONDS));
                     break;
+                case STDEV_LATENCY:
+                    break;
                 default:
                     results.add(type.toString(TimeUnit.MILLISECONDS));
             }
@@ -285,9 +287,9 @@ public final class Results {
                 case MAX_LATENCY:
                     results.add(stats.getMaximum() / conversionFactor);
                     break;
-                case STDEV_LATENCY:
-                    results.add(stats.getStandardDeviation() / conversionFactor);
-                    break;
+//                case STDEV_LATENCY:
+//                    results.add(stats.getStandardDeviation() / conversionFactor);
+//                    break;
                 default:
                     /* Nothing */
             }
