@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<parameters>
+	
+    <!-- Connection details -->
+    <dbtype>postgres</dbtype>
+    <driver>org.postgresql.Driver</driver>
+    <DBUrl>jdbc:postgresql://audio.ecn.purdue.edu:5432/postgres</DBUrl>
+    <!-- <DBUrl>jdbc:postgresql://multimedia.ecn.purdue.edu:5432/tpcc</DBUrl> -->
+    <username>postgres</username>
+    <password>postgres</password>
+    <isolation>TRANSACTION_SERIALIZABLE</isolation>
+    
+    <scalefactor>1</scalefactor>
+    
+    <!-- The workload -->
+    <terminals>4</terminals>
+    <ids>
+    <simulation>true</simulation>
+    <mdelay>5</mdelay>
+    <sdelay>10</sdelay>
+    </ids>
+    <tdp>0.5</tdp>
+    <works>
+         <work arrival='POISSON'>
+          <time>30</time>
+			<rate>unlimited</rate> -->
+           <weights>20,40,20,20,0,0,0</weights>             
+        </work>
+        <!-- <work>
+        	<active_terminals>4</active_terminals>
+	        <time>10</time>
+	        <rate>40</rate>
+	        <rate>unlimited</rate>
+	        <weights>30,0,35,35,0,0,0</weights>
+        </work> -->  
+        <work>
+        	<rate>unlimited</rate>
+        	<serial>true</serial>
+        	<weights>0,0,0,0,50,49,1</weights>
+        </work>
+	</works>
+	
+	<transactiontypes>
+     	<transactiontype>
+    		<name>Balance</name>
+    		<id>1</id>
+    	</transactiontype>    
+ 		<transactiontype>
+    		<name>SendPayment</name>
+    		<id>2</id>    		
+    	</transactiontype>
+       	<transactiontype>
+    		<name>Distribute</name>
+    		<id>3</id>
+    		<fanout_n>20</fanout_n>
+    		<fanout_p>0.5</fanout_p>
+    		<fanout_min>2</fanout_min>
+    		<fanout_max>20</fanout_max>
+    	</transactiontype>  
+      	<transactiontype>
+    		<name>Collect</name>
+    		<id>4</id>
+    		<fanin_n>20</fanin_n>
+    		<fanin_p>0.5</fanin_p>
+    		<fanin_min>2</fanin_min>
+    		<fanin_max>20</fanin_max>
+    	</transactiontype> 
+    	<transactiontype>
+    		<name>ReportCheckingPerBranch</name>
+    		<id>5</id>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>ReportSavingPerBranch</name>
+    		<id>6</id>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>ReportActiveCustomers</name>
+    		<id>7</id>
+    	</transactiontype>
+   	</transactiontypes>	
+</parameters>

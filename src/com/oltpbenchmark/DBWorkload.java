@@ -611,14 +611,15 @@ public class DBWorkload {
                     
                     for (TransactionType t : activeTXTypes) {
                         PrintStream ts = ps;
-                        
+                       
                         if (ts != System.out) {
                             // Get the actual filename for the output
                             String baseFile = timestampValue + argsLine.getOptionValue("o") + "_" + t.getName();
-                            String prepended = outputDirectory + timestampValue;
+                            String prepended = outputDirectory + timestampValue;                            
                             String nextName = FileUtil.getNextFilename(FileUtil.joinPath(outputDirectory, baseFile + ".res"));                            
                             ts = new PrintStream(new File(nextName));
                             r.writeCSV(windowSize, ts, t);
+                            LOG.info(String.format("writing result for tx type: %d at %s",t.getId(), nextName));
                             ts.close();
                         }
                     }

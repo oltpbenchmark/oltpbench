@@ -28,6 +28,7 @@ import com.oltpbenchmark.api.SQLStmt;
 import com.oltpbenchmark.benchmarks.tpcc.TPCCConstants;
 import com.oltpbenchmark.benchmarks.tpcc.TPCCUtil;
 import com.oltpbenchmark.benchmarks.tpcc.TPCCWorker;
+import com.oltpbenchmark.util.AIMSLogger;
 
 public class StockLevel extends TPCCProcedure {
 
@@ -47,13 +48,16 @@ public class StockLevel extends TPCCProcedure {
 	// Stock Level Txn
 	private PreparedStatement stockGetDistOrderId = null;
 	private PreparedStatement stockGetCountStock = null;
+	
+	private long txnid = -1;
 
 	 public ResultSet run(Connection conn, Random gen,
 				int terminalWarehouseID, int numWarehouses,
 				int terminalDistrictLowerID, int terminalDistrictUpperID,
 				TPCCWorker w) throws SQLException {
 
-
+	     txnid = AIMSLogger.getTransactionId(conn, this);
+	     
 		stockGetDistOrderId = this.getPreparedStatement(conn, stockGetDistOrderIdSQL);
 		stockGetCountStock= this.getPreparedStatement(conn, stockGetCountStockSQL);
 
@@ -89,6 +93,8 @@ public class StockLevel extends TPCCProcedure {
 				throw new RuntimeException("D_W_ID="+ w_id +" D_ID="+ d_id+" not found!");
 			o_id = rs.getInt("D_NEXT_O_ID");
 			rs.close();
+			
+			AIMSLogger.logReadOperation(txnid, String.format("%s,%d:%d",TPCCConstants.TABLENAME_DISTRICT, w_id, d_id));
 			rs = null;
 
 
@@ -103,7 +109,7 @@ public class StockLevel extends TPCCProcedure {
 			if (!rs.next())
 				throw new RuntimeException("OL_W_ID="+w_id +" OL_D_ID="+d_id+" OL_O_ID="+o_id+" not found!");
 			stock_count = rs.getInt("STOCK_COUNT");
-
+			//TODO: handle access logging for aggregate queries?
 			conn.commit();
 
 			rs.close();

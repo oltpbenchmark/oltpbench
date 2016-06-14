@@ -31,6 +31,7 @@ import com.oltpbenchmark.benchmarks.tpcc.TPCCConstants;
 import com.oltpbenchmark.benchmarks.tpcc.TPCCUtil;
 import com.oltpbenchmark.benchmarks.tpcc.TPCCWorker;
 import com.oltpbenchmark.benchmarks.tpcc.pojo.Customer;
+import com.oltpbenchmark.util.AIMSLogger;
 
 public class OrderStatus extends TPCCProcedure {
 
@@ -62,13 +63,15 @@ public class OrderStatus extends TPCCProcedure {
 	private PreparedStatement payGetCust = null;
 	private PreparedStatement customerByName = null;
 
+	private long txnid = -1;
 
 	 public ResultSet run(Connection conn, Random gen,
 				int terminalWarehouseID, int numWarehouses,
 				int terminalDistrictLowerID, int terminalDistrictUpperID,
 				TPCCWorker w) throws SQLException{
 
-
+	         txnid = AIMSLogger.getTransactionId(conn, this);
+	         
 			//initializing all prepared statements
 			payGetCust =this.getPreparedStatement(conn, payGetCustSQL);
 			customerByName=this.getPreparedStatement(conn, customerByNameSQL);
@@ -106,11 +109,14 @@ public class OrderStatus extends TPCCProcedure {
 					throw new RuntimeException("C_ID=" + c_id + " C_D_ID=" + c_d_id
 							+ " C_W_ID=" + c_w_id + " not found!");
 				}
-
+				
 				Customer c = TPCCUtil.newCustomerFromResults(rs);
 				c.c_id = c_id;
 				c.c_last = rs.getString("C_LAST");
 				rs.close();
+				
+				AIMSLogger.logReadOperation(txnid, String.format("%s,%d:%d:%d",TPCCConstants.TABLENAME_CUSTOMER, c_w_id, c_d_id, c_id));
+				
 				return c;
 			}
 
@@ -246,6 +252,7 @@ public class OrderStatus extends TPCCProcedure {
 					c.c_id = rs.getInt("C_ID");
 					c.c_last = c_last;
 					customers.add(c);
+					AIMSLogger.logReadOperation(txnid, String.format("%s,%d:%d:%d",TPCCConstants.TABLENAME_CUSTOMER, c_w_id, c_d_id, c.c_id));
 				}
 				rs.close();
 

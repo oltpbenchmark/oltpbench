@@ -30,6 +30,7 @@ import com.oltpbenchmark.benchmarks.tpcc.TPCCConstants;
 import com.oltpbenchmark.benchmarks.tpcc.TPCCUtil;
 import com.oltpbenchmark.benchmarks.tpcc.TPCCWorker;
 import com.oltpbenchmark.benchmarks.tpcc.jTPCCConfig;
+import com.oltpbenchmark.util.AIMSLogger;
 
 public class NewOrder extends TPCCProcedure {
 
@@ -84,9 +85,7 @@ public class NewOrder extends TPCCProcedure {
 			int terminalDistrictLowerID, int terminalDistrictUpperID,
 			TPCCWorker w) throws SQLException {
 
-
-
-		//initializing all prepared statements
+        //initializing all prepared statements
 		stmtGetCustWhse=this.getPreparedStatement(conn, stmtGetCustWhseSQL);
 		stmtGetDist=this.getPreparedStatement(conn, stmtGetDistSQL);
 		stmtInsertNewOrder=this.getPreparedStatement(conn, stmtInsertNewOrderSQL);
@@ -140,6 +139,9 @@ public class NewOrder extends TPCCProcedure {
 			int o_ol_cnt, int o_all_local, int[] itemIDs,
 			int[] supplierWarehouseIDs, int[] orderQuantities, Connection conn, TPCCWorker w)
 			throws SQLException {
+	    
+	    long txnid = AIMSLogger.getTransactionId(conn, this);
+	    
 		float c_discount, w_tax, d_tax = 0, i_price;
 		int d_next_o_id, o_id = -1, s_quantity;
 		String c_last = null, c_credit = null, i_name, i_data, s_data;
@@ -169,7 +171,9 @@ public class NewOrder extends TPCCProcedure {
 			w_tax = rs.getFloat("W_TAX");
 			rs.close();
 			rs = null;
-
+			
+			AIMSLogger.logReadOperation(txnid, String.format("%s,%d", TPCCConstants.TABLENAME_WAREHOUSE,w_id));
+			AIMSLogger.logReadOperation(txnid, String.format("%s,%d:%d:%d", TPCCConstants.TABLENAME_CUSTOMER,w_id,d_id,c_id));
 
 			stmtGetDist.setInt(1, w_id);
 			stmtGetDist.setInt(2, d_id);
@@ -182,6 +186,8 @@ public class NewOrder extends TPCCProcedure {
 			d_tax = rs.getFloat("D_TAX");
 			rs.close();
 			rs = null;
+			
+			AIMSLogger.logReadOperation(txnid, String.format("%s,%d:%d", TPCCConstants.TABLENAME_DISTRICT,w_id,d_id));
 
 			//woonhak, need to change order because of foreign key constraints
 			//update next_order_id first, but it might doesn't matter
@@ -192,7 +198,9 @@ public class NewOrder extends TPCCProcedure {
 				throw new RuntimeException(
 						"Error!! Cannot update next_order_id on district for D_ID="
 								+ d_id + " D_W_ID=" + w_id);
-
+			// TQ: Logging Access
+			AIMSLogger.logWriteOperation(txnid, String.format("%s,%d:%d", TPCCConstants.TABLENAME_DISTRICT,w_id,d_id));
+			
 			o_id = d_next_o_id;
 
 			// woonhak, need to change order, because of foreign key constraints
@@ -244,6 +252,9 @@ public class NewOrder extends TPCCProcedure {
 							"EXPECTED new order rollback: I_ID=" + ol_i_id
 									+ " not found!");
 				}
+				
+				// TQ:
+				AIMSLogger.logReadOperation(txnid, String.format("%s,%d",TPCCConstants.TABLENAME_ITEM,ol_i_id));
 
 				i_price = rs.getFloat("I_PRICE");
 				i_name = rs.getString("I_NAME");
@@ -261,6 +272,9 @@ public class NewOrder extends TPCCProcedure {
 				if (!rs.next())
 					throw new RuntimeException("I_ID=" + ol_i_id
 							+ " not found!");
+				
+				AIMSLogger.logReadOperation(txnid, String.format("%s,%d:%d", TPCCConstants.TABLENAME_STOCK,ol_supply_w_id,ol_i_id));
+				
 				s_quantity = rs.getInt("S_QUANTITY");
 				s_data = rs.getString("S_DATA");
 				s_dist_01 = rs.getString("S_DIST_01");
@@ -297,6 +311,8 @@ public class NewOrder extends TPCCProcedure {
 				stmtUpdateStock.setInt(4, ol_i_id);
 				stmtUpdateStock.setInt(5, ol_supply_w_id);
 				stmtUpdateStock.addBatch();
+				// TQ: This is bening batched but we will log it here
+				AIMSLogger.logWriteOperation(txnid, String.format("%s,%d:%d", TPCCConstants.TABLENAME_STOCK,ol_supply_w_id,ol_i_id));
 
 				ol_amount = ol_quantity * i_price;
 				orderLineAmounts[ol_number - 1] = ol_amount;

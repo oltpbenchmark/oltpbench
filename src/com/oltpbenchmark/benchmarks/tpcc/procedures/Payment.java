@@ -32,6 +32,7 @@ import com.oltpbenchmark.benchmarks.tpcc.TPCCUtil;
 import com.oltpbenchmark.benchmarks.tpcc.TPCCWorker;
 import com.oltpbenchmark.benchmarks.tpcc.jTPCCConfig;
 import com.oltpbenchmark.benchmarks.tpcc.pojo.Customer;
+import com.oltpbenchmark.util.AIMSLogger;
 
 public class Payment extends TPCCProcedure {
 
@@ -74,6 +75,7 @@ public class Payment extends TPCCProcedure {
 	private PreparedStatement payInsertHist = null;
 	private PreparedStatement customerByName = null;
 
+	private long txnid = -1;
 
 
 	 public ResultSet run(Connection conn, Random gen,
@@ -94,6 +96,7 @@ public class Payment extends TPCCProcedure {
 			payInsertHist =this.getPreparedStatement(conn, payInsertHistSQL);
 			customerByName=this.getPreparedStatement(conn, customerByNameSQL);
 
+			txnid = AIMSLogger.getTransactionId(conn, this);
 
 		    // payUpdateWhse =this.getPreparedStatement(conn, payUpdateWhseSQL);
 
@@ -148,7 +151,7 @@ public class Payment extends TPCCProcedure {
 			String w_street_1, w_street_2, w_city, w_state, w_zip, w_name;
 			String d_street_1, d_street_2, d_city, d_state, d_zip, d_name;
 
-
+					
 			payUpdateWhse.setFloat(1, h_amount);
 			payUpdateWhse.setInt(2, w_id);
 			// MySQL reports deadlocks due to lock upgrades:
@@ -156,12 +159,15 @@ public class Payment extends TPCCProcedure {
 			int result = payUpdateWhse.executeUpdate();
 			if (result == 0)
 				throw new RuntimeException("W_ID=" + w_id + " not found!");
-
+			
+			AIMSLogger.logWriteOperation(txnid, String.format("%s,%d",TPCCConstants.TABLENAME_WAREHOUSE,w_id));
 
 			payGetWhse.setInt(1, w_id);
 			ResultSet rs = payGetWhse.executeQuery();
 			if (!rs.next())
 				throw new RuntimeException("W_ID=" + w_id + " not found!");
+			
+			AIMSLogger.logReadOperation(txnid, String.format("%s,%d",TPCCConstants.TABLENAME_WAREHOUSE,w_id));
 			w_street_1 = rs.getString("W_STREET_1");
 			w_street_2 = rs.getString("W_STREET_2");
 			w_city = rs.getString("W_CITY");
@@ -179,7 +185,7 @@ public class Payment extends TPCCProcedure {
 			if (result == 0)
 				throw new RuntimeException("D_ID=" + d_id + " D_W_ID=" + w_id
 						+ " not found!");
-
+			AIMSLogger.logWriteOperation(txnid, String.format("%s,%d:%d",TPCCConstants.TABLENAME_DISTRICT,w_id,d_id));
 
 			payGetDist.setInt(1, w_id);
 			payGetDist.setInt(2, d_id);
@@ -187,6 +193,9 @@ public class Payment extends TPCCProcedure {
 			if (!rs.next())
 				throw new RuntimeException("D_ID=" + d_id + " D_W_ID=" + w_id
 						+ " not found!");
+			
+			AIMSLogger.logReadOperation(txnid, String.format("%s,%d:%d",TPCCConstants.TABLENAME_DISTRICT,w_id,d_id));
+			
 			d_street_1 = rs.getString("D_STREET_1");
 			d_street_2 = rs.getString("D_STREET_2");
 			d_city = rs.getString("D_CITY");
@@ -219,6 +228,9 @@ public class Payment extends TPCCProcedure {
 				if (!rs.next())
 					throw new RuntimeException("C_ID=" + c.c_id + " C_W_ID="
 							+ c_w_id + " C_D_ID=" + c_d_id + " not found!");
+				
+				AIMSLogger.logReadOperation(txnid, String.format("%s,%d:%d:%d",TPCCConstants.TABLENAME_CUSTOMER,c_w_id,c_d_id, c.c_id));
+				
 				c_data = rs.getString("C_DATA");
 				rs.close();
 				rs = null;
@@ -242,7 +254,7 @@ public class Payment extends TPCCProcedure {
 					throw new RuntimeException(
 							"Error in PYMNT Txn updating Customer C_ID=" + c.c_id
 									+ " C_W_ID=" + c_w_id + " C_D_ID=" + c_d_id);
-
+				AIMSLogger.logWriteOperation(txnid, String.format("%s,%d:%d:%d",TPCCConstants.TABLENAME_CUSTOMER, c_w_id, c_d_id, c.c_id));
 			} else { // GoodCredit
 
 
@@ -257,7 +269,7 @@ public class Payment extends TPCCProcedure {
 				if (result == 0)
 					throw new RuntimeException("C_ID=" + c.c_id + " C_W_ID="
 							+ c_w_id + " C_D_ID=" + c_d_id + " not found!");
-
+				AIMSLogger.logWriteOperation(txnid, String.format("%s,%d:%d:%d",TPCCConstants.TABLENAME_CUSTOMER, c_w_id, c_d_id, c.c_id));
 			}
 
 			if (w_name.length() > 10)
@@ -375,7 +387,8 @@ public class Payment extends TPCCProcedure {
 				throw new RuntimeException("C_ID=" + c_id + " C_D_ID=" + c_d_id
 						+ " C_W_ID=" + c_w_id + " not found!");
 			}
-
+			AIMSLogger.logReadOperation(txnid, String.format("%s,%d:%d:%d",TPCCConstants.TABLENAME_CUSTOMER, c_w_id, c_d_id, c_id));
+			
 			Customer c = TPCCUtil.newCustomerFromResults(rs);
 			c.c_id = c_id;
 			c.c_last = rs.getString("C_LAST");
@@ -398,6 +411,7 @@ public class Payment extends TPCCProcedure {
 				c.c_id = rs.getInt("C_ID");
 				c.c_last = c_last;
 				customers.add(c);
+				AIMSLogger.logReadOperation(txnid, String.format("%s,%d:%d:%d",TPCCConstants.TABLENAME_CUSTOMER, c_w_id, c_d_id, c.c_id));
 			}
 			rs.close();
 
