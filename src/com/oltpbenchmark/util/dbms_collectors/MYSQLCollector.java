@@ -32,19 +32,19 @@ class MYSQLCollector extends DBCollector {
     
     @Override
     protected void getGlobalParameters(Connection conn) throws SQLException {
-        getSimpleStats(conn, PARAM_QUERY, MapKeys.GLOBAL.toString(),
+        getSimpleStats(conn, wrap(PARAM_QUERY), MapKeys.GLOBAL.toString(),
                 dbParams, true);
     }
 
     @Override
     protected void getGlobalStats(Connection conn) throws SQLException {
-        getSimpleStats(conn, GLOBAL_QUERY, MapKeys.GLOBAL.toString(),
+        getSimpleStats(conn, wrap(GLOBAL_QUERY), MapKeys.GLOBAL.toString(),
                 dbStats, true);
     }
     
     @Override
     protected void getTableStats(Connection conn) throws SQLException {
-        getSimpleStats(conn, String.format(TABLE_QUERY, databaseName),
+        getSimpleStats(conn, wrap(String.format(TABLE_QUERY, databaseName)),
                 MapKeys.TABLE.toString(), dbStats, false);
     }
     

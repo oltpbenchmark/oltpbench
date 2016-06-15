@@ -48,31 +48,31 @@ class POSTGRESCollector extends DBCollector {
     
     @Override
     protected void getGlobalParameters(Connection conn) throws SQLException {
-        getSimpleStats(conn, PARAM_QUERY, MapKeys.GLOBAL.toString(),
+        getSimpleStats(conn, wrap(PARAM_QUERY), MapKeys.GLOBAL.toString(),
                 dbParams, true);
     }
     
     @Override
     protected void getGlobalStats(Connection conn) throws SQLException {
-        getSimpleStats(conn, GLOBAL_QUERY, MapKeys.GLOBAL.toString(),
+        getSimpleStats(conn, wrap(GLOBAL_QUERY), MapKeys.GLOBAL.toString(),
                 dbStats, false);
     }
     
     @Override
     protected void getDatabaseStats(Connection conn) throws SQLException {
-        getSimpleStats(conn, String.format(DATABASE_QUERY, databaseName),
+        getSimpleStats(conn, wrap(String.format(DATABASE_QUERY, databaseName)),
                 MapKeys.DATABASE.toString(), dbStats, false);
     }
     
     @Override
     protected void getTableStats(Connection conn) throws SQLException {
-        getSimpleStats(conn, TABLE_QUERY, MapKeys.TABLE.toString(),
+        getSimpleStats(conn, wrap(TABLE_QUERY), MapKeys.TABLE.toString(),
                 dbStats, false);
     }
     
     @Override
     protected void getIndexStats(Connection conn) throws SQLException {
-        getSimpleStats(conn, INDEX_QUERY, MapKeys.INDEX.toString(),
+        getSimpleStats(conn, wrap(INDEX_QUERY), MapKeys.INDEX.toString(),
                 dbStats, false);
     }
     

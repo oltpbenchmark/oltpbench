@@ -27,6 +27,8 @@ public class DBParameterCollectorGen {
             collector = new MYSQLCollector();
         } else if (db.equals("postgres")) {
             collector = new POSTGRESCollector();
+        } else if (db.equals("db2")) {
+            collector = new DB2Collector();
         } else {
             collector = new DBCollector();
         }

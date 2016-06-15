@@ -30,12 +30,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.log4j.Logger;
+
+import com.oltpbenchmark.DBWorkload;
 import com.oltpbenchmark.catalog.Catalog;
+import com.oltpbenchmark.util.FileUtil;
 import com.oltpbenchmark.util.JSONSerializable;
 import com.oltpbenchmark.util.ResultObject.DBCollection;
 import com.oltpbenchmark.util.ResultObject.DBEntry;
 
 class DBCollector implements DBParameterCollector {
+    private static final Logger LOG = Logger.getLogger(DBWorkload.class);
     
     public static final class VersionInfo {
         String version = "";
@@ -50,8 +55,7 @@ class DBCollector implements DBParameterCollector {
             return result;
         }
     }
-    
-    
+
     public enum MapKeys {
         VARNAMES ("variable_names"),
         VARVALS ("variable_values"),
@@ -59,15 +63,7 @@ class DBCollector implements DBParameterCollector {
         DATABASE ("database"),
         TABLE ("table"),
         INDEX ("index"),
-        GLBNAME ("global_name"),
-        GLBSTATS ("global_stats"),
-        GLBVARS ("global_variables"),
-        DATNAME ("database_name"),
-        DATSTATS ("database_stats"),
-        TABNAME ("table_name"),
-        TABSTATS ("table_stats"),
-        IDXNAME ("index_name"),
-        IDXSTATS ("index_stats");
+        COLUMN ("column");
         
         public String key;
         
@@ -85,9 +81,7 @@ class DBCollector implements DBParameterCollector {
     
     protected final DBCollection dbParams;
     protected final DBCollection dbStats;
-    protected final Map<String, Map<String, String>> dbIndexStats;
-    
-    //protected final Set<String> tableNames;
+   
     protected final VersionInfo versionInfo;
     protected String databaseName;
     protected String isolationLevel;
@@ -96,8 +90,6 @@ class DBCollector implements DBParameterCollector {
     public DBCollector() {
         this.dbParams = new DBCollection();
         this.dbStats = new DBCollection();
-        this.dbIndexStats = new TreeMap<String, Map<String, String>>();
-        //this.tableNames = new TreeSet<String>();
         this.versionInfo = new VersionInfo();
         this.databaseName = null;
     }
@@ -122,6 +114,8 @@ class DBCollector implements DBParameterCollector {
         assert(conn != null);
         
         try {
+            prepareCollectors(conn);
+
             getDatabaseName(conn);
             
             getIsolationLevel(conn);
@@ -130,6 +124,8 @@ class DBCollector implements DBParameterCollector {
         
             getGlobalParameters(conn);
             
+            getDatabaseParameters(conn);
+            
             getGlobalStats(conn);
             
             getDatabaseStats(conn);
@@ -137,6 +133,8 @@ class DBCollector implements DBParameterCollector {
             getTableStats(conn);
             
             getIndexStats(conn);
+            
+            getColumnStats(conn);
             
         } catch(SQLException e) {
             printSQLException(e, false);
@@ -149,13 +147,19 @@ class DBCollector implements DBParameterCollector {
         }
     }
     
-    protected void getDatabaseName(Connection conn) throws SQLException {
-        try {
-            this.databaseName = conn.getCatalog().toLowerCase();
-        } catch(SQLException e) {
-            printSQLException(e, true);
-            this.databaseName = "";
+    protected void prepareCollectors(Connection conn) throws SQLException {
+        return;
+    }
+    
+    protected String getDatabaseName(Connection conn) throws SQLException {
+        if (this.databaseName == null) {
+            try {
+                this.databaseName = conn.getCatalog().toLowerCase();
+            } catch(Exception e) {
+                this.databaseName = FileUtil.basename(conn.getMetaData().getURL());
+            }
         }
+        return this.databaseName;
     }
     
     protected void getVersionInfo(Connection conn) throws SQLException {
@@ -200,6 +204,10 @@ class DBCollector implements DBParameterCollector {
         dbParams.add(new DBEntry(MapKeys.GLOBAL.toString(), Collections.EMPTY_LIST));
     }
     
+    protected void getDatabaseParameters(Connection conn) throws SQLException {
+        dbParams.add(new DBEntry(MapKeys.DATABASE.toString(), Collections.EMPTY_LIST));
+    }
+    
     protected void getGlobalStats(Connection conn) throws SQLException {
         dbStats.add(new DBEntry(MapKeys.GLOBAL.toString(), Collections.EMPTY_LIST));
     }
@@ -214,6 +222,10 @@ class DBCollector implements DBParameterCollector {
     
     protected void getIndexStats(Connection conn) throws SQLException {
         dbStats.add(new DBEntry(MapKeys.INDEX.toString(), Collections.EMPTY_LIST));
+    }
+    
+    protected void getColumnStats(Connection conn) throws SQLException {
+        dbStats.add(new DBEntry(MapKeys.COLUMN.toString(), Collections.EMPTY_LIST));
     }
     
     @Override
@@ -284,25 +296,29 @@ class DBCollector implements DBParameterCollector {
         }
     }
     
-    protected static void getSimpleStats(Connection conn, String query, String statTypeKey,
-            DBCollection dst, boolean hasKVResults) throws SQLException {
+    protected static void getSimpleStats(Connection conn, String[] queries,
+            String statTypeKey, DBCollection dst, boolean hasKVResults) throws SQLException {
         assert(!conn.isClosed());
         List<DBCollection> list = new ArrayList<DBCollection>();
         Statement s = conn.createStatement();
-        ResultSet out = s.executeQuery(query);
+        ResultSet out = null;
         
-        if (hasKVResults) {
-            Map<String, String> kvMap = new LinkedHashMap<String, String>();
-            while (out.next()) {
-                kvMap.put(out.getString(1).toLowerCase(), out.getString(2));
-            }
-            list.add(getBaseCollection(kvMap));
-        } else {
-            while (out.next()) {
+        for (String query: queries) {
+            out = s.executeQuery(query);
+            if (hasKVResults) {
                 Map<String, String> kvMap = new LinkedHashMap<String, String>();
-                resultHelper(out, kvMap, false);
+                while (out.next()) {
+                    kvMap.put(out.getString(1).toLowerCase(), out.getString(2));
+                }
                 list.add(getBaseCollection(kvMap));
+            } else {
+                while (out.next()) {
+                    Map<String, String> kvMap = new LinkedHashMap<String, String>();
+                    resultHelper(out, kvMap, false);
+                    list.add(getBaseCollection(kvMap));
+                }
             }
+            out.close();
         }
         s.close();
         
@@ -343,6 +359,11 @@ class DBCollector implements DBParameterCollector {
                 }
             }
         }
+    }
+    
+    public static String[] wrap(String query) {
+        String[] wrapped = {query};
+        return wrapped;
     }
 
     
