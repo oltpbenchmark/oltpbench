@@ -37,9 +37,13 @@ class DB2Collector extends DBCollector {
     
     private static final Logger LOG = Logger.getLogger(DBWorkload.class);
     
-    private static final String PARAM_QUERY_DB = "SELECT NAME, VALUE "
-            + "FROM SYSIBMADM.DBCFG UNION SELECT NAME, VALUE FROM "
-            + "SYSIBMADM.DBMCFG ORDER BY NAME";
+    private static final String PARAM_QUERY = "SELECT NAME, CASE "
+            + "SUBSTR(VALUE_FLAGS,1,9) WHEN 'AUTOMATIC' THEN "
+            + "'AUTOMATIC(' CONCAT VALUE CONCAT ')' ELSE VALUE END "
+            + "FROM SYSIBMADM.DBCFG UNION SELECT NAME, CASE "
+            + "SUBSTR(VALUE_FLAGS,1,9) WHEN 'AUTOMATIC' THEN "
+            + "'AUTOMATIC(' CONCAT VALUE CONCAT ')' ELSE VALUE "
+            + "END FROM SYSIBMADM.DBMCFG ORDER BY NAME";
     
     private static final String SYS_QUERY = "SELECT NAME, VALUE FROM "
             + "SYSIBMADM.ENV_SYS_RESOURCES ORDER BY NAME";
@@ -172,7 +176,7 @@ class DB2Collector extends DBCollector {
     
     @Override
     protected void getDatabaseParameters(Connection conn) throws SQLException {
-        getSimpleStats(conn, Arrays.asList(PARAM_QUERY_DB),
+        getSimpleStats(conn, Arrays.asList(PARAM_QUERY),
                 MapKeys.DATABASE.toString(), dbParams,
                 Arrays.asList(true), true);
     }
