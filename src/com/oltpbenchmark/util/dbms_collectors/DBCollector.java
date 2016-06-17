@@ -30,9 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.apache.log4j.Logger;
-
-import com.oltpbenchmark.DBWorkload;
 import com.oltpbenchmark.catalog.Catalog;
 import com.oltpbenchmark.util.FileUtil;
 import com.oltpbenchmark.util.JSONSerializable;
@@ -40,7 +37,6 @@ import com.oltpbenchmark.util.ResultObject.DBCollection;
 import com.oltpbenchmark.util.ResultObject.DBEntry;
 
 class DBCollector implements DBParameterCollector {
-    private static final Logger LOG = Logger.getLogger(DBWorkload.class);
     
     public static final class VersionInfo {
         String version = "";
@@ -63,7 +59,7 @@ class DBCollector implements DBParameterCollector {
         DATABASE ("database"),
         TABLE ("table"),
         INDEX ("index"),
-        COLUMN ("column");
+        OTHER ("other");
         
         public String key;
         
@@ -134,16 +130,15 @@ class DBCollector implements DBParameterCollector {
             
             getIndexStats(conn);
             
-            getColumnStats(conn);
+            getOtherStats(conn);
+
             
         } catch(SQLException e) {
             printSQLException(e, false);
         } finally {
             try {
                 conn.close();
-            } catch (SQLException e) {
-                printSQLException(e, true);
-            }
+            } catch (SQLException e) { }
         }
     }
     
@@ -224,8 +219,8 @@ class DBCollector implements DBParameterCollector {
         dbStats.add(new DBEntry(MapKeys.INDEX.toString(), Collections.EMPTY_LIST));
     }
     
-    protected void getColumnStats(Connection conn) throws SQLException {
-        dbStats.add(new DBEntry(MapKeys.COLUMN.toString(), Collections.EMPTY_LIST));
+    protected void getOtherStats(Connection conn) throws SQLException {
+        dbStats.add(new DBEntry(MapKeys.OTHER.toString(), Collections.EMPTY_LIST));
     }
     
     @Override
@@ -296,32 +291,41 @@ class DBCollector implements DBParameterCollector {
         }
     }
     
-    protected static void getSimpleStats(Connection conn, String[] queries,
-            String statTypeKey, DBCollection dst, boolean hasKVResults) throws SQLException {
+    protected static void getSimpleStats(Connection conn, List<String> queries,
+            String statTypeKey, DBCollection dst, List<Boolean> hasKVResults,
+            boolean combineResults) throws SQLException {
         assert(!conn.isClosed());
+        assert(queries.size() == hasKVResults.size());
         List<DBCollection> list = new ArrayList<DBCollection>();
         Statement s = conn.createStatement();
         ResultSet out = null;
-        
-        for (String query: queries) {
-            out = s.executeQuery(query);
-            if (hasKVResults) {
-                Map<String, String> kvMap = new LinkedHashMap<String, String>();
+        Map<String, String> kvMap = new LinkedHashMap<String, String>();
+        for (int i = 0; i < queries.size(); ++i) {
+            out = s.executeQuery(queries.get(i));
+            if (hasKVResults.get(i)) {
                 while (out.next()) {
                     kvMap.put(out.getString(1).toLowerCase(), out.getString(2));
                 }
-                list.add(getBaseCollection(kvMap));
-            } else {
-                while (out.next()) {
-                    Map<String, String> kvMap = new LinkedHashMap<String, String>();
-                    resultHelper(out, kvMap, false);
+                if (!combineResults) {
                     list.add(getBaseCollection(kvMap));
+                    kvMap = new LinkedHashMap<String, String>();
+                }
+            } else {
+                while (out.next()) { 
+                    resultHelper(out, kvMap, false);
+                    if (!combineResults) {
+                        list.add(getBaseCollection(kvMap));
+                        kvMap = new LinkedHashMap<String, String>();
+                    }
                 }
             }
             out.close();
         }
         s.close();
         
+        if (combineResults) {
+            list.add(getBaseCollection(kvMap));
+        }
         dst.add(new DBEntry(statTypeKey, list));
     }
     
@@ -360,12 +364,6 @@ class DBCollector implements DBParameterCollector {
             }
         }
     }
-    
-    public static String[] wrap(String query) {
-        String[] wrapped = {query};
-        return wrapped;
-    }
-
     
     public static boolean ignoreSQLException(String sqlState) {
 

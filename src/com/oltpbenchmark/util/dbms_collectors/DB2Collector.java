@@ -22,7 +22,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -34,31 +38,43 @@ class DB2Collector extends DBCollector {
     private static final Logger LOG = Logger.getLogger(DBWorkload.class);
     
     private static final String PARAM_QUERY_DB = "SELECT NAME, VALUE "
-            + "FROM  SYSIBMADM.DBCFG ORDER BY NAME";
-    private static final String PARAM_QUERY_DBM = "SELECT NAME, VALUE "
-            + "FROM  SYSIBMADM.DBMCFG ORDER BY NAME";
-    private static final String DATABASE_QUERY_BP = "SELECT * FROM "
-            + "SYSIBMADM.MON_BP_UTILIZATION A, SYSIBMADM.MON_GET_BUFFERPOOL B "
-            + "WHERE A.BP_NAME NOT LIKE 'IBMSYSTEMBP%K' "
-            + "AND A.BP_NAME=B.BP_NAME "
-            + "AND A.MEMBER=B.MEMBER "
-            + "ORDER BY A.BP_NAME";
-//    private static final String DATABASE_QUERY_CONN = "SELECT * FROM "
-//            + "SYSIBMADM.MON_CONNECTION_SUMMARY";
-    private static final String TABLE_QUERY = "SELECT * FROM "
-            + "SYSSTAT.TABLES WHERE TABSCHEMA='%s' ORDER BY TABNAME";
+            + "FROM SYSIBMADM.DBCFG UNION SELECT NAME, VALUE FROM "
+            + "SYSIBMADM.DBMCFG ORDER BY NAME";
+    
+    private static final String SYS_QUERY = "SELECT NAME, VALUE FROM "
+            + "SYSIBMADM.ENV_SYS_RESOURCES ORDER BY NAME";
+    
+    private static final String DATABASE_QUERY = "SELECT * FROM "
+            + "DB_DB_EVENT WHERE DISCONN_TIME IN "
+            + "(SELECT MAX(DISCONN_TIME) FROM DB_DB_EVENT)";
+
+    private static final String MEM_QUERY = "SELECT * FROM DBMEMUSE_DB_EVENT";
+    
+    private static final String OS_QUERY = "SELECT * FROM OSMETRICS_STATS_EVENT";
+    
+    private static final String TABLE_QUERY = "SELECT * FROM TABLE_TABLE_EVENT X, "
+            + "SYSCAT.TABLES Y WHERE X.TABLE_SCHEMA='%s' AND X.TABLE_NAME "
+            + "NOT LIKE '%%_EVENT' AND X.EVENT_TIME IN (SELECT MAX(EVENT_TIME) FROM "
+            + "TABLE_TABLE_EVENT) AND X.TABLE_NAME=Y.TABNAME AND "
+            + "X.TABLE_SCHEMA=Y.TABSCHEMA ORDER BY X.TABLE_NAME";
+
     private static final String INDEX_QUERY = "SELECT * FROM "
-            + "SYSSTAT.INDEXES WHERE TABSCHEMA='%s' ORDER BY TABNAME, INDNAME";
-    private static final String COLUMN_QUERY = "SELECT A.TABSCHEMA, A.TABNAME, A.COLNAME, "
-            + "A.COLCARD, A.HIGH2KEY, A.LOW2KEY, A.AVGCOLLEN, A.NUMNULLS, A.PCTINLINED, "
-            + "A.SUB_COUNT, A.SUB_DELIM_LENGTH, A.AVGCOLLENCHAR, A.PCTENCODED, B.TYPE, "
-            + "B.SEQNO, B.COLVALUE, B.VALCOUNT, B.DISTCOUNT "
-            + "FROM SYSSTAT.COLUMNS A, SYSSTAT.COLDIST B "
-            + "WHERE A.TABSCHEMA='%s' "
-            + "AND A.TABSCHEMA=B.TABSCHEMA "
-            + "AND A.TABNAME=B.TABNAME "
-            + "AND A.COLNAME=B.COLNAME "
-            + "ORDER BY A.TABNAME, A.COLNAME";
+            + "TABLE(MON_GET_INDEX('','',-2)) AS X, SYSCAT.INDEXES AS Y "
+            + "WHERE X.TABSCHEMA=Y.TABSCHEMA AND X.IID=Y.IID "
+            + "AND X.TABNAME=Y.TABNAME AND X.TABSCHEMA='%s' "
+            + "AND X.TABNAME NOT LIKE '%%_EVENT' ORDER BY X.TABNAME, X.IID";
+    
+    private static final boolean HAS_EVENT_MONITORS = true;
+    
+    private static final Map<String, List<String>> EVENT_MONITORS;
+    
+    static {
+        Map<String, List<String>> tmpMap = new HashMap<String, List<String>>();
+        tmpMap.put("DB_EVENT", Arrays.asList("DBMEMUSE_DB_EVENT", "DB_DB_EVENT"));
+        tmpMap.put("TABLE_EVENT", Arrays.asList("TABLE_TABLE_EVENT"));
+        tmpMap.put("STATS_EVENT", Arrays.asList("OSMETRICS_STATS_EVENT"));
+        EVENT_MONITORS = Collections.unmodifiableMap(tmpMap);
+    }
     
     private String databaseSchema;
     
@@ -70,23 +86,52 @@ class DB2Collector extends DBCollector {
     @Override
     protected void prepareCollectors(Connection conn) throws SQLException {
         super.prepareCollectors(conn);
+        CallableStatement callStmt = null;
+        ResultSet out = null;
 
-        String currentSchema = getDatabaseSchema(conn);
+        if (HAS_EVENT_MONITORS) {
+            // Calling this function writes the current stats_events to tables
+            callStmt = conn.prepareCall("CALL WLM_COLLECT_STATS()");
+            callStmt.execute();
+            
+            // TODO If ALL tables belonging to a particular event are empty then
+            // there could be a lingering connection. How to fix this?
+            callStmt = conn.prepareCall("FLUSH EVENT MONITOR ?");
+            Statement s = conn.createStatement();
+            LOG.debug("\n");
+            for (Map.Entry<String, List<String>> entry : EVENT_MONITORS.entrySet()) {
+                LOG.debug(entry.getKey() + ":");
+                for (String monitorTable : entry.getValue()) {
+                    out = s.executeQuery("SELECT COUNT(*) FROM " + monitorTable);
+                    int count = -1;
+                    while (out.next()) {
+                        count = out.getInt(1);
+                    }
+                    LOG.debug("  " + monitorTable + " ROWS: " + count);
+                }
+            }
+            s.close();
+            LOG.info("\n");
+        }
+
+        // We must invoke runstats on all benchmark tables to collect
+        // index stats
+        callStmt = conn.prepareCall("CALL SYSPROC.ADMIN_CMD(?)");
+        String currentSchema = getDatabaseSchema(conn).toUpperCase();
         assert (currentSchema != null);
-        LOG.info("CURRENT SCHEMA:" + currentSchema);
         
         DatabaseMetaData md = conn.getMetaData();
-        ResultSet out = md.getTables(null, currentSchema.toUpperCase(), "%", null);
+        out = md.getTables(null, currentSchema, "%", null);
         List<String> tableNames = new ArrayList<String>();
         while (out.next()) {
-            tableNames.add(out.getString(2) + "." + out.getString(3));
+            tableNames.add(out.getString(3));
         }
-        out.close();
 
-        CallableStatement callStmt = conn.prepareCall("CALL SYSPROC.ADMIN_CMD(?)");
         for (String tname : tableNames) {
-            callStmt.setString(1, "RUNSTATS ON TABLE " + tname 
-                    + " WITH DISTRIBUTION ON ALL COLUMNS AND DETAILED INDEXES ALL");
+            String param = String.format("RUNSTATS ON TABLE %s.%s "
+                    + "WITH DISTRIBUTION ON KEY COLUMNS AND DETAILED "
+                    + "INDEXES ALL", currentSchema, tname);
+            callStmt.setString(1, param);
             callStmt.execute();
         }
         callStmt.close();
@@ -95,7 +140,8 @@ class DB2Collector extends DBCollector {
     private String getDatabaseSchema(Connection conn) throws SQLException {
         if (databaseSchema == null) {
             Statement s = conn.createStatement();
-            ResultSet out = s.executeQuery("SELECT CURRENT SCHEMA FROM SYSIBM.SYSDUMMY1");
+            ResultSet out = s.executeQuery("SELECT CURRENT SCHEMA "
+                    + "FROM SYSIBM.SYSDUMMY1");
             while(out.next()) {
                 this.databaseSchema = out.getString(1);
                 break;
@@ -110,53 +156,53 @@ class DB2Collector extends DBCollector {
         if (this.databaseName == null) {
             try {
                 Statement s = conn.createStatement();
-                ResultSet out = s.executeQuery("SELECT CURRENT SERVER FROM SYSIBM.SYSDUMMY1");
+                ResultSet out = s.executeQuery("SELECT CURRENT SERVER "
+                        + "FROM SYSIBM.SYSDUMMY1");
                 while(out.next()) {
                     this.databaseName = out.getString(1).toLowerCase();
                     break;
                 }
             } catch(Exception e) {
-                this.databaseName = FileUtil.basename(conn.getMetaData().getURL());
+                this.databaseName = FileUtil.basename(
+                        conn.getMetaData().getURL());
             }
         }
         return this.databaseName;
     }
     
     @Override
-    protected void getGlobalParameters(Connection conn) throws SQLException {
-        getSimpleStats(conn, wrap(PARAM_QUERY_DBM), MapKeys.GLOBAL.toString(),
-                dbParams, true);
-    }
-    
-    @Override
     protected void getDatabaseParameters(Connection conn) throws SQLException {
-        getSimpleStats(conn, wrap(PARAM_QUERY_DB), MapKeys.DATABASE.toString(),
-                dbParams, true);
+        getSimpleStats(conn, Arrays.asList(PARAM_QUERY_DB),
+                MapKeys.DATABASE.toString(), dbParams,
+                Arrays.asList(true), true);
     }
 
     @Override
     protected void getDatabaseStats(Connection conn) throws SQLException {
-        String[] queries = {DATABASE_QUERY_BP};//, DATABASE_QUERY_CONN};
-        getSimpleStats(conn, queries, MapKeys.DATABASE.toString(),
-                dbStats, false);
+        getSimpleStats(conn, Arrays.asList(DATABASE_QUERY, OS_QUERY),
+                MapKeys.DATABASE.toString(), dbStats,
+                Arrays.asList(false, false), true);
     }
     
     @Override
     protected void getTableStats(Connection conn) throws SQLException {
-        getSimpleStats(conn, wrap(String.format(TABLE_QUERY, getDatabaseSchema(conn))),
-                MapKeys.TABLE.toString(), dbStats, false);
+        String tableQuery = String.format(TABLE_QUERY, getDatabaseSchema(conn));
+        getSimpleStats(conn, Arrays.asList(tableQuery), MapKeys.TABLE.toString(),
+                dbStats, Arrays.asList(false), false);
     }
     
     @Override
     protected void getIndexStats(Connection conn) throws SQLException {
-        getSimpleStats(conn, wrap(String.format(INDEX_QUERY, getDatabaseSchema(conn))),
-                MapKeys.INDEX.toString(), dbStats, false);
+        String indexQuery = String.format(INDEX_QUERY, getDatabaseSchema(conn));
+        getSimpleStats(conn, Arrays.asList(indexQuery), MapKeys.INDEX.toString(),
+                dbStats, Arrays.asList(false), false);
     }
-    
+  
     @Override
-    protected void getColumnStats(Connection conn) throws SQLException {
-        getSimpleStats(conn, wrap(String.format(COLUMN_QUERY, getDatabaseSchema(conn))),
-                MapKeys.COLUMN.toString(), dbStats, false);
+    protected void getOtherStats(Connection conn) throws SQLException {
+        getSimpleStats(conn, Arrays.asList(SYS_QUERY, MEM_QUERY),
+                MapKeys.OTHER.toString(), dbStats,
+                Arrays.asList(true, false), false);
     }
     
     @Override
@@ -164,19 +210,22 @@ class DB2Collector extends DBCollector {
         super.getVersionInfo(conn);
         
         Statement s = conn.createStatement();
-        ResultSet out = s.executeQuery("SELECT PROD_RELEASE FROM "
-                + "TABLE(SYSPROC.ENV_GET_PROD_INFO()) where INSTALLED_PROD='ESE'");
+        ResultSet out = s.executeQuery("SELECT PROD_RELEASE "
+                + "FROM TABLE(SYSPROC.ENV_GET_PROD_INFO()) "
+                + "WHERE INSTALLED_PROD='ESE'");
         while(out.next()) {
             this.versionInfo.version = out.getString(1);
             break;
         }
 
-        out = s.executeQuery("SELECT OS_NAME FROM TABLE(SYSPROC.ENV_GET_SYS_INFO())");
+        out = s.executeQuery("SELECT OS_NAME FROM "
+                + "TABLE(SYSPROC.ENV_GET_SYS_INFO())");
         while (out.next()) {
             this.versionInfo.osName = out.getString(1).toLowerCase();
             break;
         }
-        out = s.executeQuery("SELECT INST_PTR_SIZE FROM TABLE(SYSPROC.ENV_GET_INST_INFO())");
+        out = s.executeQuery("SELECT INST_PTR_SIZE FROM "
+                + "TABLE(SYSPROC.ENV_GET_INST_INFO())");
         while(out.next()) {
             int ptr_size = out.getInt(1);
             if (ptr_size == 64) {
