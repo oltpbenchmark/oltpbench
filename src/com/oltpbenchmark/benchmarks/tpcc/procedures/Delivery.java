@@ -27,6 +27,7 @@ import com.oltpbenchmark.api.SQLStmt;
 import com.oltpbenchmark.benchmarks.tpcc.TPCCConstants;
 import com.oltpbenchmark.benchmarks.tpcc.TPCCUtil;
 import com.oltpbenchmark.benchmarks.tpcc.TPCCWorker;
+import com.oltpbenchmark.util.AIMSLogger;
 
 public class Delivery extends TPCCProcedure {
 
@@ -65,13 +66,15 @@ public class Delivery extends TPCCProcedure {
 	private PreparedStatement delivSumOrderAmount = null;
 	private PreparedStatement delivUpdateCustBalDelivCnt = null;
 
-
+	private long txnid = -1;
+	
     public ResultSet run(Connection conn, Random gen,
 			int terminalWarehouseID, int numWarehouses,
 			int terminalDistrictLowerID, int terminalDistrictUpperID,
 			TPCCWorker w) throws SQLException {
 		int orderCarrierID = TPCCUtil.randomNumber(1, 10, gen);
-
+		
+		txnid = AIMSLogger.getTransactionId(conn, this);
 
 		delivGetOrderId = this.getPreparedStatement(conn, delivGetOrderIdSQL);
 		delivDeleteNewOrder =  this.getPreparedStatement(conn, delivDeleteNewOrderSQL);
@@ -145,6 +148,9 @@ public class Delivery extends TPCCProcedure {
 						+ d_id + " O_W_ID=" + w_id + " not found!");
 			c_id = rs.getInt("O_C_ID");
 			rs.close();
+			
+			AIMSLogger.logReadOperation(txnid, String.format("%s,%d:%d:%d",TPCCConstants.TABLENAME_CUSTOMER, w_id, d_id, c_id));
+			
 			rs = null;
 
 
@@ -193,6 +199,7 @@ public class Delivery extends TPCCProcedure {
 			if (result == 0)
 				throw new RuntimeException("C_ID=" + c_id + " C_W_ID=" + w_id
 						+ " C_D_ID=" + d_id + " not found!");
+			AIMSLogger.logWriteOperation(txnid, String.format("%s,%d:%d:%d",TPCCConstants.TABLENAME_CUSTOMER, w_id, d_id, c_id));
 		}
 
 		conn.commit();

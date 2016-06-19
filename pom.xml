@@ -140,7 +140,25 @@
       <artifactId>commons-io</artifactId>
       <version>2.2</version>
     </dependency>
-                
+    <!-- 
+    For data generation
+     -->            
+    <dependency>
+	  <groupId>org.fluttercode.datafactory</groupId>
+	  <artifactId>datafactory</artifactId>
+	  <version>0.8</version>
+	</dependency>
+	<dependency>
+	  <groupId>joda-time</groupId>
+	  <artifactId>joda-time</artifactId>
+	  <version>2.9.3</version>
+	</dependency>
+	<dependency>
+	    <groupId>org.apache.commons</groupId>
+	    <artifactId>commons-math3</artifactId>
+	    <version>3.6.1</version>
+	</dependency>
+	
     <!--
 	Because this isn't an open source jar this is required:
     $ mvn install:install-file -DgroupId=com.oracle -DartifactId=ojdbc14 -Dversion=10.2.0.1.0 -Dpackaging=jar -Dfile=lib/ojdbc14-10.2.jar -DgeneratePom=true

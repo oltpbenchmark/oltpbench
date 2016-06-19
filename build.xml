@@ -50,6 +50,7 @@
                 <include name="**/*.xsd"/>
                 <include name="**/histogram.*.gz"/>
                 <include name="**/table.*.gz"/>
+            	<include name="**/*.csv"/>
             </fileset>
         </copy>
         

@@ -1,0 +1,97 @@
+<?xml version="1.0"?>
+<parameters>
+	
+    <!-- Connection details -->
+    <dbtype>postgres</dbtype>
+    <driver>org.postgresql.Driver</driver>
+    <DBUrl>jdbc:postgresql://audio.ecn.purdue.edu:5432/postgres</DBUrl>
+    <!-- <DBUrl>jdbc:postgresql://multimedia.ecn.purdue.edu:5432/tpcc</DBUrl>  -->
+    <username>postgres</username>
+    <password>postgres</password>
+    <isolation>TRANSACTION_SERIALIZABLE</isolation>
+    
+    <scalefactor>1</scalefactor>
+    <terminals>4</terminals>
+
+	<!-- IDS Parameters -->
+    <mddelay>5</mddelay>
+    <sddelay>10</sddelay>
+    
+    <!-- Transaction Dependency Control -->
+    <tdp>0.5</tdp>
+    
+    <!-- The workload -->
+    <works>
+    	<work>
+    		<time>35</time>
+			<rate>unlimited</rate>
+			<weights>0,0,100,0,0,0,0,0,0</weights>
+    	</work>    
+<!--     	<work> -->
+<!--          <work arrival='POISSON'>  	
+           	<time>35</time>
+			<rate>10</rate>
+			<active_terminals>4</active_terminals>
+           <weights>0,25,35,35,0,0,0,0,5</weights>             
+        </work> -->
+        <!-- <work> -->  
+<!--         <work arrival='POISSON'>
+        	<active_terminals>4</active_terminals>
+	        <time>15</time>
+	        <rate>10</rate>	        
+	        <weights>0,50,0,0,0,0,0,0,50</weights>
+        </work> 
+         <work>
+         	<time>20</time>
+        	<rate>10</rate>
+        	<weights>0,75,10,10,0,0,0,0,5</weights>
+        </work>  -->
+	</works>
+	
+	<transactiontypes>
+     	<transactiontype>
+    		<name>Balance</name>
+    		<id>1</id>
+    	</transactiontype>    
+ 		<transactiontype>
+    		<name>SendPayment</name>
+    		<id>2</id>    		
+    	</transactiontype>
+       	<transactiontype>
+    		<name>Distribute</name>
+    		<id>3</id>
+    		<fanout_n>6</fanout_n>
+    		<fanout_p>0.5</fanout_p>
+    		<fanout_min>2</fanout_min>
+    		<fanout_max>6</fanout_max>
+    	</transactiontype>  
+      	<transactiontype>
+    		<name>Collect</name>
+    		<id>4</id>
+    		<fanin_n>25</fanin_n>
+    		<fanin_p>0.5</fanin_p>
+    		<fanin_min>2</fanin_min>
+    		<fanin_max>25</fanin_max>
+    	</transactiontype> 
+    	<transactiontype>
+    		<name>ReportCheckingPerBranch2</name>
+    		<id>5</id>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>ReportSavingPerBranch</name>
+    		<id>6</id>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>ReportActiveCustomers</name>
+    		<id>7</id>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>ListCountries</name>
+    		<id>8</id>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>MSendPayment</name>
+    		<id>102</id>
+    	</transactiontype>
+   	</transactiontypes>	
+</parameters>

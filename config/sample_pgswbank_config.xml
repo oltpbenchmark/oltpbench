@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<parameters>
+	
+    <!-- Connection details -->
+    <dbtype>postgres</dbtype>
+    <driver>org.postgresql.Driver</driver>
+    <DBUrl>jdbc:postgresql://localhost:5432/tpcc</DBUrl>
+    <username>postgres</username>
+    <password>postgres</password>
+    <isolation>TRANSACTION_SERIALIZABLE</isolation>
+    
+    <scalefactor>1</scalefactor>
+    
+    <!-- The workload -->
+    <terminals>2</terminals>
+    <works>
+        <work>
+          <time>60</time>
+          <rate>10000</rate>
+          <weights>100</weights>
+        </work>
+	</works>
+	
+	<transactiontypes>
+    	<transactiontype>
+    		<name>Balance</name>
+    	</transactiontype>    	
+   	</transactiontypes>	
+</parameters>

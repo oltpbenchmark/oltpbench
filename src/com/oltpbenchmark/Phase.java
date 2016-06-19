@@ -21,19 +21,22 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-public class Phase {
-    public enum Arrival {
-        REGULAR,POISSON,
-    }
+import org.apache.log4j.Logger;
 
+public class Phase {
+    private static final Logger LOG = Logger.getLogger(Phase.class);
+    
+    public enum Arrival {
+        REGULAR, POISSON,
+    }
+    
     private final Random gen = new Random();
     public final String benchmarkName;
     public final int id;
     public final int time;
     public final int rate;
     public final Arrival arrival;
-
-
+    
     private final boolean rateLimited;
     private final boolean disabled;
     private final boolean serial;
@@ -43,12 +46,13 @@ public class Phase {
     private int activeTerminals;
     private int nextSerial;
     
-
-    Phase(String benchmarkName, int id, int t, int r, List<String> o, boolean rateLimited, boolean disabled, boolean serial, boolean timed, int activeTerminals, Arrival a) {
+    Phase(String benchmarkName, int id, int t, int r, List<String> o,
+            boolean rateLimited, boolean disabled, boolean serial,
+            boolean timed, int activeTerminals, Arrival a) {
         ArrayList<Double> w = new ArrayList<Double>();
         for (String s : o)
             w.add(Double.parseDouble(s));
-
+        
         this.benchmarkName = benchmarkName;
         this.id = id;
         this.time = t;
@@ -61,44 +65,45 @@ public class Phase {
         this.timed = timed;
         this.nextSerial = 1;
         this.activeTerminals = activeTerminals;
-        this.arrival=a;
+        this.arrival = a;
     }
     
     public boolean isRateLimited() {
         return rateLimited;
     }
-
+    
     public boolean isDisabled() {
         return disabled;
     }
-
+    
     public boolean isSerial() {
         return serial;
     }
-
+    
     public boolean isTimed() {
         return timed;
     }
-
+    
     public boolean isLatencyRun() {
         return !timed && serial;
     }
-
+    
     public boolean isThroughputRun() {
         return !isLatencyRun();
     }
-
+    
     public void resetSerial() {
         this.nextSerial = 1;
     }
-
+    
     public int getActiveTerminals() {
         return activeTerminals;
     }
-
+    
     public int getWeightCount() {
         return (this.num_weights);
     }
+    
     public List<Double> getWeights() {
         return (this.weights);
     }
@@ -124,20 +129,22 @@ public class Phase {
     public int chooseTransaction() {
         return chooseTransaction(false);
     }
+    
     public int chooseTransaction(boolean isColdQuery) {
         if (isDisabled())
             return -1;
-
+        
         if (isSerial()) {
             int ret;
-            synchronized(this) {
+            synchronized (this) {
                 ret = this.nextSerial;
-
+                
                 // Serial runs should not execute queries with non-positive
                 // weights.
-                while (ret <= this.num_weights && weights.get(ret - 1).doubleValue() <= 0.0)
+                while (ret <= this.num_weights
+                        && weights.get(ret - 1).doubleValue() <= 0.0)
                     ret = ++this.nextSerial;
-
+                
                 // If it's a cold execution, then we don't want to advance yet,
                 // since the hot run needs to execute the same query.
                 if (!isColdQuery) {
@@ -149,23 +156,23 @@ public class Phase {
                         assert this.isThroughputRun();
                         this.nextSerial %= this.num_weights;
                     }
-
+                    
                     ++this.nextSerial;
                 }
             }
             return ret;
+        } else {
+            int randomPercentage = gen.nextInt((int) totalWeight()) + 1;
+            double weight = 0.0;
+            for (int i = 0; i < this.num_weights; i++) {
+                weight += weights.get(i).doubleValue();
+                if (randomPercentage <= weight) {
+//                    LOG.info(String.format("choosing txtype %d", (i+1)));
+                    return i + 1;
+                }
+            } // FOR
         }
-        else {
-            int randomPercentage = gen.nextInt((int)totalWeight()) + 1;
-        double weight = 0.0;
-        for (int i = 0; i < this.num_weights; i++) {
-            weight += weights.get(i).doubleValue();
-            if (randomPercentage <= weight) {
-                return i + 1;
-            }
-        } // FOR
-        }
-
+        
         return -1;
     }
     
@@ -175,20 +182,22 @@ public class Phase {
      * @return Loggin String
      */
     public String currentPhaseString() {
-        String retString ="[Starting Phase] [Workload= " + benchmarkName + "] ";
-        if (isDisabled()){
+        String retString = "[Starting Phase] [Workload= " + benchmarkName
+                + "] ";
+        if (isDisabled()) {
             retString += "[Disabled= true]";
         } else {
             if (isLatencyRun()) {
                 retString += "[Serial= true] [Time= n/a] ";
+            } else {
+                retString += "[Serial= " + (isSerial() ? "true" : "false")
+                        + "] [Time= " + time + "] ";
             }
-            else {
-                retString += "[Serial= " + (isSerial()? "true" : "false")
-                             + "] [Time= " + time + "] ";
-            }
-            retString += "[Rate= " + (isRateLimited() ? rate : "unlimited") + "] [Arrival= " + arrival + "] [Ratios= " + getWeights() + "] [Active Workers=" + getActiveTerminals() + "]";
+            retString += "[Rate= " + (isRateLimited() ? rate : "unlimited")
+                    + "] [Arrival= " + arrival + "] [Ratios= " + getWeights()
+                    + "] [Active Workers=" + getActiveTerminals() + "]";
         }
         return retString;
     }
-
+    
 }
