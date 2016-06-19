@@ -37,6 +37,6 @@
 	<classpathentry kind="lib" path="lib/httpcore-4.3.jar"/>
 	<classpathentry kind="lib" path="lib/httpclient-4.3.1.jar"/>
 	<classpathentry kind="lib" path="lib/httpmime-4.3.1.jar"/>
-	<classpathentry kind="lib" path="/Users/qadahtm/Dev/oltpbench/lib/commons-math3-3.6.1.jar"/>
+	<classpathentry kind="lib" path="lib/commons-math3-3.6.1.jar"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>
