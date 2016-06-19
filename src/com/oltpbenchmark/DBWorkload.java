@@ -127,9 +127,9 @@ public class DBWorkload {
                 "Upload the result");
         options.addOption(
         		null,
-        		"exclude-raw",
+        		"include-raw",
         		true,
-        		"Exclude raw data from the result files");
+        		"Include raw data from the result files");
 
 
         options.addOption("v", "verbose", false, "Display Messages");
@@ -586,7 +586,7 @@ public class DBWorkload {
             
             // Special result uploader
             ResultUploader ru = new ResultUploader(r, xmlConfig, argsLine);
-            boolean includeRawData = isBooleanOptionSet(argsLine, "exclude-raw");
+            boolean includeRawData = isBooleanOptionSet(argsLine, "include-raw");
             
             if (argsLine.hasOption("o")) {
                 // Check if directory needs to be created
