@@ -11,7 +11,7 @@ import com.oltpbenchmark.benchmarks.smallworldbank.SWBankConstants;
 import com.oltpbenchmark.util.AIMSLogger;
 
 public class Collect extends Procedure {
-    public final SQLStmt getChkBalanceSQL = new SQLStmt("SELECT CHK_BALANCE FROM " 
+    public final SQLStmt getChkBalanceSQL = new SQLStmt("SELECT * FROM " 
             + SWBankConstants.TABLENAME_CHECKING 
             + " WHERE CHK_A_ID = ? for share");
     
@@ -30,7 +30,7 @@ public class Collect extends Procedure {
             + " SET CHK_BALANCE = CHK_BALANCE - ?"
             + " WHERE CHK_A_ID = ?");
     
-    public ResultSet run(Connection conn, long[] s_a_ids ,  long d_a_id, double[] amounts) throws SQLException {
+    public long run(Connection conn, long[] s_a_ids ,  long d_a_id, double[] amounts, boolean isM) throws SQLException {
         
 //        long txnid = AIMSLogger.getTransactionId(conn, this);
         int tmp = 0;
@@ -71,7 +71,12 @@ public class Collect extends Procedure {
         }
 //        AIMSLogger.logReadOperation(txnid, String.format("%s,%d",SWBankConstants.TABLENAME_CHECKING,d_a_id));
 //        AIMSLogger.logWriteOperation(txnid, String.format("%s,%d",SWBankConstants.TABLENAME_CHECKING,d_a_id));
+        if (isM){
+            return AIMSLogger.getTransactionId(conn, this);
+        }
+        else {
+            return -1;
+        }
         
-        return null;
     }
 }

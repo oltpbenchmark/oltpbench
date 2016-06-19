@@ -20,17 +20,17 @@ public class Balance extends Procedure {
     private static final Logger LOG = Logger.getLogger(Balance.class);
     
     public final SQLStmt stmtGetAccIdSQL = new SQLStmt(
-            "SELECT A_ID "
+            "SELECT * "
             + "  FROM " + SWBankConstants.TABLENAME_ACCOUNT 
             + " WHERE A_CUST_ID = ?");
     
     public final SQLStmt stmtGetCheckingBalSQL = new SQLStmt(
-            "SELECT CHK_BALANCE"
+            "SELECT *"
             + "  FROM " + SWBankConstants.TABLENAME_CHECKING 
             + " WHERE CHK_A_ID = ?");
     
     public final SQLStmt stmtGetSavingBalSQL = new SQLStmt(
-            "SELECT SAV_BALANCE"
+            "SELECT *"
             + "  FROM " + SWBankConstants.TABLENAME_SAVING 
             + " WHERE SAV_A_ID = ?");
     
@@ -65,7 +65,7 @@ public class Balance extends Procedure {
 //        AIMSLogger.logReadOperation(txnid, String.format("%s,%d", SWBankConstants.TABLENAME_CHECKING, a_id));
         
         
-//        LOG.info(String.format("CHECKING,%d", a_id));
+//        LOG.info(String.format("CHECKING,%d, %.2f", a_id,bal));
         
         ResultSet rsSav = stmtGetSavingBal.executeQuery();
         

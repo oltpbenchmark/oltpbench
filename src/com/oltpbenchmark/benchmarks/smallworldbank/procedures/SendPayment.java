@@ -18,9 +18,16 @@ public class SendPayment extends Procedure {
     private static final Logger LOG = Logger.getLogger(SendPayment.class);
     
     public final SQLStmt spGetAccIdSQL = new SQLStmt(
-            "SELECT A_ID "
+            "SELECT * "
             + "  FROM " + SWBankConstants.TABLENAME_ACCOUNT 
-            + " WHERE A_CUST_ID = ? for share");
+            + " WHERE A_CUST_ID = ?");
+    
+    public final SQLStmt spGetChkBalance = new SQLStmt("Select * from "+SWBankConstants.TABLENAME_CHECKING+" where CHK_A_ID = ?");
+    
+    public final SQLStmt spUpdateChkBalance = new SQLStmt("UPDATE " 
+            + SWBankConstants.TABLENAME_CHECKING 
+            + " SET CHK_BALANCE = ?"
+            + " WHERE CHK_A_ID = ?");
     
     public final SQLStmt spUpdateSrcChkBalance = new SQLStmt("UPDATE " 
             + SWBankConstants.TABLENAME_CHECKING 
@@ -41,18 +48,24 @@ public class SendPayment extends Procedure {
             "update "+ SWBankConstants.TABLENAME_CUSTOMER
                     +" set cust_curr_tx_count = cust_curr_tx_count +1 where cust_id = ?");
     
-    public ResultSet run(Connection conn, long s_cust_id, long d_cust_id, float amount) throws SQLException {
+    public long run(Connection conn, long s_cust_id, long d_cust_id, float amount, boolean isM) throws SQLException {
         
-//        long txnid = AIMSLogger.getTransactionId(conn, this);
         long src_a_id = 0;
         long dest_a_id = 0;
+        double src_obal = 0;
+        double dest_obal = 0;
+        
         int utuples = 0;
         ResultSet tmprs = null;
         
         
         PreparedStatement spGetDestAcctId = this.getPreparedStatement(conn, spGetAccIdSQL);
-        PreparedStatement spUpdateSrcAcct = this.getPreparedStatement(conn, spUpdateSrcChkBalance);
-        PreparedStatement spUpdateDestAcct = this.getPreparedStatement(conn, spUpdateDestChkBalance);
+//        PreparedStatement spUpdateSrcAcct = this.getPreparedStatement(conn, spUpdateSrcChkBalance);
+//        PreparedStatement spUpdateDestAcct = this.getPreparedStatement(conn, spUpdateDestChkBalance);
+        
+        PreparedStatement spGetAcctBal = this.getPreparedStatement(conn, spGetChkBalance);
+        PreparedStatement spUpdateChkAcct = this.getPreparedStatement(conn, spUpdateChkBalance);
+        
         PreparedStatement spUpdateCustTxn = this.getPreparedStatement(conn, spUpdateCustTxnSQL);
         
         
@@ -81,16 +94,34 @@ public class SendPayment extends Procedure {
         
 //        AIMSLogger.logReadOperation(txnid, String.format("%s,%d", SWBankConstants.TABLENAME_CUSTOMER,d_cust_id));
         
+        // read src balance
+        spGetAcctBal.setLong(1, src_a_id);
+        tmprs = spGetAcctBal.executeQuery();
+        if (!tmprs.next()){
+            throw new RuntimeException(String.format("Cannot find account with id = %d", src_a_id));
+        }
+        src_obal = tmprs.getDouble(2);
+        tmprs.close();
+        
+        spGetAcctBal.setLong(1, dest_a_id);
+        tmprs = spGetAcctBal.executeQuery();
+        if (!tmprs.next()){
+            throw new RuntimeException(String.format("Cannot find account with id = %d", dest_a_id));
+        }
+        dest_obal = tmprs.getDouble(2);
+        tmprs.close();
+        
+        
         // do transfer amount
-        spUpdateSrcAcct.setFloat(1, amount);
-        spUpdateSrcAcct.setLong(2, src_a_id);
-        utuples = spUpdateSrcAcct.executeUpdate();
+        spUpdateChkAcct.setDouble(1, src_obal-amount);
+        spUpdateChkAcct.setLong(2, src_a_id);
+        utuples = spUpdateChkAcct.executeUpdate();
         assert(utuples == 1);
 //        AIMSLogger.logWriteOperation(txnid, String.format("%s,%d",SWBankConstants.TABLENAME_CHECKING,src_a_id));
         ;
-        spUpdateDestAcct.setFloat(1, amount);
-        spUpdateDestAcct.setLong(2, dest_a_id);
-        utuples = spUpdateDestAcct.executeUpdate();
+        spUpdateChkAcct.setDouble(1, dest_obal+amount);
+        spUpdateChkAcct.setLong(2, dest_a_id);
+        utuples = spUpdateChkAcct.executeUpdate();
         assert(utuples == 1);
 //        AIMSLogger.logWriteOperation(txnid, String.format("%s,%d",SWBankConstants.TABLENAME_CHECKING,dest_a_id));
         
@@ -103,6 +134,11 @@ public class SendPayment extends Procedure {
         utuples = spUpdateCustTxn.executeUpdate();
         assert(utuples == 1);
         
-        return null;
+        if (isM){
+            return AIMSLogger.getTransactionId(conn, this);
+        }
+        else {
+            return -1;
+        }
     }
 }

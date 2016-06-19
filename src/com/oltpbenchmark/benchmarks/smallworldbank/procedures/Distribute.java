@@ -15,9 +15,20 @@ import com.oltpbenchmark.util.AIMSLogger;
 public class Distribute extends Procedure {
     private static final Logger LOG = Logger.getLogger(Distribute.class);
     
-    public final SQLStmt getChkBalanceSQL = new SQLStmt("SELECT CHK_BALANCE FROM " 
+    /**
+     * Note: using "for update" is observed to 
+     * help in improving throughput. However, 
+     * the logging system for AIMS is not able
+     * to reads from this statement  
+     * 
+     */
+//    public final SQLStmt getChkBalanceSQL = new SQLStmt("SELECT * FROM " 
+//            + SWBankConstants.TABLENAME_CHECKING 
+//            + " WHERE CHK_A_ID = ? for update");
+    
+    public final SQLStmt getChkBalanceSQL = new SQLStmt("SELECT * FROM " 
             + SWBankConstants.TABLENAME_CHECKING 
-            + " WHERE CHK_A_ID = ? for share");
+            + " WHERE CHK_A_ID = ?");
     
     public final SQLStmt updateChkBalanceSQL = new SQLStmt("UPDATE " 
             + SWBankConstants.TABLENAME_CHECKING 
@@ -35,9 +46,9 @@ public class Distribute extends Procedure {
             + " WHERE CHK_A_ID = ?");
     
     public final SQLStmt spGetCustIdSQL = new SQLStmt(
-            "SELECT A_CUST_ID "
+            "SELECT * "
             + "  FROM " + SWBankConstants.TABLENAME_ACCOUNT 
-            + " WHERE A_ID = ? for share");
+            + " WHERE A_ID = ?");
     
     
     public final SQLStmt spUpdateCustTxnSQL = new SQLStmt(
@@ -49,7 +60,7 @@ public class Distribute extends Procedure {
 //            + "SET cust_current_tx = cust_current_tx + 1 " 
 //            + "WHERE CUST_ID = ?");
 //    
-    public ResultSet run(Connection conn, long s_a_id, long[] d_a_ids, double[] amounts) throws SQLException {
+    public long run(Connection conn, long s_a_id, long[] d_a_ids, double[] amounts, boolean isM) throws SQLException {
 //        long txnid = AIMSLogger.getTransactionId(conn, this);
         int tmp = 0;
         int tmp2 = 0;
@@ -96,8 +107,10 @@ public class Distribute extends Procedure {
             throw new RuntimeException(String.format("s_a_id = %d not found",s_a_id));
         }
         
-        float srcBal = rs.getFloat(1);
+        float srcBal = rs.getFloat(2);
 //        AIMSLogger.logReadOperation(txnid, String.format("%s,%d",SWBankConstants.TABLENAME_CHECKING,s_a_id));
+        
+//        LOG.info(String.format("CHECKING,%d, %.2f", s_a_id, srcBal));
         
         float srcDedcution = 0;
         for (double d : amounts) {
@@ -142,8 +155,12 @@ public class Distribute extends Procedure {
             
         }
         
-        
-        return null;
+        if (isM) {
+            return AIMSLogger.getTransactionId(conn, this);
+        }
+        else {
+            return -1;
+        }
     }
     
 }

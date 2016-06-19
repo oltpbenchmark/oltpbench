@@ -12,6 +12,9 @@ import com.oltpbenchmark.benchmarks.smallworldbank.SWBankConstants;
 
 public class ReportActiveCustomers extends Procedure {
     
+    
+    public final String sqlstr0 = "select * from "+ SWBankConstants.TABLENAME_CUSTOMER;
+    
     public final String sqlstr1 = "update "+ SWBankConstants.TABLENAME_CUSTOMER
             + " "
             + "set cust_total_tx_count = cust_total_tx_count + cust_curr_tx_count,"
@@ -23,12 +26,20 @@ public class ReportActiveCustomers extends Procedure {
     public final SQLStmt stmtUpdateCustTotalsSQL = new SQLStmt(sqlstr1);
     public final SQLStmt stmtUpdateCustCurrentsSQL = new SQLStmt(sqlstr2);
     
+    public final SQLStmt stmtr0 = new SQLStmt(sqlstr0);
+    
     
     
     public ResultSet run(Connection conn) throws SQLException {
      
         PreparedStatement ps1 = this.getPreparedStatement(conn, stmtUpdateCustTotalsSQL);
         PreparedStatement ps2 = this.getPreparedStatement(conn, stmtUpdateCustCurrentsSQL);
+        
+        // make sure reads were logged.
+        PreparedStatement rq = this.getPreparedStatement(conn, stmtr0);
+        ResultSet tmp1 = rq.executeQuery();
+        tmp1.close();
+        
         int tmp = 0;
         
         ps1.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
