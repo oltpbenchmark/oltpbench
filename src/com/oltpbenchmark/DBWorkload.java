@@ -681,7 +681,7 @@ public class DBWorkload {
             }
             
             if (includeRawData) {
-            	r.writeAllCSVAbsoluteTiming(rs);
+            	ru.writeAbsoluteTimings(rs);
             }
 
             ps.close();
