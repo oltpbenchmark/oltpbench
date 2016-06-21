@@ -19,6 +19,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 
 class MYSQLCollector extends DBCollector {
     
@@ -32,20 +33,20 @@ class MYSQLCollector extends DBCollector {
     
     @Override
     protected void getGlobalParameters(Connection conn) throws SQLException {
-        getSimpleStats(conn, wrap(PARAM_QUERY), MapKeys.GLOBAL.toString(),
-                dbParams, true);
+        getSimpleStats(conn, Arrays.asList(PARAM_QUERY), MapKeys.GLOBAL.toString(),
+                dbParams, Arrays.asList(true), false);
     }
 
     @Override
     protected void getGlobalStats(Connection conn) throws SQLException {
-        getSimpleStats(conn, wrap(GLOBAL_QUERY), MapKeys.GLOBAL.toString(),
-                dbStats, true);
+        getSimpleStats(conn, Arrays.asList(GLOBAL_QUERY), MapKeys.GLOBAL.toString(),
+                dbStats, Arrays.asList(true), false);
     }
     
     @Override
     protected void getTableStats(Connection conn) throws SQLException {
-        getSimpleStats(conn, wrap(String.format(TABLE_QUERY, databaseName)),
-                MapKeys.TABLE.toString(), dbStats, false);
+        getSimpleStats(conn, Arrays.asList(String.format(TABLE_QUERY, databaseName)),
+                MapKeys.TABLE.toString(), dbStats, Arrays.asList(false), false);
     }
     
     @Override

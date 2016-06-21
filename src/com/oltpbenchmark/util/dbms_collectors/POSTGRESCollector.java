@@ -20,13 +20,13 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 class POSTGRESCollector extends DBCollector {
     
     private static final String PARAM_QUERY = "SHOW ALL";
-            //"SELECT name, setting FROM pg_settings;";
     
     private static final String GLOBAL_QUERY =
             "SELECT * FROM pg_stat_bgwriter;";
@@ -48,32 +48,32 @@ class POSTGRESCollector extends DBCollector {
     
     @Override
     protected void getGlobalParameters(Connection conn) throws SQLException {
-        getSimpleStats(conn, wrap(PARAM_QUERY), MapKeys.GLOBAL.toString(),
-                dbParams, true);
+        getSimpleStats(conn, Arrays.asList(PARAM_QUERY), MapKeys.GLOBAL.toString(),
+                dbParams, Arrays.asList(true), false);
     }
     
     @Override
     protected void getGlobalStats(Connection conn) throws SQLException {
-        getSimpleStats(conn, wrap(GLOBAL_QUERY), MapKeys.GLOBAL.toString(),
-                dbStats, false);
+        getSimpleStats(conn, Arrays.asList(GLOBAL_QUERY), MapKeys.GLOBAL.toString(),
+                dbStats, Arrays.asList(false), false);
     }
     
     @Override
     protected void getDatabaseStats(Connection conn) throws SQLException {
-        getSimpleStats(conn, wrap(String.format(DATABASE_QUERY, databaseName)),
-                MapKeys.DATABASE.toString(), dbStats, false);
+        getSimpleStats(conn, Arrays.asList(String.format(DATABASE_QUERY, databaseName)),
+                MapKeys.DATABASE.toString(), dbStats, Arrays.asList(false), false);
     }
     
     @Override
     protected void getTableStats(Connection conn) throws SQLException {
-        getSimpleStats(conn, wrap(TABLE_QUERY), MapKeys.TABLE.toString(),
-                dbStats, false);
+        getSimpleStats(conn, Arrays.asList(TABLE_QUERY), MapKeys.TABLE.toString(),
+                dbStats, Arrays.asList(false), false);
     }
     
     @Override
     protected void getIndexStats(Connection conn) throws SQLException {
-        getSimpleStats(conn, wrap(INDEX_QUERY), MapKeys.INDEX.toString(),
-                dbStats, false);
+        getSimpleStats(conn, Arrays.asList(INDEX_QUERY), MapKeys.INDEX.toString(),
+                dbStats, Arrays.asList(false), false);
     }
     
     @Override
