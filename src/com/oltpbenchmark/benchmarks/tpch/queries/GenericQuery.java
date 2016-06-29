@@ -74,21 +74,21 @@ public abstract class GenericQuery extends Procedure {
         LOG.debug(this.getClass());
         ResultSet rs = null;
         rs = stmt.executeQuery();
-//        try {
-//            rs = stmt.executeQuery();
-//        } catch(SQLException ex) {
-//            // If the system thinks we're missing a prepared statement, then we
-//            // should regenerate them.
-//            if (ex.getErrorCode() == 0 && ex.getSQLState() != null
-//                && ex.getSQLState().equals("07003"))
-//            {
-//                this.resetPreparedStatements();
-//                rs = stmt.executeQuery();
-//            }
-//            else {
-//                throw ex;
-//            }
-//        }
+        try {
+            rs = stmt.executeQuery();
+        } catch(SQLException ex) {
+            // If the system thinks we're missing a prepared statement, then we
+            // should regenerate them.
+            if (ex.getErrorCode() == 0 && ex.getSQLState() != null
+                && ex.getSQLState().equals("07003"))
+            {
+                this.resetPreparedStatements();
+                rs = stmt.executeQuery();
+            }
+            else {
+                throw ex;
+            }
+        }
         while (rs.next()) {
             //do nothing
         }

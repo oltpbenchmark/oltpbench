@@ -453,9 +453,9 @@ work:
                     }
                     else {
                         // UNKNOWN: In this case .. Retry as well!
-                        continue;
+                        //continue;
                         //FIXME Disable this for now
-                        // throw ex;
+                        throw ex;
                     }
                 }
                 finally {
