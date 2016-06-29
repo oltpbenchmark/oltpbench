@@ -80,8 +80,10 @@ public abstract class GenericQuery extends Procedure {
             // If the system thinks we're missing a prepared statement, then we
             // should regenerate them.
             if (ex.getErrorCode() == 0 && ex.getSQLState() != null
-                && ex.getSQLState().equals("07003"))
+                && (ex.getSQLState().equals("07003")
+                        || ex.getSQLState() == "08003"))
             {
+                LOG.debug("Resetting prepared statements");
                 this.resetPreparedStatements();
                 rs = stmt.executeQuery();
             }
