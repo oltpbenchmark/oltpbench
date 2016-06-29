@@ -39,6 +39,7 @@ import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
@@ -177,6 +178,13 @@ public class ResultUploader {
         os.println(JSONUtil.format(stringer.toString()));
     }
     
+    public void writeAbsoluteTimings(PrintStream os) {
+        String[] labels = {"txn_type", "start_time_ms", "latency_ms",
+                "worker_id", "phase_id"};
+        List<List<Double>> timings = results.getAllAbsoluteTiming();
+        writeStatsMatrix(os, Arrays.asList(labels), timings);
+    }
+    
     public void writeResultStats(PrintStream os) {
         writeResultStats(os, TransactionType.INVALID);
     }
@@ -185,15 +193,20 @@ public class ResultUploader {
         List<String> statLabels = Results.getResultLabels();
         List<List<Double>> samples = results.getSampleResults(this.windowSize,
                 os, txId);
-        int numStats = statLabels.size();
+        writeStatsMatrix(os, statLabels, samples);
+    }
+        
+    public void writeStatsMatrix(PrintStream os, List<String> labels,
+            List<List<Double>> samples) {
+        int numStats = labels.size();
         
         JSONStringer stringer = new JSONStringer();
         try {
             stringer.object()
-                    .key("statlabels")
+                    .key("labels")
                     .array();
             for (int i = 0; i < numStats; ++i) {
-                stringer.value(statLabels.get(i));
+                stringer.value(labels.get(i));
             }
             stringer.endArray()
                     .key("samples")

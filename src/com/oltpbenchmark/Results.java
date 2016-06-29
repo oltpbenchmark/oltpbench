@@ -188,6 +188,30 @@ public final class Results {
         }
     }
     
+    public List<List<Double>> getAllAbsoluteTiming() {
+
+        // This is needed because nanTime does not guarantee offset... we
+        // ground it (and round it) to ms from 1970-01-01 like currentTime
+        double x = ((double) System.nanoTime() / (double) 1000000000);
+        double y = ((double) System.currentTimeMillis() / (double) 1000);
+        double offset = x - y;
+
+        //out.println("transaction type (index in config file), start time (microseconds),latency (microseconds),worker id(start number), phase id(index in config file)");
+        List<List<Double>> timings = new ArrayList<List<Double>>();
+        for (Sample s : latencySamples) {
+            List<Double> timing = new ArrayList<Double>();
+            double startUs = ((double) s.startNs / (double) 1000000000);
+            //out.println(s.tranType + "," + String.format("%10.6f", startUs - offset) + "," + s.latencyUs + "," + s.workerId + "," + s.phaseId);
+            timing.add((double) s.tranType);
+            timing.add((startUs - offset) / (double) 1000);
+            timing.add(s.latencyUs / (double) 1000);
+            timing.add((double) s.workerId);
+            timing.add((double) s.phaseId);
+            timings.add(timing);
+        }
+        return timings;
+    }
+    
     public boolean valid() {
     	return getRequestsPerSecond() != 0.0;
     }
