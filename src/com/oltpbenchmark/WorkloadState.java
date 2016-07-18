@@ -141,13 +141,15 @@ public class WorkloadState {
         }
 
         // Unlimited-rate phases don't use the work queue.
-        if (currentPhase != null && traceReader == null
-            && !currentPhase.isRateLimited())
-        {
-            synchronized(this) {
+        synchronized(this) {
+            if (currentPhase != null && traceReader == null
+                && !currentPhase.isRateLimited())
+            {
+                //synchronized(this) {
                 ++workersWorking;
+                //}
+                return new SubmittedProcedure(currentPhase.chooseTransaction(getGlobalState() == State.COLD_QUERY));
             }
-            return new SubmittedProcedure(currentPhase.chooseTransaction(getGlobalState() == State.COLD_QUERY));
         }
 
         synchronized(this) {
