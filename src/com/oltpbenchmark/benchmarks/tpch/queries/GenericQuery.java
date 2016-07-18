@@ -73,7 +73,6 @@ public abstract class GenericQuery extends Procedure {
 
         LOG.debug(this.getClass());
         ResultSet rs = null;
-        rs = stmt.executeQuery();
         try {
             rs = stmt.executeQuery();
         } catch(SQLException ex) {
