@@ -29,6 +29,8 @@ public class DBParameterCollectorGen {
             collector = new POSTGRESCollector();
         } else if (db.equals("db2")) {
             collector = new DB2Collector();
+        } else if (db.equals("greenplum")) {
+            collector = new GREENPLUMCollector();
         } else {
             collector = new DBCollector();
         }

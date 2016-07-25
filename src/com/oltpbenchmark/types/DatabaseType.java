@@ -36,7 +36,8 @@ public enum DatabaseType {
     H2,
     MONETDB,
     NUODB,
-    TIMESTEN
+    TIMESTEN,
+    GREENPLUM
     ;
     
     public static final DatabaseType TEST_TYPE = DatabaseType.HSQLDB; 
