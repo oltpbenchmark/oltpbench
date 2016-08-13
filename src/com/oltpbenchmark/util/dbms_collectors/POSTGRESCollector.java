@@ -35,16 +35,20 @@ class POSTGRESCollector extends DBCollector {
             "SELECT * FROM pg_stat_database WHERE datname='%s';";
     
     private static final String TABLE_QUERY = 
-            "select * from pg_stat_user_tables full outer join "
-            + "pg_statio_user_tables on pg_stat_user_tables.relid="
-            + "pg_statio_user_tables.relid order by "
-            + "pg_statio_user_tables.relname;";
+            "select * from pg_stat_user_tables, "
+            + "pg_statio_user_tables "
+            + "where pg_stat_user_tables.relid="
+            + "pg_statio_user_tables.relid and "
+            + "pg_statio_user_tables.schemaname='public' "
+            + "order by pg_statio_user_tables.relname;";
     
     private static final String INDEX_QUERY = 
-            "select * from pg_stat_user_indexes full outer join "
-            + "pg_statio_user_indexes on pg_stat_user_indexes.indexrelid="
-            + "pg_statio_user_indexes.indexrelid order by "
-            + "pg_statio_user_indexes.indexrelname;";
+            "select * from pg_stat_user_indexes, "
+            + "pg_statio_user_indexes "
+            + "where pg_stat_user_indexes.indexrelid="
+            + "pg_statio_user_indexes.indexrelid and "
+            + "pg_statio_user_indexes.schemaname='public' "
+            + "order by pg_statio_user_indexes.indexrelname;";
     
     @Override
     protected void getGlobalParameters(Connection conn) throws SQLException {

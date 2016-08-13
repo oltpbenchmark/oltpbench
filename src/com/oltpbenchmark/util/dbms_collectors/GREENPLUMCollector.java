@@ -17,94 +17,16 @@
 package com.oltpbenchmark.util.dbms_collectors;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.oltpbenchmark.util.ResultObject.DBEntry;
-import com.oltpbenchmark.util.dbms_collectors.DBCollector.MapKeys;
 
 class GREENPLUMCollector extends POSTGRESCollector {
-    
-//    private static final String PARAM_QUERY = "SHOW ALL";
-//    
-//    private static final String GLOBAL_QUERY =
-//            "SELECT * FROM pg_stat_bgwriter;";
-//    
-//    private static final String DATABASE_QUERY = 
-//            "SELECT * FROM pg_stat_database WHERE datname='%s';";
-//    
-//    private static final String TABLE_QUERY = 
-//            "select * from pg_stat_user_tables full outer join "
-//            + "pg_statio_user_tables on pg_stat_user_tables.relid="
-//            + "pg_statio_user_tables.relid order by "
-//            + "pg_statio_user_tables.relname;";
-//    
-//    private static final String INDEX_QUERY = 
-//            "select * from pg_stat_user_indexes full outer join "
-//            + "pg_statio_user_indexes on pg_stat_user_indexes.indexrelid="
-//            + "pg_statio_user_indexes.indexrelid order by "
-//            + "pg_statio_user_indexes.indexrelname;";
-//    
-//    @Override
-//    protected void getGlobalParameters(Connection conn) throws SQLException {
-//        getSimpleStats(conn, Arrays.asList(PARAM_QUERY), MapKeys.GLOBAL.toString(),
-//                dbParams, Arrays.asList(true), false);
-//    }
-    
+
     @Override
     protected void getGlobalStats(Connection conn) throws SQLException {
-//        getSimpleStats(conn, Arrays.asList(GLOBAL_QUERY), MapKeys.GLOBAL.toString(),
-//                dbStats, Arrays.asList(false), false);
         dbStats.add(new DBEntry(MapKeys.GLOBAL.toString(), Collections.EMPTY_LIST));
     }
-    
-//    @Override
-//    protected void getDatabaseStats(Connection conn) throws SQLException {
-//        getSimpleStats(conn, Arrays.asList(String.format(DATABASE_QUERY, databaseName)),
-//                MapKeys.DATABASE.toString(), dbStats, Arrays.asList(false), false);
-//    }
-//    
-//    @Override
-//    protected void getTableStats(Connection conn) throws SQLException {
-//        getSimpleStats(conn, Arrays.asList(TABLE_QUERY), MapKeys.TABLE.toString(),
-//                dbStats, Arrays.asList(false), false);
-//    }
-//    
-//    @Override
-//    protected void getIndexStats(Connection conn) throws SQLException {
-//        getSimpleStats(conn, Arrays.asList(INDEX_QUERY), MapKeys.INDEX.toString(),
-//                dbStats, Arrays.asList(false), false);
-//    }
-//    
-//    @Override
-//    protected void getVersionInfo(Connection conn) throws SQLException {
-//        super.getVersionInfo(conn);
-//        
-//        final Pattern COMPILE_PATTERN = Pattern.compile("\\S+-\\S+-\\S+-[^,]+");
-//        final Pattern OS_PATTERN = Pattern.compile("(?<=\\()\\S+");
-//        
-//        Statement s = conn.createStatement();
-//        ResultSet out = s.executeQuery("SELECT version();");
-//        String result = null;
-//        while (out.next()) {
-//            result = out.getString(1);
-//        }
-//        if (result != null) {
-//            Matcher m = COMPILE_PATTERN.matcher(result);
-//            if (m.find()) {
-//                this.versionInfo.architecture = m.group()
-//                        .split("-", 2)[0].toLowerCase();
-//            }
-//            m = OS_PATTERN.matcher(result);
-//            if (m.find()) {
-//                this.versionInfo.osName = m.group().toLowerCase();
-//            }
-//        }
-//    }
 
 }
