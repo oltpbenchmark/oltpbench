@@ -463,13 +463,14 @@ work:
                         continue;
                     }
                     else {
-                        // UNKNOWN: In this case .. Retry as well!
-                        status = TransactionStatus.RETRY_DIFFERENT;
+                        // UNKNOWN: In this case .. Retry different as well!
+                        // FIXME(Dana): temporarily setting this to fail to help weed out
+                        // special case errors
                         ex.printStackTrace();
                         LOG.info("Unknown error encountered.");
-                        continue;
-                        //FIXME Disable this for now
-                        //throw ex;
+                        System.exit(0);
+                        //status = TransactionStatus.RETRY_DIFFERENT;
+                        //continue;
                     }
                 }
                 finally {
