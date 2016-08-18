@@ -323,6 +323,12 @@ work:
                         intervalRequests.incrementAndGet();
                     }
                     if (phase.isLatencyRun())
+                        if (type == null) {
+                            type = transactionTypes.getType(pieceOfWork.getType());
+                            latencies.addIncompleteLatency(type.getId(), start, this.id
+                                    , phase.id);
+                            intervalRequests.incrementAndGet();
+                        }
                         this.wrkldState.startColdQuery();
                     break;
                 case COLD_QUERY:
@@ -453,9 +459,10 @@ work:
                     }
                     else {
                         // UNKNOWN: In this case .. Retry as well!
-                        //continue;
+                        status = TransactionStatus.RETRY_DIFFERENT;
+                        continue;
                         //FIXME Disable this for now
-                        throw ex;
+                        //throw ex;
                     }
                 }
                 finally {

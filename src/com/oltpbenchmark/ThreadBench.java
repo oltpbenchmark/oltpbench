@@ -478,7 +478,7 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
                 // Time to quit.
                 break;
             }
-        }
+        } // WHILE
 
         try {
             int requests = finalizeWorkers(this.workerThreads);
@@ -499,7 +499,8 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
             }
             DistributionStatistics stats = DistributionStatistics.computeStatistics(latencies);
 
-            Results results = new Results(measureEnd - start, requests, stats, samples);
+            // Results results = new Results(measureEnd - start, requests, stats, samples);
+            Results results = new Results(measureEnd - start, stats.getCount(), stats, samples);
 
             // Compute transaction histogram
             Set<TransactionType> txnTypes = new HashSet<TransactionType>();

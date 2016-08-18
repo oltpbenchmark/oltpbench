@@ -19,7 +19,10 @@ package com.oltpbenchmark;
 
 import java.util.Arrays;
 
+import org.apache.log4j.Logger;
+
 public class DistributionStatistics {
+    private static final Logger LOG = Logger.getLogger(DistributionStatistics.class);
 	private static final double[] PERCENTILES = { 0.0, 0.25, 0.5, 0.75, 0.9,
 			0.95, 0.99, 1.0 };
 
@@ -47,6 +50,14 @@ public class DistributionStatistics {
 		this.average = average;
 		this.standardDeviation = standardDeviation;
 	}
+	
+	private static DistributionStatistics computeEmptyStatistics() {
+        long[] percentiles = new long[PERCENTILES.length];
+        for (int i = 0; i < percentiles.length; ++i) {
+            percentiles[i] = -1;
+        }
+        return new DistributionStatistics(0, percentiles, 0, 0);
+	}
 
 	/**
 	 * Computes distribution statistics over values. WARNING: This will sort
@@ -54,17 +65,19 @@ public class DistributionStatistics {
 	 */
 	public static DistributionStatistics computeStatistics(int[] values) {
 		if (values.length == 0) {
-			//			throw new IllegalArgumentException(
-			//					"cannot compute statistics for an empty list");
-			
-			long[] percentiles = new long[PERCENTILES.length];
-			for (int i = 0; i < percentiles.length; ++i) {
-				percentiles[i] = -1;
-			}
-			return new DistributionStatistics(values.length, percentiles, 0,0);
-		
+		    return computeEmptyStatistics();
 		}
 		Arrays.sort(values);
+
+		// Factor out incomplete latencies (set to max value)
+		int idx = values.length;
+		while (idx > 0 && values[idx - 1] == Integer.MAX_VALUE) {
+		    --idx;
+		}
+		values = Arrays.copyOfRange(values, 0, idx);
+        if (values.length == 0) {
+            return computeEmptyStatistics();
+        }
 
 		double sum = 0;
 		for (int i = 0; i < values.length; ++i) {

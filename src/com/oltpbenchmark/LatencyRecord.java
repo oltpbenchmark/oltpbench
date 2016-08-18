@@ -67,6 +67,26 @@ public class LatencyRecord implements Iterable<LatencyRecord.Sample> {
 
 		lastNs += startOffsetNs;
 	}
+    
+    public void addIncompleteLatency(int transType, long startNs, int workerId, int phaseId) {
+        assert lastNs > 0;
+        assert lastNs - 500 <= startNs;
+
+        if (nextIndex == ALLOC_SIZE) {
+            allocateChunk();
+        }
+        Sample[] chunk = values.get(values.size() - 1);
+
+        long startOffsetNs = (startNs - lastNs + 500);
+        assert startOffsetNs >= 0;
+        int latencyUs = Integer.MAX_VALUE;
+
+        chunk[nextIndex] = new Sample(transType, startOffsetNs, latencyUs
+                , workerId, phaseId);
+        ++nextIndex;
+
+        lastNs += startOffsetNs;
+    }
 
 	private void allocateChunk() {
 		assert (values.isEmpty() && nextIndex == 0)

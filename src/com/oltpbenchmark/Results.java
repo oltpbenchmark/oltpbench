@@ -204,7 +204,11 @@ public final class Results {
             //out.println(s.tranType + "," + String.format("%10.6f", startUs - offset) + "," + s.latencyUs + "," + s.workerId + "," + s.phaseId);
             timing.add((double) s.tranType);
             timing.add((startUs - offset) / (double) 1000);
-            timing.add(s.latencyUs / (double) 1000);
+            if (s.latencyUs == Integer.MAX_VALUE) {
+                timing.add((double) s.latencyUs);
+            } else {
+                timing.add(s.latencyUs / (double) 1000);
+            }
             timing.add((double) s.workerId);
             timing.add((double) s.phaseId);
             timings.add(timing);
