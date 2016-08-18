@@ -404,7 +404,7 @@ work:
                 } catch (SQLException ex) {
                                        
                     //TODO: Handle acceptable error codes for every DBMS     
-                    LOG.debug(next+ " " +  ex.getMessage()+" "+ex.getErrorCode()+ " - " +ex.getSQLState());
+                    LOG.info(next+ " " +  ex.getMessage()+" "+ex.getErrorCode()+ " - " +ex.getSQLState());
 
                     this.txnErrors.put(next);
                     
@@ -457,9 +457,16 @@ work:
                         status = TransactionStatus.RETRY_DIFFERENT;
                         continue;
                     }
+                    else if (ex.getErrorCode() == 0 && ex.getSQLState().equals("XX000")) {
+                        // Greenplum insufficient memory for statement
+                        status = TransactionStatus.RETRY_DIFFERENT;
+                        continue;
+                    }
                     else {
                         // UNKNOWN: In this case .. Retry as well!
                         status = TransactionStatus.RETRY_DIFFERENT;
+                        ex.printStackTrace();
+                        LOG.info("Unknown error encountered.");
                         continue;
                         //FIXME Disable this for now
                         //throw ex;
@@ -473,6 +480,7 @@ work:
                             break;
                         case RETRY_DIFFERENT:
                             this.txnRetry.put(next);
+                            LOG.debug("Retrying different transaction...");
                             return null;
                         case RETRY:
                             LOG.debug("Retrying transaction...");
