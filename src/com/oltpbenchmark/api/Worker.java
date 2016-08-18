@@ -322,7 +322,7 @@ work:
                                 , phase.id);
                         intervalRequests.incrementAndGet();
                     }
-                    if (phase.isLatencyRun())
+                    if (phase.isLatencyRun()) {
                         if (type == null) {
                             type = transactionTypes.getType(pieceOfWork.getType());
                             latencies.addIncompleteLatency(type.getId(), start, this.id
@@ -330,12 +330,14 @@ work:
                             intervalRequests.incrementAndGet();
                         }
                         this.wrkldState.startColdQuery();
+                    }
                     break;
                 case COLD_QUERY:
                     // No recording for cold runs, but next time we will since
                     // it'll be a hot run.
-                    if (preState == State.COLD_QUERY)
+                    if (preState == State.COLD_QUERY) {
                         this.wrkldState.startHotQuery();
+                    }
                     break;
 			}
 
