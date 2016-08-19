@@ -460,6 +460,11 @@ work:
                         status = TransactionStatus.RETRY_DIFFERENT;
                         continue;
                     }
+                    else if (ex.getErrorCode() == 0 && ex.getSQLState().equals("08003")) {
+                        // MySQL statement closed
+                        status = TransactionStatus.RETRY_DIFFERENT;
+                        continue;
+                    }
                     else if (ex.getErrorCode() == 0 && ex.getSQLState().equals("XX000")) {
                         // Greenplum insufficient memory for statement
                         status = TransactionStatus.RETRY_DIFFERENT;
