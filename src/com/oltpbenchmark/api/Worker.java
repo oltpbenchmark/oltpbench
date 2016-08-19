@@ -445,6 +445,7 @@ work:
                     } 
                     else if (   (ex.getErrorCode() == 0 && ex.getSQLState().equals("57014"))
                         || (ex.getErrorCode() == -952 && ex.getSQLState().equals("57014")) // DB2
+                        || (ex.getErrorCode() == 13172745 && ex.getSQLState().equals("5000R")) // VW
                        )
                     {
                         // Query cancelled by benchmark because we changed
