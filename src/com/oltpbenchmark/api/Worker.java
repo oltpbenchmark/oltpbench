@@ -426,7 +426,12 @@ work:
                     else if (ex.getErrorCode() == 1205 && ex.getSQLState().equals("41000")) {
                         // MySQL Lock timeout
                         continue;
-                    } 
+                    }
+                    else if (ex.getErrorCode() == 0 && ex.getSQLState().equals("08S01")) {
+                        // MySQL Communications Failure -- BAD
+                        ex.printStackTrace();
+                        System.exit(1);
+                    }
                     else if (ex.getErrorCode() == 1205 && ex.getSQLState().equals("40001")) {
                         // SQLServerException Deadlock
                         continue;
