@@ -20,6 +20,7 @@ package com.oltpbenchmark;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -36,6 +37,7 @@ import com.oltpbenchmark.LatencyRecord.Sample;
 import com.oltpbenchmark.api.TransactionType;
 import com.oltpbenchmark.api.Worker;
 import com.oltpbenchmark.types.State;
+import com.oltpbenchmark.util.EarlyAbortConfiguration;
 import com.oltpbenchmark.util.Histogram;
 import com.oltpbenchmark.util.QueueLimitException;
 import com.oltpbenchmark.util.StringUtil;
@@ -52,6 +54,7 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
     private List<WorkloadState> workStates;
     ArrayList<LatencyRecord.Sample> samples = new ArrayList<LatencyRecord.Sample>();
     private int intervalMonitor = 0;
+    private EarlyAbortConfiguration earlyAbortConfig = null;
 
     private ThreadBench(List<? extends Worker> workers, List<WorkloadConfiguration> workConfs) {
         this(workers, null, workConfs);
@@ -247,6 +250,140 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
         }
     } // CLASS
 
+    private class EarlyAbortThread extends Thread {
+        private final EarlyAbortConfiguration abortConfig;
+        private final int intervalSeconds;
+        private double averageLatency;
+        
+        {
+            this.setDaemon(true);
+        }
+        EarlyAbortThread(EarlyAbortConfiguration abortConfig) {
+            this.abortConfig = abortConfig;
+            this.intervalSeconds = abortConfig.getIntervalSeconds();
+            this.averageLatency = 0.0;
+        }
+        @Override
+        public void run() {
+            LOG.info("Starting EarlyAbortThread Interval[" + this.intervalSeconds + " seconds]");
+            while (true) {
+                try {
+                    Thread.sleep(this.intervalSeconds * 1000);
+                } catch (InterruptedException ex) {
+                    return;
+                }
+
+                Phase phase = null;
+                int numLatencies = 0;
+                int chunkSize = 1000;
+                int capacity = chunkSize;
+                int[] latencies = new int[capacity];
+                synchronized (testState) {
+                    if (testState == null) {
+                        return;
+                    }
+                    for (WorkloadState workState : workStates) {
+                        synchronized (workState) {
+                            phase = workState.getCurrentPhase();
+                            if (phase == null) {
+                                return;
+                            }
+                        }
+                    }
+                    for (Worker w : workers) {
+                        List<Integer> wLatencies = w.getAndResetRawLatencies();
+                        LOG.info("NUM_LATENCIES = " + wLatencies.size());
+                        for (int lat : wLatencies) {
+                            if (numLatencies >= capacity) {
+                                capacity += chunkSize;
+                                latencies = Arrays.copyOf(latencies, capacity);
+                            }
+                            latencies[numLatencies++] = lat;
+                        }
+                    }
+                }
+                if (capacity > numLatencies) {
+                    latencies = Arrays.copyOfRange(latencies, 0, numLatencies);
+                }
+                
+                double latencyThreshold = 0.0;
+                if (phase.isLatencyRun()) {
+                    int responseTimesElapsed = latencies.length;
+                    double currentLatency = 0.0;
+                    for (int i = 0; i < responseTimesElapsed; ++i) {
+                        currentLatency += latencies[i];
+                    }
+                    this.averageLatency = currentLatency;
+                    latencyThreshold = abortConfig.getLatencyThreshold(responseTimesElapsed);
+                } else {
+                    DistributionStatistics stats = DistributionStatistics.computeStatistics(latencies);
+                    double currentLatency = 0.0;
+                    switch (abortConfig.getLatencyMetric()) {
+                        case MAXIMUM:
+                            currentLatency = stats.getMaximum();
+                            break;
+                        case PERCENTILE_99TH:
+                            currentLatency = stats.get99thPercentile();
+                            break;
+                        case PERCENTILE_95TH:
+                            currentLatency = stats.get95thPercentile();
+                            break;
+                        case PERCENTILE_90TH:
+                            currentLatency = stats.get90thPercentile();
+                            break;
+                        case PERCENTILE_75TH:
+                            currentLatency = stats.get75thPercentile();
+                            break;
+                        case MEDIAN:
+                            currentLatency = stats.getMedian();
+                            break;
+                        case PERCENTILE_25TH:
+                            currentLatency = stats.get25thPercentile();
+                            break;
+                        case MEAN:
+                            currentLatency = stats.getAverage();
+                            break;
+                        case MINIMUM:
+                            currentLatency = stats.getMinimum();
+                            break;
+                        default:
+                            LOG.error("FATAL: unexpected latency metric " 
+                                    + abortConfig.getLatencyMetric());
+                            System.exit(-1);
+                    }
+                    if (this.averageLatency == 0.0) {
+                        this.averageLatency = currentLatency;
+                    } else {
+                        this.averageLatency = (currentLatency + averageLatency) / 2.0;
+                    }
+                    latencyThreshold = abortConfig.getLatencyThreshold();
+                    
+                }
+                LOG.info("abort threshold: " + abortConfig.getLatencyThreshold());
+                LOG.info("WLATENCY: " + averageLatency);
+                if (this.averageLatency > latencyThreshold) {
+                    // TODO: abort! And print out stats collected so far.
+                    LOG.info("ABORTING!!");
+                    synchronized (testState) {
+                        if (phase.isLatencyRun()) {
+                            testState.ackLatencyComplete();
+                        }
+                        for (WorkloadState workState : workStates) {
+                            synchronized (workState) {
+                                workState.switchToNextPhase();
+                                phase = workState.getCurrentPhase();
+                                interruptWorkers();
+                                // Last phase
+                                testState.startCoolDown();
+                                LOG.info("[EarlyAbort] Waiting for all terminals to finish ..");
+                            }
+                        }
+                    }
+                }
+            } // WHILE
+        }
+    } // CLASS
+
     private class MonitorThread extends Thread {
         private final int intervalMonitor;
         {
@@ -286,9 +423,13 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
      * bench.runRateLimitedFromFile(); }
      */
 
-    public static Results runRateLimitedBenchmark(List<Worker> workers, List<WorkloadConfiguration> workConfs, int intervalMonitoring) throws QueueLimitException, IOException {
+    public static Results runRateLimitedBenchmark(List<Worker> workers,
+            List<WorkloadConfiguration> workConfs,
+            int intervalMonitoring,
+            EarlyAbortConfiguration abortConfig) throws QueueLimitException, IOException {
         ThreadBench bench = new ThreadBench(workers, workConfs);
         bench.intervalMonitor = intervalMonitoring;
+        bench.earlyAbortConfig = abortConfig;
         return bench.runRateLimitedMultiPhase();
     }
 
@@ -308,6 +449,7 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
 
         long start = System.nanoTime();
         long measureEnd = -1;
+        long now = -1;
         // used to determine the longest sleep interval
         int lowestRate = Integer.MAX_VALUE;
 
@@ -337,6 +479,11 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
         if(this.intervalMonitor > 0 ) {
             new MonitorThread(this.intervalMonitor).start();
         }
+        
+        // Initialize the early abort monitor
+        if (this.earlyAbortConfig != null) {
+            new EarlyAbortThread(earlyAbortConfig).start();
+        }
 
         // Main Loop
         while (true) {           
@@ -354,7 +501,7 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
             resetQueues = false;
 
             // Wait until the interval expires, which may be "don't wait"
-            long now = System.nanoTime();
+            now = System.nanoTime();
             long diff = nextInterval - now;
             while (diff > 0) { // this can wake early: sleep multiple times to
                                // avoid that
@@ -482,6 +629,9 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
 
         try {
             int requests = finalizeWorkers(this.workerThreads);
+            if (measureEnd < 0) {
+                measureEnd = System.nanoTime();;
+            }
 
             // Combine all the latencies together in the most disgusting way
             // possible: sorting!

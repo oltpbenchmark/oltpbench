@@ -46,7 +46,7 @@ public class LatencyRecord implements Iterable<LatencyRecord.Sample> {
 
 	}
 
-    public void addLatency(int transType, long startNs, long endNs, int workerId, int phaseId) {
+    public int addLatency(int transType, long startNs, long endNs, int workerId, int phaseId) {
 		assert lastNs > 0;
 		assert lastNs - 500 <= startNs;
 		assert endNs >= startNs;
@@ -66,9 +66,10 @@ public class LatencyRecord implements Iterable<LatencyRecord.Sample> {
 		++nextIndex;
 
 		lastNs += startOffsetNs;
+		return latencyUs;
 	}
     
-    public void addIncompleteLatency(int transType, long startNs, int workerId, int phaseId) {
+    public int addIncompleteLatency(int transType, long startNs, int workerId, int phaseId) {
         assert lastNs > 0;
         assert lastNs - 500 <= startNs;
 
@@ -86,6 +87,7 @@ public class LatencyRecord implements Iterable<LatencyRecord.Sample> {
         ++nextIndex;
 
         lastNs += startOffsetNs;
+        return latencyUs;
     }
 
 	private void allocateChunk() {

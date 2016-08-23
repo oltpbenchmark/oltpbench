@@ -46,6 +46,7 @@ import com.oltpbenchmark.api.Worker;
 import com.oltpbenchmark.distributions.ZipfianGenerator;
 import com.oltpbenchmark.types.DatabaseType;
 import com.oltpbenchmark.util.ClassUtil;
+import com.oltpbenchmark.util.EarlyAbortConfiguration;
 import com.oltpbenchmark.util.ErrorCodes;
 import com.oltpbenchmark.util.FileUtil;
 import com.oltpbenchmark.util.QueueLimitException;
@@ -145,6 +146,7 @@ public class DBWorkload {
         options.addOption(null, "dialects-export", true, "Export benchmark SQL to a dialects file");
         options.addOption(null, "get-config", true, "Output the DBMS configuration to a config file");
         options.addOption("pp", "prettyprint", false, "Pretty print the result files");
+        options.addOption("ea", "early-abort", true, "Abort poorly-performing experiments early");
 
         // parse the command line arguments
         CommandLine argsLine = parser.parse(options, args);
@@ -177,6 +179,14 @@ public class DBWorkload {
         int intervalMonitor = 0;
         if (argsLine.hasOption("im")) {
             intervalMonitor = Integer.parseInt(argsLine.getOptionValue("im"));
+        }
+        
+        EarlyAbortConfiguration abortConfig = null;
+        if (argsLine.hasOption("ea")) {
+            String earlyAbortConfigFile = argsLine.getOptionValue("ea");
+            XMLConfiguration abortXmlConfig = new XMLConfiguration(earlyAbortConfigFile);
+            abortXmlConfig.setExpressionEngine(new XPathExpressionEngine());
+            abortConfig = new EarlyAbortConfiguration(abortXmlConfig);
         }
         
         // -------------------------------------------------------------------
@@ -264,6 +274,7 @@ public class DBWorkload {
             // LOAD TRANSACTION DESCRIPTIONS
             // ----------------------------------------------------------------
             int numTxnTypes = xmlConfig.configurationsAt("transactiontypes" + pluginTest + "/transactiontype").size();
+            LOG.info("num txn types: " + numTxnTypes);
             if (numTxnTypes == 0 && targetList.length == 1) {
                 //if it is a single workload run, <transactiontypes /> w/o attribute is used
                 pluginTest = "[not(@bench)]";
@@ -302,7 +313,7 @@ public class DBWorkload {
             // Read in the groupings of transactions (if any) defined for this
             // benchmark
             HashMap<String,List<String>> groupings = new HashMap<String,List<String>>();
-            int numGroupings = xmlConfig.configurationsAt("transactiontypes" + pluginTest + "/groupings/grouping").size();
+            int numGroupings = xmlConfig.configurationsAt("transactiontypes" + pluginTest + "/groupings/grouping").size();            
             LOG.debug("Num groupings: " + numGroupings);
             for (int i = 1; i < numGroupings + 1; i++) {
                 String key = "transactiontypes" + pluginTest + "/groupings/grouping[" + i + "]";
@@ -366,7 +377,7 @@ public class DBWorkload {
                     if (groupings.containsKey(weightKey))
                         weight_strings = groupings.get(weightKey);
                     else
-                    weight_strings = work.getList("weights[not(@bench)]"); 
+                    weight_strings = work.getList("weights[not(@bench)]");
                 }
                 int rate = 1;
                 boolean rateLimited = true;
@@ -570,7 +581,7 @@ public class DBWorkload {
             // Bombs away!
             Results r = null;
             try {
-                r = runWorkload(benchList, verbose, intervalMonitor);
+                r = runWorkload(benchList, verbose, intervalMonitor, abortConfig);
             } catch (Throwable ex) {
                 LOG.error("Unexpected error when running benchmarks.", ex);
                 System.exit(1);
@@ -734,7 +745,8 @@ public class DBWorkload {
         bench.loadDatabase();
     }
 
-    private static Results runWorkload(List<BenchmarkModule> benchList, boolean verbose, int intervalMonitor) throws QueueLimitException, IOException {
+    private static Results runWorkload(List<BenchmarkModule> benchList, boolean verbose,
+            int intervalMonitor, EarlyAbortConfiguration abortConfig) throws QueueLimitException, IOException {
         List<Worker> workers = new ArrayList<Worker>();
         List<WorkloadConfiguration> workConfs = new ArrayList<WorkloadConfiguration>();
         for (BenchmarkModule bench : benchList) {
@@ -746,7 +758,8 @@ public class DBWorkload {
             workConfs.add(bench.getWorkloadConfiguration());
             
         }
-        Results r = ThreadBench.runRateLimitedBenchmark(workers, workConfs, intervalMonitor);
+        Results r = ThreadBench.runRateLimitedBenchmark(workers, workConfs, intervalMonitor,
+                abortConfig);
         LOG.info(SINGLE_LINE);
         LOG.info("Rate limited reqs/s: " + r);
         return r;
