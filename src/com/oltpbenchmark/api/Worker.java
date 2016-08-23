@@ -480,6 +480,11 @@ work:
                         status = TransactionStatus.RETRY_DIFFERENT;
                         continue;
                     }
+                    else if (ex.getErrorCode() == 802820 && ex.getSQLState().equals("08003")) {
+                        // VW connection closed error
+                        status = TransactionStatus.RETRY_DIFFERENT;
+                        continue;
+                    }
                     else {
                         // UNKNOWN: In this case .. Retry different as well!
                         // FIXME(Dana): temporarily setting this to fail to help weed out
