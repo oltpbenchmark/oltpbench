@@ -1,6 +1,7 @@
 package com.oltpbenchmark.util;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -29,6 +30,8 @@ public class EarlyAbortConfiguration {
     private static final int DEFAULT_ABORT_THRESHOLD_PERC = 20;
     private static final String DEFAULT_LATENCY_METRIC = "PERCENTILE_99TH";
     private static final String DEFAULT_ESTIMATOR = "EWA";
+    private static final int DEFAULT_WAIT_TRANSACTIONS = 0;
+    private static final int DEFAULT_WAIT_TIME_SECONDS = 0;
     
     private final XMLConfiguration xmlConfig;
     private final int intervalSeconds;
@@ -36,7 +39,9 @@ public class EarlyAbortConfiguration {
     private final LatencyType latencyMetric;
     private final long latencyValueUs;
     private final String estimator;
-    private final List<Long> responseTimesUs; 
+    private final List<Long> responseTimesUs;
+    private final int waitTransactions;
+    private final int waitTimeSeconds;
 
     public EarlyAbortConfiguration(XMLConfiguration xmlConfig) {
         this.xmlConfig = xmlConfig;
@@ -50,9 +55,16 @@ public class EarlyAbortConfiguration {
         
         this.latencyMetric = LatencyType.valueOf(xmlConfig.getString(
                 "abortLatencyMetric", DEFAULT_LATENCY_METRIC));
+        this.waitTransactions = xmlConfig.getInt(
+                "waitTransactions", DEFAULT_WAIT_TRANSACTIONS);
+        this.waitTimeSeconds = xmlConfig.getInt(
+                "waitTimeSeconds", DEFAULT_WAIT_TIME_SECONDS);
         if (this.latencyMetric == LatencyType.TOTAL_RESPONSE_TIME) {
-            this.responseTimesUs = xmlConfig.getList("/responseTimesUs/responseTimeUs");            
-            LOG.info("response times: " + responseTimesUs);
+            responseTimesUs = new ArrayList<Long>();
+            List<String> rts = xmlConfig.getList("/responseTimesUs/responseTimeUs");
+            for (String rt : rts) {
+                responseTimesUs.add(Long.parseLong(rt));
+            }
         } else {
             this.responseTimesUs = null;
         }
@@ -81,6 +93,14 @@ public class EarlyAbortConfiguration {
     
     public String getEstimator() {
         return estimator;
+    }
+    
+    public int getWaitTransactions() {
+        return waitTransactions;
+    }
+    
+    public int getWaitTimeSeconds() {
+        return waitTimeSeconds;
     }
     
     public double getLatencyThreshold() {
