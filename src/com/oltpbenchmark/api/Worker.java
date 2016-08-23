@@ -485,6 +485,11 @@ work:
                         status = TransactionStatus.RETRY_DIFFERENT;
                         continue;
                     }
+                    else if (ex.getErrorCode() == 1314870 && ex.getSQLState().equals("08000")) {
+                        // Vectorwise network communication error
+                        status = TransactionStatus.RETRY_DIFFERENT;
+                        continue;
+                    }
                     else {
                         // UNKNOWN: In this case .. Retry different as well!
                         // FIXME(Dana): temporarily setting this to fail to help weed out
