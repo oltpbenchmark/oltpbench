@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<parameters>
+    <intervalSeconds>1</intervalSeconds>
+    <abortThresholdPerc>10</abortThresholdPerc>
+    <abortLatencyMetric>TOTAL_RESPONSE_TIME</abortLatencyMetric>
+    <abortLatencyValueUs>0</abortLatencyValueUs>
+    <abortEstimator>EWA</abortEstimator>
+    <waitTransactions>2</waitTransactions>
+    <waitTimeSeconds>0</waitTimeSeconds>
+    <responseTimesUs>
+        <responseTimeUs>49983</responseTimeUs>
+        <responseTimeUs>24924</responseTimeUs>
+        <responseTimeUs>20916</responseTimeUs>
+        <responseTimeUs>58367</responseTimeUs>
+        <responseTimeUs>743</responseTimeUs>
+    </responseTimesUs>
+</parameters>

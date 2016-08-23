@@ -51,7 +51,7 @@ public class DistributionStatistics {
 		this.standardDeviation = standardDeviation;
 	}
 	
-	private static DistributionStatistics computeEmptyStatistics() {
+	public static DistributionStatistics computeEmptyStatistics() {
         long[] percentiles = new long[PERCENTILES.length];
         for (int i = 0; i < percentiles.length; ++i) {
             percentiles[i] = -1;
@@ -154,6 +154,10 @@ public class DistributionStatistics {
 
 	public double getMaximum() {
 		return percentiles[MAXIMUM];
+	}
+	
+	public long[] getPercentiles() {
+	    return Arrays.copyOfRange(percentiles, 0, percentiles.length);
 	}
 
 	@Override

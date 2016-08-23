@@ -17,10 +17,12 @@
 package com.oltpbenchmark.api;
 
 import java.sql.Connection;
-import java.sql.Statement;
 import java.sql.SQLException;
 import java.sql.Savepoint;
+import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -50,6 +52,9 @@ public abstract class Worker implements Runnable {
     
     // Interval requests used by the monitor
     private AtomicInteger intervalRequests = new AtomicInteger(0);
+    
+    // Interval latencies used by the early abort monitor
+    private List<Integer> intervalLatencies = new ArrayList<Integer>();
 	
 	private final int id;
 	private final BenchmarkModule benchmarkModule;
@@ -144,6 +149,15 @@ public abstract class Worker implements Runnable {
     
     public final Iterable<LatencyRecord.Sample> getLatencyRecords() {
         return latencies;
+    }
+    
+    public final List<Integer> getAndResetRawLatencies() {
+        List<Integer> rawLatencies;
+        synchronized(intervalLatencies) {
+            rawLatencies = new ArrayList<Integer>(intervalLatencies);
+            intervalLatencies.clear();
+        }
+        return rawLatencies;
     }
 	
 	public final Procedure getProcedure(TransactionType type) {
@@ -318,15 +332,21 @@ work:
                     // after the timer went off.
                     if (preState == State.MEASURE && type != null
                         && this.wrkldState.getCurrentPhase().id == phase.id) {
-                        latencies.addLatency(type.getId(), start, end, this.id
-                                , phase.id);
+                        int latencyUs = latencies.addLatency(type.getId(),start,
+                                end, this.id, phase.id);
+                        synchronized (intervalLatencies) {
+                            intervalLatencies.add(latencyUs);
+                        }
                         intervalRequests.incrementAndGet();
                     }
                     if (phase.isLatencyRun()) {
                         if (type == null) {
                             type = transactionTypes.getType(pieceOfWork.getType());
-                            latencies.addIncompleteLatency(type.getId(), start, this.id
-                                    , phase.id);
+                            int latencyUS = latencies.addIncompleteLatency(type.getId(),
+                                    start, this.id, phase.id);
+                            synchronized (intervalLatencies) {
+                                intervalLatencies.add(latencyUS);
+                            }
                             intervalRequests.incrementAndGet();
                         }
                         this.wrkldState.startColdQuery();
