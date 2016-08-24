@@ -330,14 +330,23 @@ work:
                     // changed, otherwise we're recording results for a query
                     // that either started during the warmup phase or ended
                     // after the timer went off.
-                    if (preState == State.MEASURE && type != null
-                        && this.wrkldState.getCurrentPhase().id == phase.id) {
-                        int latencyUs = latencies.addLatency(type.getId(),start,
-                                end, this.id, phase.id);
-                        synchronized (intervalLatencies) {
-                            intervalLatencies.add(latencyUs);
+                    try{
+                        if (preState == State.MEASURE && type != null
+                            && this.wrkldState.getCurrentPhase().id == phase.id) {
+                            int latencyUs = latencies.addLatency(type.getId(),start,
+                                    end, this.id, phase.id);
+                            synchronized (intervalLatencies) {
+                                intervalLatencies.add(latencyUs);
+                            }
+                            intervalRequests.incrementAndGet();
                         }
-                        intervalRequests.incrementAndGet();
+                    } catch (NullPointerException ne) {
+                        ne.printStackTrace();
+                        LOG.info("prestate: " + preState);
+                        LOG.info("workload state: " + this.wrkldState.toString());
+                        LOG.info("wrkldState.getCurrentPhase(): " 
+                                + wrkldState.getCurrentPhase().toString());
+                        LOG.info("phase: " + phase);
                     }
                     if (phase.isLatencyRun()) {
                         if (type == null) {
