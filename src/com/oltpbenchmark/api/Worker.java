@@ -72,6 +72,7 @@ public abstract class Worker implements Runnable {
 	private final Map<TransactionType, Histogram<String>> txnAbortMessages = new HashMap<TransactionType, Histogram<String>>();
 	
 	private boolean seenDone = false;
+	private boolean recordIntervalLatencies = false;
 	
 	public Worker(BenchmarkModule benchmarkModule, int id) {
 		this.id = id;
@@ -186,6 +187,10 @@ public abstract class Worker implements Runnable {
     }
     public final Map<TransactionType, Histogram<String>> getTransactionAbortMessageHistogram() {
         return (this.txnAbortMessages);
+    }
+    
+    public void setRecordIntervalLatencies(boolean recordIntervalLatencies) {
+        this.recordIntervalLatencies = recordIntervalLatencies;
     }
     
     synchronized public void setCurrStatement(Statement s) {
@@ -335,8 +340,10 @@ work:
                             && this.wrkldState.getCurrentPhase().id == phase.id) {
                             int latencyUs = latencies.addLatency(type.getId(),start,
                                     end, this.id, phase.id);
-                            synchronized (intervalLatencies) {
-                                intervalLatencies.add(latencyUs);
+                            if (this.recordIntervalLatencies) {
+                                synchronized (intervalLatencies) {
+                                    intervalLatencies.add(latencyUs);
+                                }
                             }
                             intervalRequests.incrementAndGet();
                         }
@@ -351,10 +358,12 @@ work:
                     if (phase.isLatencyRun()) {
                         if (type == null) {
                             type = transactionTypes.getType(pieceOfWork.getType());
-                            int latencyUS = latencies.addIncompleteLatency(type.getId(),
+                            int latencyUs = latencies.addIncompleteLatency(type.getId(),
                                     start, this.id, phase.id);
-                            synchronized (intervalLatencies) {
-                                intervalLatencies.add(latencyUS);
+                            if (this.recordIntervalLatencies) {
+                                synchronized (intervalLatencies) {
+                                    intervalLatencies.add(latencyUs);
+                                }
                             }
                             intervalRequests.incrementAndGet();
                         }

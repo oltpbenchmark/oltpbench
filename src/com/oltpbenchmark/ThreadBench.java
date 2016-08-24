@@ -495,6 +495,9 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
         
         // Initialize the early abort monitor
         if (this.earlyAbortConfig != null) {
+            for (Worker w : workers) {
+                w.setRecordIntervalLatencies(true);
+            }
             new EarlyAbortThread(earlyAbortConfig).start();
         }
 
@@ -643,7 +646,7 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
         try {
             int requests = finalizeWorkers(this.workerThreads);
             if (measureEnd < 0) {
-                measureEnd = System.nanoTime();;
+                measureEnd = System.nanoTime();
             }
 
             // Combine all the latencies together in the most disgusting way
