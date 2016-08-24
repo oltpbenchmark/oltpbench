@@ -352,7 +352,7 @@ work:
                         LOG.info("prestate: " + preState);
                         LOG.info("workload state: " + this.wrkldState.toString());
                         LOG.info("wrkldState.getCurrentPhase(): " 
-                                + wrkldState.getCurrentPhase().toString());
+                                + wrkldState.getCurrentPhase());
                         LOG.info("phase: " + phase);
                     }
                     if (phase.isLatencyRun()) {
