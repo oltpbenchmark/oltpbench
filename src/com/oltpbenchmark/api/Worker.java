@@ -466,9 +466,8 @@ work:
                         continue;
                     }
                     else if (ex.getErrorCode() == 0 && ex.getSQLState().equals("08S01")) {
-                        // MySQL Communications Failure -- BAD
-                        ex.printStackTrace();
-                        System.exit(1);
+                        // MySQL Communications Failure -- FATAL
+                        status = TransactionStatus.EXIT;
                     }
                     else if (ex.getErrorCode() == 1205 && ex.getSQLState().equals("40001")) {
                         // SQLServerException Deadlock
@@ -519,24 +518,19 @@ work:
                         continue;
                     }
                     else if (ex.getErrorCode() == 802820 && ex.getSQLState().equals("08003")) {
-                        // VW connection closed error
-                        status = TransactionStatus.RETRY_DIFFERENT;
-                        continue;
+                        // VW connection closed error -- FATAL
+                        status = TransactionStatus.EXIT;
                     }
                     else if (ex.getErrorCode() == 1314870 && ex.getSQLState().equals("08000")) {
-                        // Vectorwise network communication error
-                        status = TransactionStatus.RETRY_DIFFERENT;
-                        continue;
+                        // Vectorwise network communication error -- FATAL
+                        status = TransactionStatus.EXIT;
                     }
                     else {
                         // UNKNOWN: In this case .. Retry different as well!
                         // FIXME(Dana): temporarily setting this to fail to help weed out
                         // special case errors
                         ex.printStackTrace();
-                        LOG.info("Unknown error encountered.");
-                        System.exit(0);
-                        //status = TransactionStatus.RETRY_DIFFERENT;
-                        //continue;
+                        status = TransactionStatus.EXIT;
                     }
                 }
                 finally {
@@ -552,6 +546,9 @@ work:
                         case RETRY:
                             LOG.debug("Retrying transaction...");
                             continue;
+                        case EXIT:
+                            LOG.info("Unknown error encountered.");
+                            System.exit(-1);
                         default:
                             assert(false) :
                                 String.format("Unexpected status '%s' for %s", status, next);

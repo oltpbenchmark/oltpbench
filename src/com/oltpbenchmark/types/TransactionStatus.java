@@ -38,5 +38,9 @@ public enum TransactionStatus {
      * benchmark state. The Worker should retry but select
      * a new random transaction to execute.
      */
-    RETRY_DIFFERENT
+    RETRY_DIFFERENT,
+    /**
+     * A fatal error has occurred.
+     */
+    EXIT
 }
