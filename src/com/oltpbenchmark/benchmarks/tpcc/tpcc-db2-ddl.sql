@@ -1,20 +1,22 @@
 --DECLARE CONTINUE HANDLER FOR SQLSTATE '42704' SET at_end=1;
 --CONNECT TO TPCC USER db2user USING db2;
-CREATE OR REPLACE PROCEDURE db2perf_quiet_drop( IN statement VARCHAR(1000) )
-LANGUAGE SQL
-BEGIN
-  DECLARE SQLSTATE CHAR(5);
-  DECLARE NotThere    CONDITION FOR SQLSTATE '42704';
-  DECLARE NotThereSig CONDITION FOR SQLSTATE '42883';
 
-  DECLARE EXIT HANDLER FOR NotThere, NotThereSig
-  SET SQLSTATE = '     ';
+UPDATE COMMAND OPTIONS USING s OFF;
+UPDATE COMMAND OPTIONS USING o OFF;
+DROP TABLE 'customer';
+DROP TABLE 'district';
+DROP TABLE 'history';
+DROP TABLE 'item';
+DROP TABLE 'new_order';
+DROP TABLE 'oorder';
+DROP TABLE 'order_line';
+DROP TABLE 'stock';
+DROP TABLE 'warehouse';
+DROP INDEX 'IDX_CUSTOMER_NAME';
+UPDATE COMMAND OPTIONS USING s ON;
+UPDATE COMMAND OPTIONS USING o ON;
 
-  SET statement = 'DROP ' || statement;
-  EXECUTE IMMEDIATE statement;
-END
 
-CALL db2perf_quiet_drop('TABLE customer');
 CREATE TABLE customer (
   c_w_id int NOT NULL,
   c_d_id int NOT NULL,
@@ -41,7 +43,6 @@ CREATE TABLE customer (
 );
 CREATE INDEX IDX_CUSTOMER_NAME ON customer (c_w_id,c_d_id,c_last,c_first);
 
-CALL db2perf_quiet_drop('TABLE district');
 CREATE TABLE district (
   d_w_id int NOT NULL,
   d_id int NOT NULL,
@@ -57,7 +58,6 @@ CREATE TABLE district (
   PRIMARY KEY (d_w_id,d_id)
 );
 
-CALL db2perf_quiet_drop('TABLE history');
 CREATE TABLE history (
   h_c_id int NOT NULL,
   h_c_d_id int NOT NULL,
@@ -69,7 +69,6 @@ CREATE TABLE history (
   h_data varchar(24) NOT NULL
 );
 
-CALL db2perf_quiet_drop('TABLE item');
 CREATE TABLE item (
   i_id int NOT NULL,
   i_name varchar(24) NOT NULL,
@@ -79,7 +78,6 @@ CREATE TABLE item (
   PRIMARY KEY (i_id)
 );
 
-CALL db2perf_quiet_drop('TABLE new_order');
 CREATE TABLE new_order (
   no_w_id int NOT NULL,
   no_d_id int NOT NULL,
@@ -87,7 +85,6 @@ CREATE TABLE new_order (
   PRIMARY KEY (no_w_id,no_d_id,no_o_id)
 );
 
-CALL db2perf_quiet_drop('TABLE oorder');
 CREATE TABLE oorder (
   o_w_id int NOT NULL,
   o_d_id int NOT NULL,
@@ -101,7 +98,6 @@ CREATE TABLE oorder (
   UNIQUE (o_w_id,o_d_id,o_c_id,o_id)
 );
 
-CALL db2perf_quiet_drop('TABLE order_line');
 CREATE TABLE order_line (
   ol_w_id int NOT NULL,
   ol_d_id int NOT NULL,
@@ -116,7 +112,6 @@ CREATE TABLE order_line (
   PRIMARY KEY (ol_w_id,ol_d_id,ol_o_id,ol_number)
 );
 
-CALL db2perf_quiet_drop('TABLE stock');
 CREATE TABLE stock (
   s_w_id int NOT NULL,
   s_i_id int NOT NULL,
@@ -138,7 +133,6 @@ CREATE TABLE stock (
   PRIMARY KEY (s_w_id,s_i_id)
 );
 
-CALL db2perf_quiet_drop('TABLE warehouse');
 CREATE TABLE warehouse (
   w_id int NOT NULL,
   w_ytd decimal(12,2) NOT NULL,
