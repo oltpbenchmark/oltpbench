@@ -2,16 +2,16 @@
 --CONNECT TO TPCC USER db2inst1 USING db2;
 
 
-DROP TABLE 'customer';
-DROP TABLE 'district';
-DROP TABLE 'history';
-DROP TABLE 'item';
-DROP TABLE 'new_order';
-DROP TABLE 'oorder';
-DROP TABLE 'order_line';
-DROP TABLE 'stock';
-DROP TABLE 'warehouse';
-DROP INDEX 'IDX_CUSTOMER_NAME';
+DROP TABLE customer;
+DROP TABLE district;
+DROP TABLE history;
+DROP TABLE item;
+DROP TABLE new_order;
+DROP TABLE oorder;
+DROP TABLE order_line;
+DROP TABLE stock;
+DROP TABLE warehouse;
+DROP INDEX IDX_CUSTOMER_NAME;
 
 CREATE TABLE customer (
   c_w_id int NOT NULL,
