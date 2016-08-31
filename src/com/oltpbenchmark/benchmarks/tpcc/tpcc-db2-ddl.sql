@@ -11,7 +11,6 @@ DROP TABLE oorder;
 DROP TABLE order_line;
 DROP TABLE stock;
 DROP TABLE warehouse;
-DROP INDEX IDX_CUSTOMER_NAME;
 
 CREATE TABLE customer (
   c_w_id int NOT NULL,
