@@ -2,6 +2,7 @@ package com.oltpbenchmark.util;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -124,6 +125,20 @@ public class EarlyAbortConfiguration {
         }
         return (this.abortThresholdPercentage / 100.0 + 1.0)
                 * totalResponseTime;
+    }
+    
+    public Map<String, String> getSummary() {
+        Map<String, String> m = new HashMap<String, String>();
+        m.put("intervalSeconds", Integer.toString(this.intervalSeconds));
+        m.put("abortThresholdPercentage", Integer.toString(this.abortThresholdPercentage));
+        m.put("latencyMetric", this.latencyMetric.toString());
+        m.put("latencyValueUs", Long.toString(this.latencyValueUs));
+        m.put("estimator", this.estimator);
+        m.put("responseTimeUs", this.responseTimesUs.toString());
+        m.put("waitTransactions", Integer.toString(this.waitTransactions));
+        m.put("waitTimeSeconds", Integer.toString(this.waitTimeSeconds));
+        m.put("dryRun", Boolean.toString(this.dryRun));
+        return m;
     }
     
     @Override

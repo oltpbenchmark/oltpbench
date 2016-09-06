@@ -27,6 +27,7 @@ import java.util.Map;
 import com.oltpbenchmark.LatencyRecord.Sample;
 import com.oltpbenchmark.ThreadBench.TimeBucketIterable;
 import com.oltpbenchmark.api.TransactionType;
+import com.oltpbenchmark.util.EarlyAbortConfiguration;
 import com.oltpbenchmark.util.EarlyAbortState;
 import com.oltpbenchmark.util.Histogram;
 import com.oltpbenchmark.util.TimeUtil.TimeUnit;
@@ -253,6 +254,12 @@ public final class Results {
             secondsElapsed += windowSizeSeconds;
         }
         return results;
+    }
+
+    public Map<String, String> getEarlyAbortResults() {
+        Map<String, String> abortResults = new HashMap<String, String>();
+        abortResults.putAll(abortState.getSummary());
+        return abortResults;
     }
     
     public static List<String> getResultLabels() {

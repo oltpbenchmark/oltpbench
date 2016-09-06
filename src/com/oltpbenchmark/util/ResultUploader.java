@@ -21,6 +21,7 @@ import com.oltpbenchmark.api.TransactionType;
 import com.oltpbenchmark.util.dbms_collectors.DBParameterCollector;
 import com.oltpbenchmark.util.dbms_collectors.DBParameterCollectorGen;
 import com.oltpbenchmark.util.json.JSONException;
+import com.oltpbenchmark.util.json.JSONObject;
 import com.oltpbenchmark.util.json.JSONStringer;
 
 import org.apache.commons.cli.CommandLine;
@@ -42,6 +43,7 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.zip.GZIPOutputStream;
 
@@ -229,6 +231,21 @@ public class ResultUploader {
             os.println(JSONUtil.format(stringer.toString()));
         else
             os.println(stringer.toString());
+    }
+    
+    public void writeEarlyAbortResults(PrintStream os) {
+        Map<String, String> abortResults = results.getEarlyAbortResults();
+        JSONStringer stringer = new JSONStringer();
+        try {
+            stringer.object();
+            for (Map.Entry<String, String> entry : abortResults.entrySet()) {
+                stringer.key(entry.getKey()).value(entry.getValue());
+            }
+            stringer.endObject();
+        } catch(JSONException e) {
+            e.printStackTrace();
+        }
+        os.println(JSONUtil.format(stringer.toString()));
     }
 
     public void uploadResult(boolean includeRawData) throws ParseException {

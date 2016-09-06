@@ -643,6 +643,14 @@ public class DBWorkload {
                 LOG.info("Output benchmark config into file: " + nextName);
                 if (ru != null) ru.writeBenchmarkConf(ss);
                 ss.close();
+                
+                if (argsLine.hasOption("ea")) {
+                    nextName = FileUtil.getNextFilename(FileUtil.joinPath(outputDirectory, baseFile + ".abort"));
+                    ss = new PrintStream(new File(nextName));
+                    LOG.info("Output early abort state into file: " + nextName);
+                    if (ru != null) ru.writeEarlyAbortResults(ss);
+                    ss.close();
+                }
 
             } else if (LOG.isDebugEnabled()) {
                 LOG.debug("No output file specified");

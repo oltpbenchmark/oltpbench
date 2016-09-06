@@ -269,9 +269,6 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
         public void run() {
             final int intervalSeconds = abortConfig.getIntervalSeconds();
             LOG.info("Starting EarlyAbortThread Interval[" + intervalSeconds + " seconds]");
-
-//            double averageLatency = 0.0;
-//            int latencyCount = 0;
             while (true) {
                 try {
                     Thread.sleep(intervalSeconds * 1000);
@@ -279,9 +276,9 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
                     return;
                 }
                 if (testState == null) {
-                    return;
-                }
-                if (abortState.isAborted()) {
+                    if (!abortState.isAborted()) {
+                        abortState.setAbort(false, true);
+                    }
                     return;
                 }
                 double timeElapsedSec = (System.nanoTime() - abortState.getStartTimeNs()) / 1000000000.0;
@@ -299,6 +296,9 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
                         synchronized (workState) {
                             phase = workState.getCurrentPhase();
                             if (phase == null) {
+                                if (!abortState.isAborted()) {
+                                    abortState.setAbort(false, true);
+                                }
                                 return;
                             }
                         }
@@ -380,7 +380,7 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
                 LOG.info("[EarlyAbort] latency = " + averageLatencyUs / 1000 + "ms, threshold = " 
                         + latencyThreshold / 1000 + "ms");
                 if (averageLatencyUs > latencyThreshold) {
-                    abortState.setAbort(true);
+                    abortState.setAbort(true, true);
                     if (!abortConfig.isDryRun()) {
                         LOG.info("[EarlyAbort] Aborting! (latency > threshold)");
                         synchronized (testState) {
@@ -401,6 +401,7 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
                     } else {
                         LOG.info("[EarlyAbort] Dry-run -- aborting! (latency > threshold)");
                     }
+                    return;
                 }
             } // WHILE
         }
