@@ -7,6 +7,7 @@
     <abortEstimator>EWA</abortEstimator>
     <waitTransactions>2</waitTransactions>
     <waitTimeSeconds>0</waitTimeSeconds>
+    <dryRun>false</dryRun>
     <responseTimesUs>
         <responseTimeUs>49983</responseTimeUs>
         <responseTimeUs>24924</responseTimeUs>

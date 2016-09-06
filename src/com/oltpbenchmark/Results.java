@@ -27,6 +27,7 @@ import java.util.Map;
 import com.oltpbenchmark.LatencyRecord.Sample;
 import com.oltpbenchmark.ThreadBench.TimeBucketIterable;
 import com.oltpbenchmark.api.TransactionType;
+import com.oltpbenchmark.util.EarlyAbortState;
 import com.oltpbenchmark.util.Histogram;
 import com.oltpbenchmark.util.TimeUtil.TimeUnit;
 
@@ -94,6 +95,7 @@ public final class Results {
     public final long nanoSeconds;
     public final int measuredRequests;
     public final DistributionStatistics latencyDistribution;
+    final EarlyAbortState abortState;
     final Histogram<TransactionType> txnSuccess = new Histogram<TransactionType>(true);
     final Histogram<TransactionType> txnAbort = new Histogram<TransactionType>(true);
     final Histogram<TransactionType> txnRetry = new Histogram<TransactionType>(true);
@@ -103,9 +105,15 @@ public final class Results {
     public final List<LatencyRecord.Sample> latencySamples;
 
     public Results(long nanoSeconds, int measuredRequests, DistributionStatistics latencyDistribution, final List<LatencyRecord.Sample> latencySamples) {
+        this(nanoSeconds, measuredRequests, latencyDistribution, latencySamples, null);
+    }
+    
+    public Results(long nanoSeconds, int measuredRequests, DistributionStatistics latencyDistribution, final List<LatencyRecord.Sample> latencySamples,
+            final EarlyAbortState abortState) {
         this.nanoSeconds = nanoSeconds;
         this.measuredRequests = measuredRequests;
         this.latencyDistribution = latencyDistribution;
+        this.abortState = abortState;
 
         if (latencyDistribution == null) {
             assert latencySamples == null;

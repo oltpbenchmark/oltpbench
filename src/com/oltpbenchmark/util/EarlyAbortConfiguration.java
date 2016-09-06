@@ -32,6 +32,7 @@ public class EarlyAbortConfiguration {
     private static final String DEFAULT_ESTIMATOR = "EWA";
     private static final int DEFAULT_WAIT_TRANSACTIONS = 0;
     private static final int DEFAULT_WAIT_TIME_SECONDS = 0;
+    private static final boolean DEFAULT_DRY_RUN = false;
     
     private final XMLConfiguration xmlConfig;
     private final int intervalSeconds;
@@ -42,6 +43,7 @@ public class EarlyAbortConfiguration {
     private final List<Long> responseTimesUs;
     private final int waitTransactions;
     private final int waitTimeSeconds;
+    private final boolean dryRun;
 
     public EarlyAbortConfiguration(XMLConfiguration xmlConfig) {
         this.xmlConfig = xmlConfig;
@@ -59,6 +61,7 @@ public class EarlyAbortConfiguration {
                 "waitTransactions", DEFAULT_WAIT_TRANSACTIONS);
         this.waitTimeSeconds = xmlConfig.getInt(
                 "waitTimeSeconds", DEFAULT_WAIT_TIME_SECONDS);
+        this.dryRun = xmlConfig.getBoolean("dryRun", DEFAULT_DRY_RUN);
         if (this.latencyMetric == LatencyType.TOTAL_RESPONSE_TIME) {
             responseTimesUs = new ArrayList<Long>();
             List<String> rts = xmlConfig.getList("/responseTimesUs/responseTimeUs");
@@ -101,6 +104,10 @@ public class EarlyAbortConfiguration {
     
     public int getWaitTimeSeconds() {
         return waitTimeSeconds;
+    }
+    
+    public boolean isDryRun() {
+        return dryRun;
     }
     
     public double getLatencyThreshold() {
