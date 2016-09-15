@@ -54,8 +54,8 @@ public class EarlyAbortConfiguration {
                 "abortThresholdPerc", DEFAULT_ABORT_THRESHOLD_PERC);
         this.estimator = xmlConfig.getString(
                 "abortEstimator", DEFAULT_ESTIMATOR);
-        this.latencyValueUs = xmlConfig.getLong("abortLatencyValueUs");
-        
+
+        this.latencyValueUs = xmlConfig.getLong("abortLatencyValueUs", 0);
         this.latencyMetric = LatencyType.valueOf(xmlConfig.getString(
                 "abortLatencyMetric", DEFAULT_LATENCY_METRIC));
         this.waitTransactions = xmlConfig.getInt(
@@ -63,14 +63,12 @@ public class EarlyAbortConfiguration {
         this.waitTimeSeconds = xmlConfig.getInt(
                 "waitTimeSeconds", DEFAULT_WAIT_TIME_SECONDS);
         this.dryRun = xmlConfig.getBoolean("dryRun", DEFAULT_DRY_RUN);
+        responseTimesUs = new ArrayList<Long>();
         if (this.latencyMetric == LatencyType.TOTAL_RESPONSE_TIME) {
-            responseTimesUs = new ArrayList<Long>();
             List<String> rts = xmlConfig.getList("/responseTimesUs/responseTimeUs");
             for (String rt : rts) {
                 responseTimesUs.add(Long.parseLong(rt));
             }
-        } else {
-            this.responseTimesUs = null;
         }
         LOG.info(this.toString());
     }
