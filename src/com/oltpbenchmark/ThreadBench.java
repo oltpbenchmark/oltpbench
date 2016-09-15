@@ -282,9 +282,7 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
                     return;
                 }
                 double timeElapsedSec = (System.nanoTime() - abortState.getStartTimeNs()) / 1000000000.0;
-                if (timeElapsedSec < abortConfig.getWaitTimeSeconds()) {
-                    continue;
-                }
+
                 Phase phase = null;
                 int numLatencies = 0;
                 int chunkSize = 1000;
@@ -376,6 +374,9 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
                     averageLatencyUs = abortState.updateLatencyUs(currentLatencyUs, true);
                     latencyThreshold = abortConfig.getLatencyThreshold();
                     
+                }
+                if (timeElapsedSec < abortConfig.getWaitTimeSeconds()) {
+                    continue;
                 }
                 LOG.info("[EarlyAbort] latency = " + averageLatencyUs / 1000 + "ms, threshold = " 
                         + latencyThreshold / 1000 + "ms");
