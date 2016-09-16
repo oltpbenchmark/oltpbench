@@ -5,8 +5,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.collections15.map.ListOrderedMap;
+import org.apache.log4j.Logger;
 
 public class EarlyAbortState {
+    private static final Logger LOG = Logger.getLogger(EarlyAbortState.class);
 
     private final EarlyAbortConfiguration abortConfig;
     private final long startTimeNs;
@@ -44,11 +46,14 @@ public class EarlyAbortState {
     }
     
     public double updateLatencyUs(double currentLatencyUs, boolean weightedSum) {
+
         if (weightedSum && latencyUs != 0.0) {
             latencyUs = (latencyUs + currentLatencyUs) / 2.0;
         } else {
             latencyUs += currentLatencyUs;
         }
+        LOG.info("[EarlyAbort] current latency = " + currentLatencyUs / 1000 + 
+                "ms, average latency = " + latencyUs / 1000 + "ms");
         return latencyUs;
     }
     

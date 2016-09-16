@@ -375,11 +375,12 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
                     latencyThreshold = abortConfig.getLatencyThreshold();
                     
                 }
-                LOG.info("[EarlyAbort] latency = " + averageLatencyUs / 1000 + "ms, threshold = " 
-                        + latencyThreshold / 1000 + "ms");
+
                 if (timeElapsedSec < abortConfig.getWaitTimeSeconds()) {
                     continue;
                 }
+                LOG.info("[EarlyAbort] latency = " + averageLatencyUs / 1000 + "ms, threshold = " 
+                        + latencyThreshold / 1000 + "ms");
                 if (averageLatencyUs > latencyThreshold) {
                     abortState.setAbort(true, true);
                     if (!abortConfig.isDryRun()) {
