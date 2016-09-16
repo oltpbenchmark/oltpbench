@@ -55,7 +55,7 @@ public class EarlyAbortConfiguration {
         this.estimator = xmlConfig.getString(
                 "abortEstimator", DEFAULT_ESTIMATOR);
 
-        this.latencyValueUs = xmlConfig.getLong("abortLatencyValueUs", 0);
+        this.latencyValueUs = xmlConfig.getLong("abortLatencyValueUs", 0L);
         this.latencyMetric = LatencyType.valueOf(xmlConfig.getString(
                 "abortLatencyMetric", DEFAULT_LATENCY_METRIC));
         this.waitTransactions = xmlConfig.getInt(
