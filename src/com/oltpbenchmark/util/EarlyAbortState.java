@@ -48,7 +48,7 @@ public class EarlyAbortState {
     public double updateLatencyUs(double currentLatencyUs, boolean weightedSum) {
 
         if (weightedSum && latencyUs != 0.0) {
-            latencyUs = (latencyUs + currentLatencyUs) / 2.0;
+            latencyUs = 0.7 * latencyUs + 0.3 * currentLatencyUs;
         } else {
             latencyUs += currentLatencyUs;
         }

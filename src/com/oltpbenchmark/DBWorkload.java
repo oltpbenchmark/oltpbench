@@ -274,7 +274,6 @@ public class DBWorkload {
             // LOAD TRANSACTION DESCRIPTIONS
             // ----------------------------------------------------------------
             int numTxnTypes = xmlConfig.configurationsAt("transactiontypes" + pluginTest + "/transactiontype").size();
-            LOG.info("num txn types: " + numTxnTypes);
             if (numTxnTypes == 0 && targetList.length == 1) {
                 //if it is a single workload run, <transactiontypes /> w/o attribute is used
                 pluginTest = "[not(@bench)]";
