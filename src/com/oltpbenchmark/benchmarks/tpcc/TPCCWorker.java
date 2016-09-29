@@ -42,6 +42,10 @@ import com.oltpbenchmark.types.TransactionStatus;
 import com.oltpbenchmark.util.SimplePrinter;
 
 public class TPCCWorker extends Worker {
+    
+    // indicates that the warehouse is not defined and should be chosen
+    // randomly
+    private static final int RANDOM_WH_ID = -1;
 
 	// private TransactionTypes transactionTypes;
 
@@ -58,6 +62,15 @@ public class TPCCWorker extends Worker {
 	private int transactionCount = 1, numWarehouses;
 
 	private static final AtomicInteger terminalId = new AtomicInteger(0);
+	
+	public TPCCWorker(String terminalName, TPCCBenchmark benchmarkModule,
+	        SimplePrinter terminalOutputArea, SimplePrinter errorOutputArea,
+	        int numWarehouses) throws SQLException {
+	    this(terminalName, RANDOM_WH_ID, 1, jTPCCConfig.configDistPerWhse,
+	            benchmarkModule, terminalOutputArea,
+	            errorOutputArea, numWarehouses);
+	    
+	}
 
 	public TPCCWorker(String terminalName, int terminalWarehouseID,
 			int terminalDistrictLowerID, int terminalDistrictUpperID,
@@ -84,9 +97,15 @@ public class TPCCWorker extends Worker {
 	 */
 	@Override
     protected TransactionStatus executeWork(TransactionType nextTransaction) throws UserAbortException, SQLException {
+	    int queryWarehouseID;
+	    if (terminalWarehouseID == RANDOM_WH_ID) {
+	        queryWarehouseID = gen.nextInt(numWarehouses) + 1;
+	    } else {
+	        queryWarehouseID = terminalWarehouseID;
+	    }
         try {
             TPCCProcedure proc = (TPCCProcedure) this.getProcedure(nextTransaction.getProcedureClass());
-            proc.run(conn, gen, terminalWarehouseID, numWarehouses,
+            proc.run(conn, gen, queryWarehouseID, numWarehouses,
                     terminalDistrictLowerID, terminalDistrictUpperID, this);
         } catch (ClassCastException ex){
             //fail gracefully
