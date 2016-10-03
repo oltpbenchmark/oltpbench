@@ -517,6 +517,11 @@ work:
                         status = TransactionStatus.RETRY_DIFFERENT;
                         continue;
                     }
+                    else if (ex.getErrorCode() == 0 && ex.getSQLState().equals("XX000")) {
+                        // Postgres no unpinned buffers available
+                        status = TransactionStatus.RETRY_DIFFERENT;
+                        continue;
+                    }
                     else if (ex.getErrorCode() == 802820 && ex.getSQLState().equals("08003")) {
                         // VW connection closed error -- FATAL
                         status = TransactionStatus.EXIT;
