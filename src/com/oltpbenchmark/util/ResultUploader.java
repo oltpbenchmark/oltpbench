@@ -234,12 +234,22 @@ public class ResultUploader {
     }
     
     public void writeEarlyAbortResults(PrintStream os) {
-        Map<String, String> abortResults = results.getEarlyAbortResults();
+        Map<String, Object> abortResults = results.getEarlyAbortResults();
         JSONStringer stringer = new JSONStringer();
         try {
             stringer.object();
-            for (Map.Entry<String, String> entry : abortResults.entrySet()) {
-                stringer.key(entry.getKey()).value(entry.getValue());
+            for (Map.Entry<String, Object> entry : abortResults.entrySet()) {
+                stringer.key(entry.getKey());
+                if (entry.getValue() instanceof List) {
+                    List<Object> list = (List<Object>)entry.getValue();
+                    stringer.array();
+                    for (Object obj : list) {
+                        stringer.value(obj);
+                    }
+                    stringer.endArray();
+                } else {
+                    stringer.value(entry.getValue());
+                }
             }
             stringer.endObject();
         } catch(JSONException e) {

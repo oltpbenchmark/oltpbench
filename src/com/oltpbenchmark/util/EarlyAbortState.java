@@ -1,7 +1,9 @@
 package com.oltpbenchmark.util;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.collections15.map.ListOrderedMap;
@@ -17,6 +19,8 @@ public class EarlyAbortState {
     private int latencyCount;
     private double latencyUs;
     private long endTimeNs;
+    private final List<Double> latencyHistoryUs;
+    private final List<Long> latencyTimestampsNs;
     
     public EarlyAbortState(EarlyAbortConfiguration abortConfig) {
         this.abortConfig = abortConfig;
@@ -24,6 +28,8 @@ public class EarlyAbortState {
         this.startTimeNs = System.nanoTime();
         this.latencyCount = 0;
         this.latencyUs = 0.0;
+        this.latencyHistoryUs = new ArrayList<Double>();
+        this.latencyTimestampsNs = new ArrayList<Long>(); 
     }
     
     public boolean earlyAbortEnabled() {
@@ -47,6 +53,8 @@ public class EarlyAbortState {
     
     public double updateLatencyUs(double currentLatencyUs, boolean weightedSum) {
 
+        latencyHistoryUs.add(currentLatencyUs);
+        latencyTimestampsNs.add(System.nanoTime());
         if (weightedSum && latencyUs != 0.0) {
             latencyUs = 0.7 * latencyUs + 0.3 * currentLatencyUs;
         } else {
@@ -70,19 +78,37 @@ public class EarlyAbortState {
         return this.endTimeNs;
     }
 
-    public Map<String, String> getSummary() {
-        Map<String, String> m = new HashMap<String, String>();
+//    public Map<String, String> getSummary() {
+//        Map<String, String> m = new HashMap<String, String>();
+//        if (this.abortConfig != null) {
+//            m.putAll(this.abortConfig.getSummary());
+//            m.put("earlyAbortEnabled", "true");
+//        } else {
+//            m.put("earlyAbortEnabled", "false");
+//        }
+//        m.put("startTimeNs", Long.toString(startTimeNs));
+//        m.put("endTimeNs", Long.toString(endTimeNs));
+//        m.put("aborted", Boolean.toString(aborted));
+//        m.put("latencyCount", Integer.toString(latencyCount));
+//        m.put("latencyUs", Double.toString(latencyUs));
+//        return m;
+//    }
+    
+    public Map<String, Object> getSummary() {
+        Map<String, Object> m = new HashMap<String, Object>();
         if (this.abortConfig != null) {
             m.putAll(this.abortConfig.getSummary());
-            m.put("earlyAbortEnabled", "true");
+            m.put("earlyAbortEnabled", true);
         } else {
-            m.put("earlyAbortEnabled", "false");
+            m.put("earlyAbortEnabled", false);
         }
-        m.put("startTimeNs", Long.toString(startTimeNs));
-        m.put("endTimeNs", Long.toString(endTimeNs));
-        m.put("aborted", Boolean.toString(aborted));
-        m.put("latencyCount", Integer.toString(latencyCount));
-        m.put("latencyUs", Double.toString(latencyUs));
+        m.put("startTimeNs", startTimeNs);
+        m.put("endTimeNs", endTimeNs);
+        m.put("aborted", aborted);
+        m.put("latencyCount", latencyCount);
+        m.put("latencyUs", latencyUs);
+        m.put("latencyHistoryUs", latencyHistoryUs);
+        m.put("latencyTimestampsNs", latencyTimestampsNs);
         return m;
     }
     

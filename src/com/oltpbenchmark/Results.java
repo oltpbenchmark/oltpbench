@@ -256,8 +256,14 @@ public final class Results {
         return results;
     }
 
-    public Map<String, String> getEarlyAbortResults() {
-        Map<String, String> abortResults = new HashMap<String, String>();
+//    public Map<String, String> getEarlyAbortResults() {
+//        Map<String, String> abortResults = new HashMap<String, String>();
+//        abortResults.putAll(abortState.getSummary());
+//        return abortResults;
+//    }
+    
+    public Map<String, Object> getEarlyAbortResults() {
+        Map<String, Object> abortResults = new HashMap<String, Object>();
         abortResults.putAll(abortState.getSummary());
         return abortResults;
     }
