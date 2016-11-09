@@ -109,14 +109,7 @@ public class WikipediaWorker extends Worker {
         conn.commit();
         }catch(SQLException esql)
         {
-		//SQLException esql2 = esql.getNextException();
-		//if ((esql.getErrorCode() == 0 && esql.getSQLState().equals("25P02")) ||
-                //		(esql2 != null && esql2.getErrorCode() == 0 && esql2.getSQLState().equals("25P02"))) {
-		//	return (TransactionStatus.RETRY);
-		//}
-        	//LOG.error("Caught SQL Exception in WikipediaWorker for procedure"+procClass.getName()+":"+esql+", error code="+esql.getErrorCode()+", state="+esql.getSQLState(), esql);
-        	//LOG.error("Caught SQL Exception in WikipediaWorker for procedure"+procClass.getName()+":"+esql2+", error code="+esql2.getErrorCode()+", state="+esql2.getSQLState(), esql2);
-		
+        	LOG.error("Caught SQL Exception in WikipediaWorker for procedure"+procClass.getName()+":"+esql, esql);
         	throw esql;
         }/*catch(Exception e) {
         	LOG.error("caught Exception in WikipediaWorker for procedure "+procClass.getName() +":" + e, e);
