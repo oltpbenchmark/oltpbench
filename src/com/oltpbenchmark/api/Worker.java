@@ -481,6 +481,9 @@ work:
                         // Postgres serialization
                         continue;
                     } 
+		    else if (ex.getErrorCode() == 0 && ex.getSQLState().equals("40P01")) {
+		        continue;
+                    }
                     else if (ex.getErrorCode() == 8177 && ex.getSQLState().equals("72000")) {
                         // ORA-08177: Oracle Serialization
                         continue;
