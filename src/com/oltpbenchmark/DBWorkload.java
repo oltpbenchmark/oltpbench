@@ -141,6 +141,7 @@ public class DBWorkload {
         options.addOption("ts", "tracescript", true, "Script of transactions to execute");
         options.addOption(null, "histograms", false, "Print txn histograms");
         options.addOption(null, "dialects-export", true, "Export benchmark SQL to a dialects file");
+        options.addOption(null, "stats", false, "Collect system statistics");
 
         // parse the command line arguments
         CommandLine argsLine = parser.parse(options, args);
@@ -164,6 +165,7 @@ public class DBWorkload {
         if (argsLine.hasOption("im")) {
             intervalMonitor = Integer.parseInt(argsLine.getOptionValue("im"));
         }
+
         
         // -------------------------------------------------------------------
         // GET PLUGIN LIST
@@ -534,11 +536,18 @@ public class DBWorkload {
 
         // Execute Loader
         if (isBooleanOptionSet(argsLine, "load")) {
+            Process p = null;
+            if (argsLine.hasOption("stats")) {
+                p = Runtime.getRuntime().exec("sar -o " + outputDirectory + "/" + argsLine.getOptionValue("o") + ".load.sar 60");
+            }
             for (BenchmarkModule benchmark : benchList) {
                 LOG.info("Loading data into " + benchmark.getBenchmarkName().toUpperCase() + " database...");
                 runLoader(benchmark, verbose);
                 LOG.info("Finished!");
                 LOG.info(SINGLE_LINE);
+            }
+            if (argsLine.hasOption("stats") && p != null) {
+                p.destroy();
             }
         } else if (LOG.isDebugEnabled()) {
             LOG.debug("Skipping loading benchmark database records");
@@ -559,7 +568,11 @@ public class DBWorkload {
         // Execute Workload
         if (isBooleanOptionSet(argsLine, "execute")) {
             // Bombs away!
+            Process p = null;
             Results r = null;
+            if (argsLine.hasOption("stats")) {
+                p = Runtime.getRuntime().exec("sar -o " + outputDirectory + "/" + argsLine.getOptionValue("o") + ".execute.sar 60");
+            }
             try {
                 r = runWorkload(benchList, verbose, intervalMonitor);
             } catch (Throwable ex) {
@@ -567,6 +580,9 @@ public class DBWorkload {
                 System.exit(1);
             }
             assert(r != null);
+            if (argsLine.hasOption("stats") && p != null) {
+                p.destroy();
+            }
 
             // WRITE OUTPUT
             writeOutputs(r, activeTXTypes, argsLine, xmlConfig);
