@@ -22,4 +22,5 @@ GROUP BY ol_o_id,
          ol_w_id,
          ol_d_id,
          o_entry_d
-ORDER BY revenue DESC , o_entry_d
+ORDER BY revenue DESC,
+         o_entry_d

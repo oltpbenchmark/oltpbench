@@ -20,4 +20,4 @@ WHERE ol_i_id = s_i_id
 GROUP BY n_name,
          l_year
 ORDER BY n_name,
-         l_year DESC;
+         l_year DESC
