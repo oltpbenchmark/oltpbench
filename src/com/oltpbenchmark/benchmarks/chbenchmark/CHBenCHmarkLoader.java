@@ -36,6 +36,7 @@ import com.oltpbenchmark.benchmarks.chbenchmark.pojo.Nation;
 import com.oltpbenchmark.benchmarks.chbenchmark.pojo.Region;
 import com.oltpbenchmark.benchmarks.chbenchmark.pojo.Supplier;
 import com.oltpbenchmark.util.RandomGenerator;
+import com.oltpbenchmark.benchmarks.tpcc.TPCCLoader;
 
 public class CHBenCHmarkLoader extends Loader<CHBenCHmark> {
 	private static final Logger LOG = Logger.getLogger(CHBenCHmarkLoader.class);
@@ -49,6 +50,8 @@ public class CHBenCHmarkLoader extends Loader<CHBenCHmark> {
 	private static Date now;
 	private static long lastTimeMS;
 	private static Connection conn;
+
+	private static TPCCLoader tpccLoader;
 	
 	//create possible keys for n_nationkey ([a-zA-Z0-9])
 	private static final int[] nationkeys = new int[62];
@@ -67,11 +70,13 @@ public class CHBenCHmarkLoader extends Loader<CHBenCHmark> {
 	public CHBenCHmarkLoader(CHBenCHmark benchmark, Connection c) {
 		super(benchmark, c);
 		conn =c;
+		tpccLoader = new TPCCLoader(benchmark.tpccbenchmark,c);
 	}
 	
 	@Override
 	public List<LoaderThread> createLoaderTheads() throws SQLException {
-	    // TODO Auto-generated method stub
+
+	    tpccLoader.createLoaderTheads();
 	    return null;
 	}
 
