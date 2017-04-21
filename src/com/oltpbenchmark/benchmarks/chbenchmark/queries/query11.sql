@@ -6,7 +6,8 @@ FROM stock,
 WHERE mod((s_w_id * s_i_id), 10000) = su_suppkey
   AND su_nationkey = n_nationkey
   AND n_name = 'Germany'
-GROUP BY s_i_id HAVING sum(s_order_cnt) >
+GROUP BY s_i_id
+HAVING sum(s_order_cnt) >
   (SELECT sum(s_order_cnt) * .005
    FROM stock,
         supplier,
@@ -14,4 +15,4 @@ GROUP BY s_i_id HAVING sum(s_order_cnt) >
    WHERE mod((s_w_id * s_i_id), 10000) = su_suppkey
      AND su_nationkey = n_nationkey
      AND n_name = 'Germany')
-ORDER BY ordercount DESC;
+ORDER BY ordercount DESC

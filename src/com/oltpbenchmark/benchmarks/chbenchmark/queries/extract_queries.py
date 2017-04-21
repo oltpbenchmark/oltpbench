@@ -8,7 +8,7 @@ import re
 import sqlparse
 
 if __name__ == "__main__":
-    for x in xrange(1, 23):
+    for x in range(1, 23):
         with open("Q{0}.java".format(x), "r") as java_file:
             with open("query{0}.sql".format(x), "w") as query_file:
                 sql = "".join(re.findall('\"(.*?)\"', java_file.read()))

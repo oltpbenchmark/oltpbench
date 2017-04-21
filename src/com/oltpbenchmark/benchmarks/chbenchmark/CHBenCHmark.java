@@ -31,12 +31,16 @@ import com.oltpbenchmark.api.Loader;
 import com.oltpbenchmark.api.Worker;
 import com.oltpbenchmark.benchmarks.chbenchmark.queries.Q1;
 import com.oltpbenchmark.benchmarks.tpcc.TPCCConfig;
+import com.oltpbenchmark.benchmarks.tpcc.TPCCBenchmark;
 
 public class CHBenCHmark extends BenchmarkModule {
 	private static final Logger LOG = Logger.getLogger(CHBenCHmark.class);
+
+	public TPCCBenchmark tpccbenchmark;
 	
 	public CHBenCHmark(WorkloadConfiguration workConf) {
 		super("chbenchmark", workConf, true);
+		tpccbenchmark = new TPCCBenchmark(workConf);
 	}
 	
 	protected Package getProcedurePackageImpl() {
