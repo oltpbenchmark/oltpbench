@@ -48,7 +48,8 @@ public enum DatabaseType {
     MONETDB("nl.cwi.monetdb.jdbc.MonetDriver", false, false),
     NUODB("com.nuodb.jdbc.Driver", true, false),
     TIMESTEN("com.timesten.jdbc.TimesTenDriver", true, false),
-    PELOTON("org.postgresql.Driver", false, false)
+    PELOTON("org.postgresql.Driver", false, false),
+    COMDB2("com.bloomberg.comdb2.jdbc.Driver", true, false)
     ;
     
     private DatabaseType(String driver, boolean escapeNames, boolean includeColNames) {

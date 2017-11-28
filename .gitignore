@@ -20,3 +20,7 @@ results
 
 # maven output
 target
+
+# intellij files
+.idea
+.iml
