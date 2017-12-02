@@ -1,5 +1,6 @@
 bin/
 /build/
+out/
 output.raw
 output.res
 .classpath
@@ -22,5 +23,5 @@ results
 target
 
 # intellij files
-.idea
-.iml
+*.idea
+*.iml
