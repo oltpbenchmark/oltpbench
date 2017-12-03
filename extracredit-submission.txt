@@ -1,0 +1,110 @@
+# 15-445/645 (Fall 2017) -- Extra Credit
+# System: $(NAME)
+
+---------------------------------------
+
+## Part 1 - Installation
+
+Provide the instructions that you followed to install and setup the system. You should describe the steps (with commands when necessary) to deploy the DBMS on Amazon. This includes the cluster configuration if your DBMS is comprised of multiple components. If your DBMS requires third-party libraries or external services (e.g., Zookeeper), be sure to include the setup instructions for them. If you followed instructions from an on-line guide or tutorial, be sure to include the URL to those instructions.
+
+Example template:
+
+1. You will need to launch an instance with MemSQL. The easiest way to do this is to use the following link 
+	https://aws.amazon.com/marketplace/pp/B011MEZL88
+This will configure and launch a single node MemSQL instance with all its dependencies installed 
+
+2. You will need to install git, ant, and java8 to run OLTP bench. 
+
+# Install git
+sudo apt-get update
+sudo apt-get -y install git
+
+# Install Ant (http://xmodulo.com/how-to-install-apache-ant-on-centos.html)
+sudo apt-get -y install zip
+wget http://ftp.wayne.edu/apache//ant/binaries/apache-ant-1.10.1-bin.zip
+unzip apache-ant-1.10.1-bin.zip
+rm apache-ant-1.10.1-bin.zip
+sudo mv apache-ant-1.10.1 /opt/
+cd /opt
+sudo mv apache-ant-1.10.1/ ant/
+sudo sh -c 'echo ANT_HOME=/opt/ant >> /etc/environment'
+# LOG OUT AND LOG BACK IN TO FULLY INSTALL ANT
+
+# Install Java (http://tipsonubuntu.com/2016/07/31/install-oracle-java-8-9-ubuntu-16-04-linux-mint-18/)
+sudo add-apt-repository ppa:webupd8team/java
+# PRESS ENTER
+sudo apt update; sudo apt install oracle-java8-installer
+# When prompted, select the <OK> option, and Accept the terms and conditions
+javac -version
+# Should correctly print a java version 1.8+
+
+# Now just clone the OLTP repository and you should be good to go :)
+
+
+# If you are running the TPCH benchmark, you will need to get dbgen installed
+# You will need to download the dbgen zip file from tpc.com. You can download it from (you will need to create an account):
+# http://www.tpc.org/tpc_documents_current_versions/download_programs/tools-download-request.asp?bm_type=TPC-H&bm_vers=2.17.3&mode=CURRENT-ONLY
+
+unzip dbgen.zip
+cd 2.17.3/dbgen
+cp makefile.suite makefile
+vim makefile
+# Search for “CC” and change the variables as follows:
+CC      = gcc
+DATABASE= SQLSERVER
+MACHINE = LINUX
+WORKLOAD = TPCH
+
+make
+./dbgen -s <SCALE_FACTOR> -v
+mkdir ../../data
+mkdir ../../data/tpch1
+mv *.tbl ../../data/tpch1/
+
+
+
+---------------------------------------
+
+## Part 2 - System Configuration
+
+List the configuration that you used to tune the system to get it to perform better. For example, if you benchmarked MySQL, you should list the configuration settings that you manually set in its 'mysqld.cnf' file. You do not need to include configuration settings for directory paths or networking information (e.g., bind-address).
+
+
+
+
+
+Example template:
+
+```
+innodb_buffer_pool_size = 1024M
+innodb_file_per_table = 1
+max_allowed_packet = 32M
+```
+
+---------------------------------------
+
+## Part 3 - Benchmarks
+
+For each benchmark that you evaluated with your DBMS, provide the student name and AndrewId of the person that worked on it. Also provide an overview of the changes that you made to get the benchmark to work with the OLTP-Bench framework.
+
+*****
+
+### Benchmark 1: $(TPCH)
+Student: $(FirstName) $(LastName) <$(AndrewId)>
+List any modifications that you had to make to either the benchmark DDL, SQL dialects, or worker/loader in order to get the benchmark to work.
+
+For every date object, (i.e. date ‘2017-01-01’), surround the date string with parenthesis: data(‘2017-0101’).
+The queries that need this change are: 1,3,4,5,6,7,8,10,12,14,20
+
+Disable Query #15. MemSQL does not fully support views.
+
+
+*****
+
+### Benchmark 2: $(TPCC)
+Student: $(FirstName) $(LastName) <$(AndrewId)>
+
+Comment out the foreign key declarations. MemSQL does not support foreign keys.
+
+*****
+
