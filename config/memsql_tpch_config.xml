@@ -43,11 +43,11 @@
         <groupings>
             <grouping>
                 <name>odd</name>
-                <weights>1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0</weights>
+                <weights>1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,1,0,1,0,1,0</weights>
             </grouping>
             <grouping>
                 <name>even</name>
-                <weights>0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1</weights>
+                <weights>0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1</weights>
             </grouping>
         </groupings>
         <transactiontype>
@@ -106,10 +106,10 @@
             <name>Q14</name>
             <id>14</id>
         </transactiontype>      
-        <transactiontype>
+        <!--transactiontype>
             <name>Q15</name>
             <id>15</id>
-        </transactiontype>   
+        </transactiontype-->   
         <transactiontype>
             <name>Q16</name>
             <id>16</id>

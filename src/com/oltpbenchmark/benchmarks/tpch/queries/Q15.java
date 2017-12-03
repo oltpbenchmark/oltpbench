@@ -25,7 +25,7 @@ import java.sql.SQLException;
 public class Q15 extends GenericQuery {
 
     public final SQLStmt createview_stmt = new SQLStmt(
-              "create view revenue0 (supplier_no, total_revenue) as "
+              "create table revenue0 (supplier_no, total_revenue) as "
             +     "select "
             +         "l_suppkey, "
             +         "sum(l_extendedprice * (1 - l_discount)) "
@@ -61,7 +61,7 @@ public class Q15 extends GenericQuery {
         );
 
     public final SQLStmt dropview_stmt = new SQLStmt(
-              "drop view revenue0"
+              "drop table revenue0"
         );
 
     protected SQLStmt get_query() {
