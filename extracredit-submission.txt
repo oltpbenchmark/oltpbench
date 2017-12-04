@@ -12,7 +12,7 @@ Example template:
 1. You will need to launch an instance with MemSQL. The easiest way to do this is to use the following link 
 	https://aws.amazon.com/marketplace/pp/B011MEZL88
 This will configure and launch a single node MemSQL instance with all its dependencies installed 
-
+1.5 After launching this, you should go to AWS and expand the EBS volume size. To do this click on your running instance, click description, then scroll down to root device. Click on the dev/sda volume and then click on the EBS id. Then click on the ebs volume, click Actions, modify volume and expand it to 64 gb. 
 2. You will need to install git, ant, and java8 to run OLTP bench. 
 
 # Install git
