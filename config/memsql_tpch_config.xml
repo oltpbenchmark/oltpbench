@@ -17,7 +17,7 @@
     <fileFormat>tbl</fileFormat>
     
     <!-- This setting doesn't do anything here -->
-    <scalefactor>1</scalefactor>
+    <scalefactor>20</scalefactor>
 
     <!-- The workload -->
     <terminals>1</terminals>
