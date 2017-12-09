@@ -4,7 +4,7 @@
     <!-- Connection details -->
     <dbtype>comdb2</dbtype>
     <driver>com.bloomberg.comdb2.jdbc.Driver</driver>
-    <DBUrl>jdbc:comdb2://localhost/tpcc/</DBUrl>
+    <DBUrl>jdbc:comdb2://localhost/tpcc?statement_query_effects=1</DBUrl>
     <username></username>
     <password></password>
     <isolation>TRANSACTION_READ_COMMITTED</isolation>
@@ -13,7 +13,7 @@
     <scalefactor>16</scalefactor>
     
     <!-- The workload -->
-    <terminals>64</terminals>
+    <terminals>20</terminals>
     <works>
         <work>
           <time>300</time>

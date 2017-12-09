@@ -21,6 +21,7 @@ results
 
 # maven output
 target
+results
 
 # intellij files
 *.idea

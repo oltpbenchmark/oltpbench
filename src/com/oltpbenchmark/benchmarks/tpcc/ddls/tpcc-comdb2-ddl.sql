@@ -78,7 +78,7 @@ CREATE TABLE customer (
   c_d_id int NOT NULL,
   c_id int NOT NULL,
   c_discount double NOT NULL,
-  c_credit char(2) NOT NULL,
+  c_credit char(3) NOT NULL,
   c_last varchar(16) NOT NULL,
   c_first varchar(16) NOT NULL,
   c_credit_lim double NOT NULL,
@@ -89,11 +89,11 @@ CREATE TABLE customer (
   c_street_1 varchar(20) NOT NULL,
   c_street_2 varchar(20) NOT NULL,
   c_city varchar(20) NOT NULL,
-  c_state char(2) NOT NULL,
-  c_zip char(9) NOT NULL,
-  c_phone char(16) NOT NULL,
+  c_state char(3) NOT NULL,
+  c_zip char(10) NOT NULL,
+  c_phone char(17) NOT NULL,
   c_since datetime DEFAULT CURRENT_TIMESTAMP,
-  c_middle char(2) NOT NULL,
+  c_middle char(3) NOT NULL,
   c_data varchar(500) NOT NULL,
   PRIMARY KEY (c_w_id,c_d_id,c_id)
 );
@@ -109,8 +109,8 @@ CREATE TABLE district (
   d_street_1 varchar(20) NOT NULL,
   d_street_2 varchar(20) NOT NULL,
   d_city varchar(20) NOT NULL,
-  d_state char(2) NOT NULL,
-  d_zip char(9) NOT NULL,
+  d_state char(3) NOT NULL,
+  d_zip char(10) NOT NULL,
   PRIMARY KEY (d_w_id,d_id)
 );
 
@@ -134,8 +134,8 @@ CREATE TABLE warehouse (
   w_street_1 varchar(20) NOT NULL,
   w_street_2 varchar(20) NOT NULL,
   w_city varchar(20) NOT NULL,
-  w_state char(2) NOT NULL,
-  w_zip char(9) NOT NULL,
+  w_state char(3) NOT NULL,
+  w_zip char(10) NOT NULL,
   PRIMARY KEY (w_id)
 );
 
