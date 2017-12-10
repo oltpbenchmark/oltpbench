@@ -194,7 +194,7 @@ CREATE INDEX IDX_USERTEXT_TIMESTAMP ON "revision" (rev_user_text,rev_timestamp);
 -- TODO old_id auto_increment
 --DROP TABLE "text";
 CREATE TABLE "text" (
-  old_id int NOT NULL,
+  old_id int NOT NULL AUTO_INCREMENT,
   old_text varchar(1048576) NOT NULL,
   old_flags varchar(1024) NOT NULL,
   old_page int DEFAULT NULL,
