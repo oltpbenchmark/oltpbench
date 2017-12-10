@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<parameters>
+    <!-- General Workload configuration -->
+    <dbtype>oracle</dbtype>
+    <driver>oracle.jdbc.driver.OracleDriver</driver>
+    <DBUrl>jdbc:oracle:thin:@52.90.242.242:1521:orcl</DBUrl>
+    <DBName>tpcc</DBName>
+    <username>benchmark_user</username>
+    <password>password</password>
+    <terminals>64</terminals>
+
+    <works>
+        <work>
+            <time>300</time>
+            <rate>unlimited</rate>
+            <weights>45,43,4,4,4</weights>
+        </work>
+    </works>
+
+    <!-- TPCC specific -->
+    <scalefactor>16</scalefactor>
+    <dialect>config/dialects/tpcc_dialects.xml</dialect>
+    <isolation>TRANSACTION_READ_COMMITTED</isolation>
+    <transactiontypes>
+        <transactiontype>
+            <name>NewOrder</name>
+            <id>1</id>
+        </transactiontype>
+        <transactiontype>
+            <name>Payment</name>
+            <id>2</id>
+        </transactiontype>
+        <transactiontype>
+            <name>OrderStatus</name>
+            <id>3</id>
+        </transactiontype>
+        <transactiontype>
+            <name>Delivery</name>
+            <id>4</id>
+        </transactiontype>
+        <transactiontype>
+            <name>StockLevel</name>
+            <id>5</id>
+        </transactiontype>
+    </transactiontypes>
+</parameters>
