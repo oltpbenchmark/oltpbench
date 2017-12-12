@@ -15,16 +15,8 @@ This will configure and launch a single node MemSQL instance with all its depend
 sudo apt-get update
 sudo apt-get -y install git
 
-# Install Ant (http://xmodulo.com/how-to-install-apache-ant-on-centos.html)
-sudo apt-get -y install zip
-wget http://ftp.wayne.edu/apache//ant/binaries/apache-ant-1.10.1-bin.zip
-unzip apache-ant-1.10.1-bin.zip
-rm apache-ant-1.10.1-bin.zip
-sudo mv apache-ant-1.10.1 /opt/
-cd /opt
-sudo mv apache-ant-1.10.1/ ant/
-sudo sh -c 'echo ANT_HOME=/opt/ant >> /etc/environment'
-# LOG OUT AND LOG BACK IN TO FULLY INSTALL ANT
+# Install Ant
+sudo apt-get install -y ant
 
 # Install Java (http://tipsonubuntu.com/2016/07/31/install-oracle-java-8-9-ubuntu-16-04-linux-mint-18/)
 sudo add-apt-repository ppa:webupd8team/java
