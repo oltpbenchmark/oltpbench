@@ -40,12 +40,14 @@ import com.oltpbenchmark.types.DatabaseType;
 import com.oltpbenchmark.util.ClassUtil;
 import com.oltpbenchmark.util.ScriptRunner;
 import com.oltpbenchmark.util.ThreadUtil;
+import com.oltpbenchmark.util.StringUtil;
 
 /**
  * Base class for all benchmark implementations
  */
 public abstract class BenchmarkModule {
     private static final Logger LOG = Logger.getLogger(BenchmarkModule.class);
+    private static final String SINGLE_LINE = StringUtil.repeat("=", 70);
 
     /**
      * Each benchmark must put their all of the DBMS-specific DDLs
@@ -304,7 +306,11 @@ public abstract class BenchmarkModule {
     protected final void loadDatabase(final Connection conn) {
         try {
             Loader<? extends BenchmarkModule> loader = this.makeLoaderImpl(conn);
+	    LOG.info("into loader ");
+	    LOG.info(SINGLE_LINE);
             if (loader != null) {
+		LOG.info("into loader stuff");
+		LOG.info(SINGLE_LINE);
                 conn.setAutoCommit(false);
                 
                 // PAVLO: 2016-12-23
@@ -314,6 +320,7 @@ public abstract class BenchmarkModule {
                 // method.
                 List<? extends LoaderThread> loaderThreads = loader.createLoaderTheads();
                 if (loaderThreads != null) {
+		
                     int maxConcurrent = workConf.getLoaderThreads();
                     assert(maxConcurrent > 0);
                     if (LOG.isDebugEnabled())

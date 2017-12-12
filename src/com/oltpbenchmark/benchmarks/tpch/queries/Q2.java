@@ -18,6 +18,7 @@ package com.oltpbenchmark.benchmarks.tpch.queries;
 
 import com.oltpbenchmark.api.SQLStmt;
 
+import java.lang.System;
 public class Q2 extends GenericQuery {
 
     public final SQLStmt query_stmt = new SQLStmt(
@@ -67,6 +68,7 @@ public class Q2 extends GenericQuery {
         );
 
     protected SQLStmt get_query() {
+	System.out.println("Q2");
         return query_stmt;
     }
 }

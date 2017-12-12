@@ -1,3 +1,4 @@
+use tpch;
 select
 	nation,
 	o_year,
