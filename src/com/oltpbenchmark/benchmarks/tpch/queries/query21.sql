@@ -1,4 +1,3 @@
-use tpch;
 select
 	s_name,
 	count(*) as numwait

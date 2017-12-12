@@ -1,4 +1,3 @@
-use tpch;
 select
 	s_acctbal,
 	s_name,

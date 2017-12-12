@@ -17,7 +17,6 @@
 package com.oltpbenchmark.benchmarks.tpch.queries;
 
 import com.oltpbenchmark.api.SQLStmt;
-import java.lang.System;
 
 public class Q7 extends GenericQuery {
 
@@ -51,7 +50,7 @@ public class Q7 extends GenericQuery {
             +                 "(n1.n_name = 'MOZAMBIQUE' and n2.n_name = 'CANADA') "
             +                 "or (n1.n_name = 'CANADA' and n2.n_name = 'MOZAMBIQUE') "
             +             ") "
-            +             "and l_shipdate between date('1995-01-01') and date('1996-12-31') "
+            +             "and l_shipdate between date '1995-01-01' and date '1996-12-31' "
             +     ") as shipping "
             + "group by "
             +     "supp_nation, "
@@ -64,7 +63,6 @@ public class Q7 extends GenericQuery {
         );
 
     protected SQLStmt get_query() {
-	System.out.println("Q7");
-        return new SQLStmt("SELECT 1");
+        return query_stmt;
     }
 }

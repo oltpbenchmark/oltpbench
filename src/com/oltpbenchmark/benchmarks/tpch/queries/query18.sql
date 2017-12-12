@@ -1,4 +1,3 @@
-use tpch;
 select
 	c_name,
 	c_custkey,

@@ -17,7 +17,6 @@
 package com.oltpbenchmark.benchmarks.tpch.queries;
 
 import com.oltpbenchmark.api.SQLStmt;
-import java.lang.System;
 
 public class Q6 extends GenericQuery {
 
@@ -27,14 +26,13 @@ public class Q6 extends GenericQuery {
             + "from "
             +     "lineitem "
             + "where "
-            +     "l_shipdate >= date('1997-01-01') "
-            +     "and l_shipdate < date('1997-01-01') + interval '1' year "
+            +     "l_shipdate >= date '1997-01-01' "
+            +     "and l_shipdate < date '1997-01-01' + interval '1' year "
             +     "and l_discount between 0.07 - 0.01 and 0.07 + 0.01 "
             +     "and l_quantity < 24"
         );
 
     protected SQLStmt get_query() {
-	System.out.println("Q6");
         return query_stmt;
     }
 }

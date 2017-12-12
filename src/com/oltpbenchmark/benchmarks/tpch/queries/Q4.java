@@ -17,7 +17,6 @@
 package com.oltpbenchmark.benchmarks.tpch.queries;
 
 import com.oltpbenchmark.api.SQLStmt;
-import java.lang.System;
 
 public class Q4 extends GenericQuery {
 
@@ -28,8 +27,8 @@ public class Q4 extends GenericQuery {
             + "from "
             +     "orders "
             + "where "
-            +     "o_orderdate >= date('1994-08-01') "
-            +     "and o_orderdate < date('1994-08-01') + interval '3' month "
+            +     "o_orderdate >= date '1994-08-01' "
+            +     "and o_orderdate < date '1994-08-01' + interval '3' month "
             +     "and exists ( "
             +         "select "
             +             "* "
@@ -46,7 +45,6 @@ public class Q4 extends GenericQuery {
         );
 
     protected SQLStmt get_query() {
-	System.out.println("Q4");
         return query_stmt;
     }
 }

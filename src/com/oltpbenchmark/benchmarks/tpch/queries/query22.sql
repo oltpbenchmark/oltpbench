@@ -1,4 +1,3 @@
-use tpch;
 select
 	cntrycode,
 	count(*) as numcust,

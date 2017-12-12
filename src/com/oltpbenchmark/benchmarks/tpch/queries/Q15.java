@@ -25,15 +25,15 @@ import java.sql.SQLException;
 public class Q15 extends GenericQuery {
 
     public final SQLStmt createview_stmt = new SQLStmt(
-              "create table revenue0 (supplier_no, total_revenue) as "
+              "create view revenue0 (supplier_no, total_revenue) as "
             +     "select "
             +         "l_suppkey, "
             +         "sum(l_extendedprice * (1 - l_discount)) "
             +     "from "
             +         "lineitem "
             +     "where "
-            +         "l_shipdate >= date('1997-03-01') "
-            +         "and l_shipdate < date('1997-03-01') + interval '3' month "
+            +         "l_shipdate >= date '1997-03-01' "
+            +         "and l_shipdate < date '1997-03-01' + interval '3' month "
             +     "group by "
             +         "l_suppkey"
         );
@@ -61,7 +61,7 @@ public class Q15 extends GenericQuery {
         );
 
     public final SQLStmt dropview_stmt = new SQLStmt(
-              "drop table revenue0"
+              "drop view revenue0"
         );
 
     protected SQLStmt get_query() {
@@ -73,13 +73,13 @@ public class Q15 extends GenericQuery {
         // query, then drop it once we're done.
         Statement stmt = conn.createStatement();
         ResultSet ret = null;
-/*        try {
+        try {
             stmt.executeUpdate(createview_stmt.getSQL());
             ret = super.run(conn);
         } finally {
             stmt.executeUpdate(dropview_stmt.getSQL());
         }
-*/
+
         return ret;
     }
 }

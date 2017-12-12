@@ -1,4 +1,3 @@
-use tpch;
 select
 	supp_nation,
 	cust_nation,
@@ -28,7 +27,7 @@ from
 				(n1.n_name = 'MOZAMBIQUE' and n2.n_name = 'CANADA')
 				or (n1.n_name = 'CANADA' and n2.n_name = 'MOZAMBIQUE')
 			)
-			and l_shipdate between date('1995-01-01') and date('1996-12-31')
+			and l_shipdate between date '1995-01-01' and date '1996-12-31'
 	) as shipping
 group by
 	supp_nation,

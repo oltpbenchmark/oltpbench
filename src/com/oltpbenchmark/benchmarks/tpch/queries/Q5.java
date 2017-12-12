@@ -17,7 +17,6 @@
 package com.oltpbenchmark.benchmarks.tpch.queries;
 
 import com.oltpbenchmark.api.SQLStmt;
-import java.lang.System;
 
 public class Q5 extends GenericQuery {
 
@@ -40,8 +39,8 @@ public class Q5 extends GenericQuery {
             +     "and s_nationkey = n_nationkey "
             +     "and n_regionkey = r_regionkey "
             +     "and r_name = 'AFRICA' "
-            +     "and o_orderdate >= date('1997-01-01') "
-            +     "and o_orderdate < date('1997-01-01') + interval '1' year "
+            +     "and o_orderdate >= date '1997-01-01' "
+            +     "and o_orderdate < date '1997-01-01' + interval '1' year "
             + "group by "
             +     "n_name "
             + "order by "
@@ -49,7 +48,6 @@ public class Q5 extends GenericQuery {
         );
 
     protected SQLStmt get_query() {
-	System.out.println("Q5");
         return query_stmt;
     }
 }

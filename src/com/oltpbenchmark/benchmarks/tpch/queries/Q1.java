@@ -17,7 +17,6 @@
 package com.oltpbenchmark.benchmarks.tpch.queries;
 
 import com.oltpbenchmark.api.SQLStmt;
-import java.lang.System;
 
 public class Q1 extends GenericQuery {
 
@@ -36,7 +35,7 @@ public class Q1 extends GenericQuery {
             + "from "
             +     "lineitem "
             + "where "
-            +     "l_shipdate <= date('1998-12-01') - interval '95' day "
+            +     "l_shipdate <= date '1998-12-01' - interval '95' day "
             + "group by "
             +     "l_returnflag, "
             +     "l_linestatus "
@@ -46,8 +45,6 @@ public class Q1 extends GenericQuery {
         );
 
     protected SQLStmt get_query() {
-	System.out.println("Q1");
-	
         return query_stmt;
     }
 }
