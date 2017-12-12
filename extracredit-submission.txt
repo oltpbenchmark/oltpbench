@@ -1,13 +1,9 @@
 # 15-445/645 (Fall 2017) -- Extra Credit
-# System: $(NAME)
+# System: MemSQL
 
 ---------------------------------------
 
 ## Part 1 - Installation
-
-Provide the instructions that you followed to install and setup the system. You should describe the steps (with commands when necessary) to deploy the DBMS on Amazon. This includes the cluster configuration if your DBMS is comprised of multiple components. If your DBMS requires third-party libraries or external services (e.g., Zookeeper), be sure to include the setup instructions for them. If you followed instructions from an on-line guide or tutorial, be sure to include the URL to those instructions.
-
-Example template:
 
 1. You will need to launch an instance with MemSQL. The easiest way to do this is to use the following link 
 	https://aws.amazon.com/marketplace/pp/B011MEZL88
@@ -67,19 +63,9 @@ mv *.tbl ../../data/tpch1/
 
 ## Part 2 - System Configuration
 
-List the configuration that you used to tune the system to get it to perform better. For example, if you benchmarked MySQL, you should list the configuration settings that you manually set in its 'mysqld.cnf' file. You do not need to include configuration settings for directory paths or networking information (e.g., bind-address).
+MemSQL does not allow many system variables to be modified. Those that could produce better performance were either set to the optimal values by default or were read only. Tuning other variables resulted in worse performance than the out of the box configuration. Thus, we did perform any tuning to our system with system variables. 
 
-
-
-
-
-Example template:
-
-```
-innodb_buffer_pool_size = 1024M
-innodb_file_per_table = 1
-max_allowed_packet = 32M
-```
+We did, however, run the TPCH benchmark using MemSQL’s column store configuration, which is better suited for OLAP workloads.
 
 ---------------------------------------
 
@@ -113,7 +99,7 @@ Then to run the benchmark execute the following commands
 *****
 
 ### Benchmark 2: $(TPCC)
-Student: $(FirstName) $(LastName) <$(AndrewId)>
+Student: Gustavo Angulo <gangulo>
 
 Comment out the foreign key declarations. MemSQL does not support foreign keys.
 
