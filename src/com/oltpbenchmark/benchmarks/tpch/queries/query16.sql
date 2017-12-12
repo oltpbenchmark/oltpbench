@@ -1,3 +1,4 @@
+use tpch;
 select
 	p_brand,
 	p_type,

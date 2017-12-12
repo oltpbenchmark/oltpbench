@@ -1,3 +1,4 @@
+use tpch;
 select
 	n_name,
 	sum(l_extendedprice * (1 - l_discount)) as revenue
@@ -16,8 +17,8 @@ where
 	and s_nationkey = n_nationkey
 	and n_regionkey = r_regionkey
 	and r_name = 'AFRICA'
-	and o_orderdate >= date '1997-01-01'
-	and o_orderdate < date '1997-01-01' + interval '1' year
+	and o_orderdate >= date('1997-01-01')
+	and o_orderdate < date('1997-01-01') + interval '1' year
 group by
 	n_name
 order by
