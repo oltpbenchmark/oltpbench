@@ -90,13 +90,22 @@ For each benchmark that you evaluated with your DBMS, provide the student name a
 *****
 
 ### Benchmark 1: $(TPCH)
-Student: $(FirstName) $(LastName) <$(AndrewId)>
+Student: Ajay Benno abenno
 List any modifications that you had to make to either the benchmark DDL, SQL dialects, or worker/loader in order to get the benchmark to work.
 
 For every date object, (i.e. date ‘2017-01-01’), surround the date string with parenthesis: data(‘2017-0101’).
 The queries that need this change are: 1,3,4,5,6,7,8,10,12,14,20
 
 Disable Query #15. MemSQL does not fully support views.
+To disable this query we went into the Q15.java file in queries and commented out the try statement in the run method. Thus we returned null.
+
+We also had to make all the tables be stored on disk. To do this we edited the ddl file and added keys which used the columnstore engine. This issue we faced here was we werent able to natively load this into memsql with the ./oltpbench command. So instead we manually load this in with the following command : 
+
+memsql < src/com/oltpbenchmark/benchmarks/tpch/ddls/tpch-memsql-ddl.sql
+
+Then to run the benchmark execute the following commands
+./oltpbenchmark -b tpch -c config/memsql_tpch_config.xml --load=true
+./oltpbenchmark -b tpch -c config/memsql_tpch_config.xml --execute=true -s 10 
 
 
 *****
