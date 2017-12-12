@@ -68,7 +68,6 @@ public class TPCHLoader extends Loader<TPCHBenchmark> {
     private static Date now;
     private static long lastTimeMS;
     private static Connection conn;
-    int LOWERBOUND = 1;
 
 
     public TPCHLoader(TPCHBenchmark benchmark, Connection c) {
@@ -286,13 +285,11 @@ public class TPCHLoader extends Loader<TPCHBenchmark> {
         for (int i = 0; i < 8; ++i)
             if (loaders[i] != null)
                 loaders[i].start();
-	LOG.info("threads started");
 
         for (int i = 0; i < 8; ++i) {
             try {
                 if (loaders[i] != null)
                     loaders[i].join();
-		LOG.info("thread ended");
             } catch(InterruptedException e) {
                 LOG.error(e.getMessage());
             }
@@ -389,10 +386,6 @@ public class TPCHLoader extends Loader<TPCHBenchmark> {
                     int group = getFormatGroup(format);
                     Matcher matcher;
                     while ((line = br.readLine()) != null) {
-			if(recordsRead %10000 == 0){
-				String test = "More Processed" + recordsRead;
-				LOG.info(test);
-			}
                         matcher = pattern.matcher(line);
                         try {
                             for (int i = 0; i < types.length; ++i) {
