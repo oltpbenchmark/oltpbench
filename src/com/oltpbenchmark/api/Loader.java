@@ -179,6 +179,27 @@ public abstract class Loader<T extends BenchmarkModule> {
         conn.commit();
     }
 
+    protected void updateAutoIncrement(String table_name, Column catalog_col, int value) throws SQLException {
+	System.out.println(table_name+catalog_col+String.valueOf(value));
+        String sql = null;
+        switch (getDatabaseType()) {
+            case CUBRID:
+                // assert (seqName != null);
+                sql = String.format("ALTER table %s modify %s int AUTO_INCREMENT(%d,1);", table_name, catalog_col, value);
+                break;
+            default:
+                // Nothing!
+        }
+        if (sql != null) {
+            if (LOG.isDebugEnabled())
+                LOG.debug(String.format("Updating %s auto-increment counter with value '%d'", catalog_col.fullName(), value));
+            Statement stmt = this.conn.createStatement();
+            boolean result = stmt.execute(sql);
+            if (LOG.isDebugEnabled())
+                LOG.debug(String.format("%s => [%s]", sql, result));
+        }
+    }
+
     protected void updateAutoIncrement(Column catalog_col, int value) throws SQLException {
         String sql = null;
         switch (getDatabaseType()) {
@@ -186,10 +207,6 @@ public abstract class Loader<T extends BenchmarkModule> {
                 String seqName = SQLUtil.getSequenceName(getDatabaseType(), catalog_col);
                 assert (seqName != null);
                 sql = String.format("SELECT setval(%s, %d)", seqName.toLowerCase(), value);
-                break;
-            case CUBRID:
-                // assert (seqName != null);
-                sql = String.format("ALTER table text modify old_id int AUTO_INCREMENT((%d),1);", value);
                 break;
             default:
                 // Nothing!

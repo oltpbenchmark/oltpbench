@@ -146,12 +146,18 @@ public class UpdatePage extends Procedure {
 		ps.setString(param++, pageText);
 		ps.setString(param++, "utf-8");  //This is an error
 //		ps.execute();
+		System.out.println();
 		execute(conn, ps);
 		
 		rs = ps.getGeneratedKeys();
 		adv = rs.next();
 		assert(adv) : "Problem inserting new tuples in table text";
-		int nextTextId = rs.getInt(1);
+		int nextTextId = -1;
+		try {
+			nextTextId = rs.getInt(1);
+		} catch (NullPointerException e){
+			System.out.println("no result");
+		}
 		rs.close();
 		assert(nextTextId >= 0) : "Invalid nextTextId (" + nextTextId + ")";
 
@@ -317,8 +323,10 @@ public class UpdatePage extends Procedure {
 					successful = true;
 				} catch (SQLException esql) {
 					int errorCode = esql.getErrorCode();
-					if (errorCode == 8177)
+					if (errorCode == 8177) {
+						System.out.println("errCode 8177");
 						conn.rollback();
+					}
 					else
 						throw esql;
 				}
@@ -340,5 +348,6 @@ public class UpdatePage extends Procedure {
 			}
 		}
 }
+
 
 

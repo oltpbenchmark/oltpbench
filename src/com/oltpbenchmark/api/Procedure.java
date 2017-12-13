@@ -133,7 +133,7 @@ public abstract class Procedure {
             }
             // Everyone else can use the regular getGeneratedKeys() method
             else if (is != null) {
-                pStmt = conn.prepareStatement(stmt.getSQL(), is);
+                pStmt = conn.prepareStatement(stmt.getSQL(), pStmt.RETURN_GENERATED_KEYS);//is
             }
             // They don't care about keys
             else {

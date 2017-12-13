@@ -1,7 +1,7 @@
 -- TODO: ipb_id auto_increment
 --DROP TABLE "ipblocks";
 CREATE TABLE "ipblocks" (
-  ipb_id int NOT NULL,
+  ipb_id int NOT NULL AUTO_INCREMENT,
   ipb_address varchar(1024) NOT NULL,
   ipb_user int NOT NULL,
   ipb_by int NOT NULL,
@@ -30,7 +30,7 @@ CREATE INDEX IDX_IPB_EXPIRY ON "ipblocks" (ipb_expiry);
 -- TOOD: user_id auto_increment
 --DROP TABLE "useracct";
 CREATE TABLE "useracct" (
-  user_id int NOT NULL,
+  user_id int NOT NULL AUTO_INCREMENT,
   user_name varchar(255) NOT NULL,
   user_real_name varchar(255) NOT NULL,
   user_password varchar(1024) NOT NULL,
@@ -53,7 +53,7 @@ CREATE INDEX IDX_USER_EMAIL_TOKEN ON "useracct" (user_email_token);
 -- TODO: log_id auto_increment
 --DROP TABLE "logging";
 CREATE TABLE "logging" (
-  log_id int NOT NULL,
+  log_id int NOT NULL AUTO_INCREMENT,
   log_type varchar(32) NOT NULL,
   log_action varchar(32) NOT NULL,
   log_timestamp varchar(14) NOT NULL,
@@ -77,7 +77,7 @@ CREATE INDEX IDX_LOG_PAGE_ID_TIME ON "logging" (log_page,log_timestamp);
 -- TODO: page_id auto_increment
 --DROP TABLE "page";
 CREATE TABLE "page" (
-  page_id int NOT NULL,
+  page_id int NOT NULL AUTO_INCREMENT,
   page_namespace int NOT NULL,
   page_title varchar(1024) NOT NULL,
   page_restrictions varchar(1024) NULL,
@@ -97,7 +97,7 @@ CREATE INDEX IDX_PAGE_LEN ON "page" (page_len);
 -- TODO: page_id auto_increment
 --DROP TABLE "page_backup";
 CREATE TABLE "page_backup" (
-  page_id int NOT NULL,
+  page_id int NOT NULL AUTO_INCREMENT,
   page_namespace int NOT NULL,
   page_title varchar(1024) NOT NULL,
   page_restrictions varchar(1024) NULL,
@@ -122,7 +122,7 @@ CREATE TABLE "page_restrictions" (
   pr_cascade SMALLINT NOT NULL,
   pr_user int DEFAULT NULL,
   pr_expiry varchar(14) DEFAULT NULL,
-  pr_id int NOT NULL,
+  pr_id int NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (pr_id),
   UNIQUE (pr_page,pr_type)
 );
@@ -133,7 +133,7 @@ CREATE INDEX IDX_PR_CASCADE ON "page_restrictions" (pr_cascade);
 -- TOOD: rc_id auto_increment
 --DROP TABLE "recentchanges";
 CREATE TABLE "recentchanges" (
-  rc_id int NOT NULL,
+  rc_id int NOT NULL AUTO_INCREMENT,
   rc_timestamp varchar(14) NOT NULL,
   rc_cur_time varchar(14) NOT NULL,
   rc_user int NOT NULL,
@@ -143,19 +143,19 @@ CREATE TABLE "recentchanges" (
   rc_comment varchar(255) NOT NULL,
   rc_minor SMALLINT NOT NULL,
   rc_bot SMALLINT NOT NULL,
-  rc_new SMALLINT NOT NULL,
+  rc_new SMALLINT NOT NULL DEFAULT '0',
   rc_cur_id int NOT NULL,
   rc_this_oldid int NOT NULL,
   rc_last_oldid int NOT NULL,
   rc_type SMALLINT NOT NULL,
   rc_moved_to_ns SMALLINT NOT NULL,
   rc_moved_to_title varchar(255) NOT NULL,
-  rc_patrolled SMALLINT NOT NULL,
+  rc_patrolled SMALLINT NOT NULL DEFAULT '0',
   rc_ip varchar(40) NOT NULL,
   rc_old_len int DEFAULT NULL,
   rc_new_len int DEFAULT NULL,
-  rc_deleted SMALLINT NOT NULL,
-  rc_logid int NOT NULL,
+  rc_deleted SMALLINT NOT NULL DEFAULT '0',
+  rc_logid int NOT NULL DEFAULT '0',
   rc_log_type varchar(255) DEFAULT NULL,
   rc_log_action varchar(255) DEFAULT NULL,
   rc_params varchar(1024),
@@ -172,7 +172,7 @@ CREATE INDEX IDX_RC_USER_TEXT ON "recentchanges" (rc_user_text,rc_timestamp);
 -- TODO: rev_id auto_increment
 --DROP TABLE "revision";
 CREATE TABLE "revision" (
-  rev_id int NOT NULL,
+  rev_id int NOT NULL AUTO_INCREMENT,
   rev_page int NOT NULL,
   rev_text_id int NOT NULL,
   rev_comment varchar(1024) NOT NULL,
@@ -194,7 +194,7 @@ CREATE INDEX IDX_USERTEXT_TIMESTAMP ON "revision" (rev_user_text,rev_timestamp);
 -- TODO old_id auto_increment
 --DROP TABLE "text";
 CREATE TABLE "text" (
-  old_id int NOT NULL AUTO_INCREMENT(10644, 1),
+  old_id int NOT NULL AUTO_INCREMENT,
   old_text varchar(1048576) NOT NULL,
   old_flags varchar(1024) NOT NULL,
   old_page int DEFAULT NULL,

@@ -182,6 +182,10 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
             // Oracle handles quoted object identifiers differently, do not escape names
             sql = SQLUtil.getInsertSQL(catalog_tbl, false);
         }
+	if(this.getDatabaseType() == DatabaseType.CUBRID) {
+            sql = SQLUtil.getInsertSQL(catalog_tbl, true, false, 1, 0);
+        }
+
         PreparedStatement userInsert = this.conn.prepareStatement(sql);
 
         FlatHistogram<Integer> h_nameLength = new FlatHistogram<Integer>(this.rng(), UserHistograms.NAME_LENGTH);
@@ -210,7 +214,9 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
             String touched = TimeUtil.getCurrentTimeString14();
 
             int param = 1;
-            userInsert.setInt(param++, i);                // user_id
+            if (this.getDatabaseType() != DatabaseType.CUBRID) {
+                userInsert.setInt(param++, i);                // user_id
+            }//userInsert.setInt(param++, i);                // user_id
             userInsert.setString(param++, name);          // user_name
             userInsert.setString(param++, realName);      // user_real_name
             userInsert.setString(param++, password);      // user_password
@@ -249,6 +255,9 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         userInsert.close();
         if (this.getDatabaseType() == DatabaseType.POSTGRES) {
             this.updateAutoIncrement(catalog_tbl.getColumn(0), this.num_users);
+        }
+        if (this.getDatabaseType() == DatabaseType.CUBRID) {
+            //this.updateAutoIncrement(catalog_tbl.getName(), catalog_tbl.getColumn(0), this.num_users);
         }
         if (LOG.isDebugEnabled())
             LOG.debug("Users  % " + this.num_users);
@@ -322,6 +331,9 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         pageInsert.close();
         if (this.getDatabaseType() == DatabaseType.POSTGRES) {
             this.updateAutoIncrement(catalog_tbl.getColumn(0), this.num_pages);
+        }
+        if (this.getDatabaseType() == DatabaseType.CUBRID) {
+            this.updateAutoIncrement(catalog_tbl.getName(), catalog_tbl.getColumn(0), this.num_users);
         }
         if (LOG.isDebugEnabled())
             LOG.debug("Users  % " + this.num_pages);
@@ -420,10 +432,10 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         if (this.getDatabaseType() == DatabaseType.ORACLE) {
             // Oracle handles quoted object identifiers differently, do not escape names
             textSQL = SQLUtil.getInsertSQL(textTable, false);
+        } 
+        if (this.getDatabaseType() == DatabaseType.CUBRID) {
+            textSQL = SQLUtil.getInsertSQL(textTable, true, false, 1, 0);
         }
-        // if (this.getDatabaseType() == DatabaseType.CUBRID) {
-            // textSQL = SQLUtil.getInsertSQL(textTable, true, true, 1, 0);
-        // }
         PreparedStatement textInsert = this.conn.prepareStatement(textSQL);
 
         // REVISION
@@ -480,9 +492,9 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
                 
                 // Insert the text
                 int col = 1;
-                // if (this.getDatabaseType() != DatabaseType.CUBRID) {
+                if (this.getDatabaseType() != DatabaseType.CUBRID) {
                     textInsert.setInt(col++, rev_id); // old_id
-                // }
+                }
                 
                 textInsert.setString(col++, new String(old_text)); // old_text
                 textInsert.setString(col++, "utf-8"); // old_flags
@@ -540,7 +552,8 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
             this.updateAutoIncrement(revTable.getColumn(0), rev_id);
         }
         if (this.getDatabaseType() == DatabaseType.CUBRID) {
-            this.updateAutoIncrement(textTable.getColumn(0), rev_id);
+            this.updateAutoIncrement(textTable.getName(), textTable.getColumn(0), rev_id);
+            this.updateAutoIncrement(revTable.getName(), revTable.getColumn(0), rev_id);
         }
         
         // UPDATE USER
@@ -618,3 +631,4 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         }
     }
 }
+

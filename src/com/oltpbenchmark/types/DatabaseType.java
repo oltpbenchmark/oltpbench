@@ -49,7 +49,7 @@ public enum DatabaseType {
     NUODB("com.nuodb.jdbc.Driver", true, false),
     TIMESTEN("com.timesten.jdbc.TimesTenDriver", true, false),
     PELOTON("org.postgresql.Driver", false, false),
-    CUBRID("cubrid.jdbc.driver.CUBRIDDriver", true, false)
+    CUBRID("cubrid.jdbc.driver.CUBRIDDriver", false, false)
     ;
     
     private DatabaseType(String driver, boolean escapeNames, boolean includeColNames) {

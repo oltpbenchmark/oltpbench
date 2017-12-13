@@ -380,47 +380,45 @@ public abstract class SQLUtil {
      * @return
      */
     public static String getInsertSQL(Table catalog_tbl, boolean show_cols, boolean escape_names, int batchSize, int...exclude_columns) {
-    	StringBuilder sb = new StringBuilder();
-    	sb.append("INSERT INTO ")
-    	  .append(escape_names ? catalog_tbl.getEscapedName() : catalog_tbl.getName());
-    	
-    	StringBuilder values = new StringBuilder();
-    	boolean first;
-    	
-    	// Column Names
-    	// XXX: Disabled because of case issues with HSQLDB
-    	if (show_cols) sb.append(" (");
-    	first = true;
-    	
-    	// These are the column offset that we want to exclude
-    	Set<Integer> excluded = new HashSet<Integer>();
-    	for (int ex : exclude_columns) {
-            System.out.println(ex);
-    	    excluded.add(ex);
-        }
-    	
-    	for (Column catalog_col : catalog_tbl.getColumns()) {
-    	    if (excluded.contains(catalog_col.getIndex())) continue;
-    		if (first == false) {
-    			if (show_cols) sb.append(", ");
-    			values.append(", ");
-    		}
-    		if (show_cols) sb.append(escape_names ? catalog_col.getEscapedName() : catalog_col.getName());
-    		values.append("?");
-    		first = false;
-    	} // FOR
-    	if (show_cols) sb.append(")");
-    	
-    	// Values
-    	sb.append(" VALUES ");
-    	first = true;
-    	for (int i = 0; i < batchSize; i++) {
-    		if (first == false) sb.append(", ");
-    		sb.append("(").append(values.toString()).append(")");
-    	} // FOR
-//    	sb.append(";");
-    	
-    	return (sb.toString());
+        StringBuilder sb = new StringBuilder();
+        sb.append("INSERT INTO ")
+          .append(escape_names ? catalog_tbl.getEscapedName() : catalog_tbl.getName());
+        
+        StringBuilder values = new StringBuilder();
+        boolean first;
+        
+        // Column Names
+        // XXX: Disabled because of case issues with HSQLDB
+        if (show_cols) sb.append(" (");
+        first = true;
+        
+        // These are the column offset that we want to exclude
+        Set<Integer> excluded = new HashSet<Integer>();
+        for (int ex : exclude_columns)
+            excluded.add(ex);
+        
+        for (Column catalog_col : catalog_tbl.getColumns()) {
+            if (excluded.contains(catalog_col.getIndex())) continue;
+            if (first == false) {
+                if (show_cols) sb.append(", ");
+                values.append(", ");
+            }
+            if (show_cols) sb.append(escape_names ? catalog_col.getEscapedName() : catalog_col.getName());
+            values.append("?");
+            first = false;
+        } // FOR
+        if (show_cols) sb.append(")");
+        
+        // Values
+        sb.append(" VALUES ");
+        first = true;
+        for (int i = 0; i < batchSize; i++) {
+            if (first == false) sb.append(", ");
+            sb.append("(").append(values.toString()).append(")");
+        } // FOR
+//      sb.append(";");
+        
+        return (sb.toString());
     }
 
     public static String getMaxColSQL(DatabaseType dbType, Table catalog_tbl, String col) {
