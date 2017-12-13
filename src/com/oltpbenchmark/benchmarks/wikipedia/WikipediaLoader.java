@@ -414,9 +414,17 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
      */
     private void loadRevision() throws SQLException {
         
+        // Turn Identity to on
+        PreparedStatement ps;
+        ps = this.conn.prepareStatement("SET IDENTITY_INSERT " + WikipediaConstants.TABLENAME_TEXT + " ON");
+        ps.executeUpdate();
+        ps = this.conn.prepareStatement("SET IDENTITY_INSERT " + WikipediaConstants.TABLENAME_REVISION + " ON");
+        ps.executeUpdate();
+        this.conn.commit();
+
         // TEXT
         Table textTable = this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_TEXT);
-        String textSQL = SQLUtil.getInsertSQL(textTable);
+        String textSQL = SQLUtil.getInsertSQL(textTable, false, false, 1, 0);
         if (this.getDatabaseType() == DatabaseType.ORACLE) {
             // Oracle handles quoted object identifiers differently, do not escape names
             textSQL = SQLUtil.getInsertSQL(textTable, false);
@@ -425,7 +433,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
 
         // REVISION
         Table revTable = this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_REVISION);
-        String revSQL = SQLUtil.getInsertSQL(revTable);
+        String revSQL = SQLUtil.getInsertSQL(revTable, false, false, 1, 0);
         if (this.getDatabaseType() == DatabaseType.ORACLE) {
             // Oracle handles quoted object identifiers differently, do not escape names
             revSQL = SQLUtil.getInsertSQL(revTable, false);
@@ -477,7 +485,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
                 
                 // Insert the text
                 int col = 1;
-                textInsert.setInt(col++, rev_id); // old_id
+                // textInsert.setInt(col++, rev_id); // old_id
                 textInsert.setString(col++, new String(old_text)); // old_text
                 textInsert.setString(col++, "utf-8"); // old_flags
                 textInsert.setInt(col++, page_id); // old_page
@@ -485,12 +493,18 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
 
                 // Insert the revision
                 col = 1;
-                revisionInsert.setInt(col++, rev_id); // rev_id
+                // revisionInsert.setInt(col++, rev_id); // rev_id
                 revisionInsert.setInt(col++, page_id); // rev_page
                 revisionInsert.setInt(col++, rev_id); // rev_text_id
                 revisionInsert.setString(col++, rev_comment); // rev_comment
+                if(rev_comment.length()>256){
+                    System.out.println("Comment length: "+String.valueOf(rev_comment.length()));
+                }
                 revisionInsert.setInt(col++, user_id); // rev_user
                 revisionInsert.setString(col++, user_text); // rev_user_text
+                if(user_text.length()>255){
+                    System.out.println("User text length: "+String.valueOf(user_text.length()));
+                }
                 revisionInsert.setString(col++, TimeUtil.getCurrentTimeString14()); // rev_timestamp
                 revisionInsert.setInt(col++, h_minorEdit.nextValue().intValue()); // rev_minor_edit
                 revisionInsert.setInt(col++, 0); // rev_deleted
