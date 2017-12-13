@@ -489,8 +489,14 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
                 revisionInsert.setInt(col++, page_id); // rev_page
                 revisionInsert.setInt(col++, rev_id); // rev_text_id
                 revisionInsert.setString(col++, rev_comment); // rev_comment
+                if(rev_comment.length()>256){
+                    System.out.println("Comment length: "+String.valueOf(rev_comment.length()));
+                }
                 revisionInsert.setInt(col++, user_id); // rev_user
                 revisionInsert.setString(col++, user_text); // rev_user_text
+                if(user_text.length()>255){
+                    System.out.println("User text length: "+String.valueOf(user_text.length()));
+                }
                 revisionInsert.setString(col++, TimeUtil.getCurrentTimeString14()); // rev_timestamp
                 revisionInsert.setInt(col++, h_minorEdit.nextValue().intValue()); // rev_minor_edit
                 revisionInsert.setInt(col++, 0); // rev_deleted
