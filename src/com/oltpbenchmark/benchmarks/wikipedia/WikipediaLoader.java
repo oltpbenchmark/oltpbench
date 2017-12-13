@@ -421,6 +421,9 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
             // Oracle handles quoted object identifiers differently, do not escape names
             textSQL = SQLUtil.getInsertSQL(textTable, false);
         }
+        // if (this.getDatabaseType() == DatabaseType.CUBRID) {
+            // textSQL = SQLUtil.getInsertSQL(textTable, true, true, 1, 0);
+        // }
         PreparedStatement textInsert = this.conn.prepareStatement(textSQL);
 
         // REVISION
@@ -477,7 +480,10 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
                 
                 // Insert the text
                 int col = 1;
-                textInsert.setInt(col++, rev_id); // old_id
+                // if (this.getDatabaseType() != DatabaseType.CUBRID) {
+                    textInsert.setInt(col++, rev_id); // old_id
+                // }
+                
                 textInsert.setString(col++, new String(old_text)); // old_text
                 textInsert.setString(col++, "utf-8"); // old_flags
                 textInsert.setInt(col++, page_id); // old_page
@@ -532,6 +538,9 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         if (this.getDatabaseType() == DatabaseType.POSTGRES) {
             this.updateAutoIncrement(textTable.getColumn(0), rev_id);
             this.updateAutoIncrement(revTable.getColumn(0), rev_id);
+        }
+        if (this.getDatabaseType() == DatabaseType.CUBRID) {
+            this.updateAutoIncrement(textTable.getColumn(0), rev_id);
         }
         
         // UPDATE USER

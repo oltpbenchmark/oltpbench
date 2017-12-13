@@ -394,8 +394,10 @@ public abstract class SQLUtil {
     	
     	// These are the column offset that we want to exclude
     	Set<Integer> excluded = new HashSet<Integer>();
-    	for (int ex : exclude_columns)
+    	for (int ex : exclude_columns) {
+            System.out.println(ex);
     	    excluded.add(ex);
+        }
     	
     	for (Column catalog_col : catalog_tbl.getColumns()) {
     	    if (excluded.contains(catalog_col.getIndex())) continue;

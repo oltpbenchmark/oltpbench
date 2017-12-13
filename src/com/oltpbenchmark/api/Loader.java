@@ -187,6 +187,10 @@ public abstract class Loader<T extends BenchmarkModule> {
                 assert (seqName != null);
                 sql = String.format("SELECT setval(%s, %d)", seqName.toLowerCase(), value);
                 break;
+            case CUBRID:
+                // assert (seqName != null);
+                sql = String.format("ALTER table text modify old_id int AUTO_INCREMENT((%d),1);", value);
+                break;
             default:
                 // Nothing!
         }
