@@ -62,7 +62,7 @@ CREATE TABLE "logging" (
   log_title varchar(255) NOT NULL,
   log_comment varchar(255) NOT NULL,
   log_params varchar(1024) NOT NULL,
-  log_deleted SMALLINT NOT NULL,
+  log_deleted SMALLINT NOT NULL DEFAULT '0',
   log_user_text varchar(255) NOT NULL,
   log_page int DEFAULT NULL,
   PRIMARY KEY (log_id)
