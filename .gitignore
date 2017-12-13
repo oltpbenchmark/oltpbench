@@ -20,6 +20,3 @@ results
 
 # maven output
 target
-*.trc
-
-*.jar

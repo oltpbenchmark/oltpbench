@@ -2,22 +2,22 @@
 <parameters>
 	
     <!-- Connection details -->
-    <dbtype>sqlserver</dbtype>
-    <driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</driver>
-    <DBUrl>jdbc:sqlserver://localhost:1433</DBUrl>
-    <username>sa</username>
-    <password>SQLdb123!</password>
-    <isolation>TRANSACTION_READ_COMMITTED</isolation>
+    <dbtype>mysql</dbtype>
+    <driver>com.mysql.jdbc.Driver</driver>
+    <DBUrl>jdbc:mysql://localhost:3306/tpcc</DBUrl>
+    <username>root</username>
+    <password></password>
+    <isolation>TRANSACTION_SERIALIZABLE</isolation>
     
     <!-- Scale factor is the number of warehouses in TPCC -->
-    <scalefactor>16</scalefactor>
+    <scalefactor>2</scalefactor>
     
     <!-- The workload -->
-    <terminals>64</terminals>
+    <terminals>2</terminals>
     <works>
         <work>
-          <time>300</time>
-          <rate>unlimited</rate>
+          <time>60</time>
+          <rate>10000</rate>
           <weights>45,43,4,4,4</weights>
         </work>
     </works>
