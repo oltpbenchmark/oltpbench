@@ -1,0 +1,22 @@
+bin/
+/build/
+output.raw
+output.res
+.classpath
+.settings
+results
+
+## -------------------------------
+## Kate Swap Files
+## -------------------------------
+*.kate-swp
+.#kate-*
+
+## -------------------------------
+## Backup artifacts
+## -------------------------------
+~*
+*~
+
+# maven output
+target
