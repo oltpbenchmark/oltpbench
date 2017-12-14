@@ -246,22 +246,18 @@ public class UpdatePage extends Procedure {
 			// the transaction merge with the following one
 			conn.commit();
 
+			ps = this.getPreparedStatement(conn, updateWatchList);
 			for (Integer otherUserId : wlUser) {
-			    ps = this.getPreparedStatement(conn, updateWatchList);
 			    param = 1;
 			    ps.setString(param++, timestamp);
 			    ps.setString(param++, pageTitle);
 			    ps.setInt(param++, pageNamespace);
-			//for (Integer otherUserId : wlUser) {
-				//System.out.println(param);
-				//System.out.println(otherUserId.intValue());
-				ps.setInt(param, otherUserId.intValue());
-				//ps.addBatch();
-			    execute(conn, ps);
+ 			    ps.setInt(param, otherUserId.intValue());
+			    ps.addBatch();
 			} // FOR
 //			ps.executeUpdate(); // This is an error
 //			ps.executeBatch();
-			//executeBatch(conn, ps);
+			executeBatch(conn, ps);
 
 			// NOTE: this commit is skipped if none is watching the page, and
 			// the transaction merge with the following one
