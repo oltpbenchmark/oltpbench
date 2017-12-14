@@ -1,0 +1,34 @@
+Buildfile: /home/ubuntu/extracredit/oltpbench/build.xml
+
+build:
+
+execute:
+     [java] 22:00:43,820 (DBWorkload.java:259) INFO  - ======================================================================
+     [java] 
+     [java] Benchmark:     TPCH {com.oltpbenchmark.benchmarks.tpch.TPCHBenchmark}
+     [java] Configuration: config/tpch_config_comdb2.xml
+     [java] Type:          COMDB2
+     [java] Driver:        com.bloomberg.comdb2.jdbc.Driver
+     [java] URL:           jdbc:comdb2://localhost/tpch?statement_query_effects=1
+     [java] Isolation:     TRANSACTION_READ_COMMITTED
+     [java] Scale Factor:  20.0
+     [java] 
+     [java] 22:00:43,821 (DBWorkload.java:260) INFO  - ======================================================================
+     [java] 22:00:43,848 (DBWorkload.java:445) INFO  - Timer disabled for serial run; will execute all queries exactly once.
+     [java] 22:00:43,849 (DBWorkload.java:445) INFO  - Timer disabled for serial run; will execute all queries exactly once.
+     [java] 22:00:43,849 (DBWorkload.java:445) INFO  - Timer disabled for serial run; will execute all queries exactly once.
+     [java] 22:00:43,850 (DBWorkload.java:512) INFO  - Creating new TPCH database...
+     [java] 
+     [java] 
+     [java] 
+     [java] 
+     [java] 
+     [java] 
+     [java] 
+     [java] 
+     [java] 22:00:54,646 (DBWorkload.java:514) INFO  - Finished!
+     [java] 22:00:54,646 (DBWorkload.java:515) INFO  - ======================================================================
+     [java] 22:00:54,647 (DBWorkload.java:581) INFO  - Skipping benchmark workload execution
+
+BUILD SUCCESSFUL
+Total time: 11 seconds

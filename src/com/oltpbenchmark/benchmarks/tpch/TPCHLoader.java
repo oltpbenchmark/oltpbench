@@ -229,7 +229,8 @@ public class TPCHLoader extends Loader<TPCHBenchmark> {
     static void truncateTable(String strTable) throws SQLException {
         LOG.debug("Truncating '" + strTable + "' ...");
         try {
-            conn.createStatement().execute("DELETE FROM " + strTable);
+            System.out.println("truncate " + strTable);
+            conn.createStatement().execute("truncate " + strTable);
             conn.commit();
         } catch (SQLException se) {
             LOG.debug(se.getMessage());
