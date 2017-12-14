@@ -413,13 +413,19 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
      * REVISIONS
      */
     private void loadRevision() throws SQLException {
-        
         // TEXT
         Table textTable = this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_TEXT);
         String textSQL = SQLUtil.getInsertSQL(textTable);
         if (this.getDatabaseType() == DatabaseType.ORACLE) {
             // Oracle handles quoted object identifiers differently, do not escape names
             textSQL = SQLUtil.getInsertSQL(textTable, false);
+        }
+        String set_text_identity_on = "SET IDENTITY_INSERT " + WikipediaConstants.TABLENAME_TEXT + " ON;";
+        String set_text_identity_off = "; SET IDENTITY_INSERT " + WikipediaConstants.TABLENAME_TEXT + " OFF";
+        if(this.getDatabaseType() == DatabaseType.SQLSERVER) {
+            // SQL Server: Turn Identity to on
+            textSQL = SQLUtil.getInsertSQL(textTable, true, false, 1);
+            textSQL = set_text_identity_on + textSQL + set_text_identity_off;
         }
         PreparedStatement textInsert = this.conn.prepareStatement(textSQL);
 
@@ -429,6 +435,13 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         if (this.getDatabaseType() == DatabaseType.ORACLE) {
             // Oracle handles quoted object identifiers differently, do not escape names
             revSQL = SQLUtil.getInsertSQL(revTable, false);
+        }
+        String set_rev_identity_on = "SET IDENTITY_INSERT " + WikipediaConstants.TABLENAME_REVISION + " ON;";
+        String set_rev_identity_off = "; SET IDENTITY_INSERT " + WikipediaConstants.TABLENAME_REVISION + " OFF";
+        if(this.getDatabaseType() == DatabaseType.SQLSERVER) {
+            // SQL Server: Turn Identity to on
+            revSQL = SQLUtil.getInsertSQL(revTable, true, false, 1);
+            revSQL = set_rev_identity_on + revSQL + set_rev_identity_off;
         }
         PreparedStatement revisionInsert = this.conn.prepareStatement(revSQL);
 

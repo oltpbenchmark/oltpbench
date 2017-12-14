@@ -43,19 +43,18 @@ CREATE INDEX IDX_IPB_TIMESTAMP ON ipblocks (ipb_timestamp);
 CREATE INDEX IDX_IPB_EXPIRY ON ipblocks (ipb_expiry);
 
 CREATE TABLE logging (
-  log_id int NOT NULL,
+  log_id int IDENTITY(1,1) PRIMARY KEY,
   log_type varchar(32) NOT NULL,
   log_action varchar(32) NOT NULL,
   log_timestamp varchar(14) NOT NULL DEFAULT '19700101000000',
   log_user int NOT NULL DEFAULT '0',
   log_namespace int NOT NULL DEFAULT '0',
   log_title varchar(255) NOT NULL DEFAULT '',
-  log_comment varchar(255) NOT NULL DEFAULT '',
+  log_comment varchar(256) NOT NULL DEFAULT '',
   log_params text NOT NULL,
   log_deleted tinyint NOT NULL DEFAULT '0',
   log_user_text varchar(255) NOT NULL DEFAULT '',
-  log_page int DEFAULT NULL,
-  PRIMARY KEY (log_id)
+  log_page int DEFAULT NULL
 );
 CREATE INDEX IDX_LOG_TYPE_TIME ON logging (log_type,log_timestamp);
 CREATE INDEX IDX_LOG_USER_TIME ON logging (log_user,log_timestamp);
@@ -116,14 +115,14 @@ CREATE INDEX IDX_PR_LEVEL ON page_restrictions (pr_level);
 CREATE INDEX IDX_PR_CASCADE ON page_restrictions (pr_cascade);
 
 CREATE TABLE recentchanges (
-  rc_id int NOT NULL,
+  rc_id int IDENTITY(1,1) PRIMARY KEY,
   rc_timestamp varchar(14) NOT NULL DEFAULT '',
   rc_cur_time varchar(14) NOT NULL DEFAULT '',
   rc_user int NOT NULL DEFAULT '0',
   rc_user_text varchar(255) NOT NULL,
   rc_namespace int NOT NULL DEFAULT '0',
   rc_title varchar(255) NOT NULL DEFAULT '',
-  rc_comment varchar(255) NOT NULL DEFAULT '',
+  rc_comment varchar(256) NOT NULL DEFAULT '',
   rc_minor tinyint NOT NULL DEFAULT '0',
   rc_bot tinyint NOT NULL DEFAULT '0',
   rc_new tinyint NOT NULL DEFAULT '0',
@@ -141,8 +140,7 @@ CREATE TABLE recentchanges (
   rc_logid int NOT NULL DEFAULT '0',
   rc_log_type varchar(255) DEFAULT NULL,
   rc_log_action varchar(255) DEFAULT NULL,
-  rc_params text,
-  PRIMARY KEY (rc_id)
+  rc_params text
 );
 CREATE INDEX IDX_RC_TIMESTAMP ON recentchanges (rc_timestamp);
 CREATE INDEX IDX_RC_NAMESPACE_TITLE ON recentchanges (rc_namespace,rc_title);
@@ -153,10 +151,10 @@ CREATE INDEX IDX_RC_NS_USERTEXT ON recentchanges (rc_namespace,rc_user_text);
 CREATE INDEX IDX_RC_USER_TEXT ON recentchanges (rc_user_text,rc_timestamp);
 
 CREATE TABLE revision (
-  rev_id int NOT NULL,
+  rev_id int IDENTITY(1,1) PRIMARY KEY,
   rev_page int NOT NULL,
   rev_text_id int NOT NULL,
-  rev_comment varchar(255) NOT NULL,
+  rev_comment varchar(256) NOT NULL,
   rev_user int NOT NULL DEFAULT '0',
   rev_user_text varchar(255) NOT NULL DEFAULT '',
   rev_timestamp varchar(14) NOT NULL DEFAULT '\0\0\0\0\0\0\0\0\0\0\0\0\0\0',
@@ -164,7 +162,6 @@ CREATE TABLE revision (
   rev_deleted tinyint NOT NULL DEFAULT '0',
   rev_len int DEFAULT NULL,
   rev_parent_id int DEFAULT NULL,
-  PRIMARY KEY (rev_id),
   UNIQUE (rev_page,rev_id)
 );
 CREATE INDEX IDX_REV_TIMESTAMP ON revision (rev_timestamp);
@@ -173,11 +170,10 @@ CREATE INDEX IDX_USER_TIMESTAMP ON revision (rev_user,rev_timestamp);
 CREATE INDEX IDX_USERTEXT_TIMESTAMP ON revision (rev_user_text,rev_timestamp);
 
 CREATE TABLE text (
-  old_id int NOT NULL,
+  old_id int IDENTITY(1,1) PRIMARY KEY,
   old_text varchar(max) NOT NULL,
   old_flags varchar(255) NOT NULL,
-  old_page int DEFAULT NULL,
-  PRIMARY KEY (old_id)
+  old_page int DEFAULT NULL
 );
 
 CREATE TABLE useracct (
@@ -221,3 +217,5 @@ CREATE TABLE watchlist (
   UNIQUE (wl_user,wl_namespace,wl_title)
 );
 CREATE INDEX IDX_WL_NAMESPACE_TITLE ON watchlist (wl_namespace, wl_title);
+
+CREATE STATISTICS STATS_WL ON watchlist (wl_title, wl_user);
