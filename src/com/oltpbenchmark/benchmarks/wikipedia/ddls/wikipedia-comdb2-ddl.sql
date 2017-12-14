@@ -214,5 +214,4 @@ CREATE TABLE watchlist (
   wl_title varchar(255) NOT NULL,
   wl_notificationtimestamp varchar(14) DEFAULT NULL
 );
-CREATE UNIQUE INDEX UNIQUE_IDX_WL ON watchlist (wl_user, wl_namespace, wl_title);
 CREATE INDEX IDX_WL_NAMESPACE_TITLE ON watchlist (wl_namespace, wl_title);
