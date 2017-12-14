@@ -181,8 +181,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         if(this.getDatabaseType() == DatabaseType.ORACLE) {
             // Oracle handles quoted object identifiers differently, do not escape names
             sql = SQLUtil.getInsertSQL(catalog_tbl, false);
-        }
-	if(this.getDatabaseType() == DatabaseType.CUBRID) {
+        } else if(this.getDatabaseType() == DatabaseType.CUBRID) {
             sql = SQLUtil.getInsertSQL(catalog_tbl, true, false, 1, 0);
         }
 
@@ -216,7 +215,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
             int param = 1;
             if (this.getDatabaseType() != DatabaseType.CUBRID) {
                 userInsert.setInt(param++, i);                // user_id
-            }//userInsert.setInt(param++, i);                // user_id
+            }
             userInsert.setString(param++, name);          // user_name
             userInsert.setString(param++, realName);      // user_real_name
             userInsert.setString(param++, password);      // user_password
@@ -256,9 +255,6 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         if (this.getDatabaseType() == DatabaseType.POSTGRES) {
             this.updateAutoIncrement(catalog_tbl.getColumn(0), this.num_users);
         }
-        if (this.getDatabaseType() == DatabaseType.CUBRID) {
-            //this.updateAutoIncrement(catalog_tbl.getName(), catalog_tbl.getColumn(0), this.num_users);
-        }
         if (LOG.isDebugEnabled())
             LOG.debug("Users  % " + this.num_users);
     }
@@ -274,7 +270,10 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         if (this.getDatabaseType() == DatabaseType.ORACLE) {
             // Oracle handles quoted object identifiers differently, do not escape names
             sql = SQLUtil.getInsertSQL(catalog_tbl, false);
+        } else if(this.getDatabaseType() == DatabaseType.CUBRID) {
+            sql = SQLUtil.getInsertSQL(catalog_tbl, true, false, 1, 0);
         }
+
         PreparedStatement pageInsert = this.conn.prepareStatement(sql);
         
         FlatHistogram<Integer> h_titleLength = new FlatHistogram<Integer>(this.rng(), PageHistograms.TITLE_LENGTH);
@@ -295,7 +294,9 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
             String pageTouched = TimeUtil.getCurrentTimeString14();
             
             int param = 1;
-            pageInsert.setInt(param++, i);              // page_id
+            if (this.getDatabaseType() != DatabaseType.CUBRID) {
+                pageInsert.setInt(param++, i);              // page_id
+            }
             pageInsert.setInt(param++, namespace);      // page_namespace
             pageInsert.setString(param++, title);       // page_title
             pageInsert.setString(param++, restrictions);// page_restrictions
@@ -331,9 +332,6 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         pageInsert.close();
         if (this.getDatabaseType() == DatabaseType.POSTGRES) {
             this.updateAutoIncrement(catalog_tbl.getColumn(0), this.num_pages);
-        }
-        if (this.getDatabaseType() == DatabaseType.CUBRID) {
-            this.updateAutoIncrement(catalog_tbl.getName(), catalog_tbl.getColumn(0), this.num_users);
         }
         if (LOG.isDebugEnabled())
             LOG.debug("Users  % " + this.num_pages);
@@ -432,8 +430,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         if (this.getDatabaseType() == DatabaseType.ORACLE) {
             // Oracle handles quoted object identifiers differently, do not escape names
             textSQL = SQLUtil.getInsertSQL(textTable, false);
-        } 
-        if (this.getDatabaseType() == DatabaseType.CUBRID) {
+        } else if (this.getDatabaseType() == DatabaseType.CUBRID) {
             textSQL = SQLUtil.getInsertSQL(textTable, true, false, 1, 0);
         }
         PreparedStatement textInsert = this.conn.prepareStatement(textSQL);
@@ -444,6 +441,8 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         if (this.getDatabaseType() == DatabaseType.ORACLE) {
             // Oracle handles quoted object identifiers differently, do not escape names
             revSQL = SQLUtil.getInsertSQL(revTable, false);
+        } else if (this.getDatabaseType() == DatabaseType.CUBRID) {
+            revSQL = SQLUtil.getInsertSQL(revTable, true, false, 1, 0);
         }
         PreparedStatement revisionInsert = this.conn.prepareStatement(revSQL);
 
@@ -503,7 +502,9 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
 
                 // Insert the revision
                 col = 1;
-                revisionInsert.setInt(col++, rev_id); // rev_id
+                if (this.getDatabaseType() != DatabaseType.CUBRID) {
+                    revisionInsert.setInt(col++, rev_id); // rev_id
+                }
                 revisionInsert.setInt(col++, page_id); // rev_page
                 revisionInsert.setInt(col++, rev_id); // rev_text_id
                 revisionInsert.setString(col++, rev_comment); // rev_comment
@@ -551,11 +552,6 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
             this.updateAutoIncrement(textTable.getColumn(0), rev_id);
             this.updateAutoIncrement(revTable.getColumn(0), rev_id);
         }
-        if (this.getDatabaseType() == DatabaseType.CUBRID) {
-            this.updateAutoIncrement(textTable.getName(), textTable.getColumn(0), rev_id);
-            this.updateAutoIncrement(revTable.getName(), revTable.getColumn(0), rev_id);
-        }
-        
         // UPDATE USER
         revTable = this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_USER);
         

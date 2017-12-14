@@ -133,7 +133,11 @@ public abstract class Procedure {
             }
             // Everyone else can use the regular getGeneratedKeys() method
             else if (is != null) {
-                pStmt = conn.prepareStatement(stmt.getSQL(), pStmt.RETURN_GENERATED_KEYS);//is
+                if (getDatabaseType() == DatabaseType.CUBRID) {
+                    pStmt = conn.prepareStatement(stmt.getSQL(), pStmt.RETURN_GENERATED_KEYS);
+                } else {
+                    pStmt = conn.prepareStatement(stmt.getSQL(), is);
+                }
             }
             // They don't care about keys
             else {
