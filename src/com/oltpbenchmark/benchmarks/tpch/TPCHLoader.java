@@ -273,7 +273,7 @@ public class TPCHLoader extends Loader<TPCHBenchmark> {
     protected long totalRows = 0;
 
     protected long loadHelper() {
-        Thread loaders[] = new Thread[num_thread];
+        Thread loaders[] = new Thread[8];
         loaders[0] = loadCustomers();
         loaders[1] = loadLineItems();
         loaders[2] = loadNations();
