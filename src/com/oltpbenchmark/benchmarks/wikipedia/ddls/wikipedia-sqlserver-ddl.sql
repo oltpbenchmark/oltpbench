@@ -217,3 +217,5 @@ CREATE TABLE watchlist (
   UNIQUE (wl_user,wl_namespace,wl_title)
 );
 CREATE INDEX IDX_WL_NAMESPACE_TITLE ON watchlist (wl_namespace, wl_title);
+
+CREATE STATISTICS STATS_WL ON watchlist (wl_title, wl_user);
