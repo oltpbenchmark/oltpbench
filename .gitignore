@@ -26,3 +26,6 @@ results
 # intellij files
 *.idea
 *.iml
+
+# Traces
+*.trace
