@@ -273,7 +273,7 @@ public class TPCHLoader extends Loader<TPCHBenchmark> {
     protected long totalRows = 0;
 
     protected long loadHelper() {
-        Thread loaders[] = new Thread[8];
+        Thread loaders[] = new Thread[num_thread];
         loaders[0] = loadCustomers();
         loaders[1] = loadLineItems();
         loaders[2] = loadNations();
@@ -295,15 +295,15 @@ public class TPCHLoader extends Loader<TPCHBenchmark> {
 //                LOG.error(e.getMessage());
 //            }
 //        }
-        for (int i = 0; i < num_thread; ++i) {
-    if (loaders[i] != null)
-        loaders[i].start();
-    try {
-        if (loaders[i] != null)
-            loaders[i].join();
-    } catch(InterruptedException e) {
-        LOG.error(e.getMessage());
-    }
+        for (int i = 0; i < 8; ++i) {
+            if (loaders[i] != null)
+            loaders[i].start();
+        try {
+            if (loaders[i] != null)
+                loaders[i].join();
+        } catch(InterruptedException e) {
+            LOG.error(e.getMessage());
+       }
 }
 
         return this.totalRows;
