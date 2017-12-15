@@ -480,7 +480,6 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
             textInsert.setString(col++, "utf-8"); // old_flags
             textInsert.setInt(col++, page_id); // old_page
             textInsert.addBatch();
-            textInsert.
 
             // Insert the revision
             col = 1;
