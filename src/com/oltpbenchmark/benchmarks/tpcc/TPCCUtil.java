@@ -48,21 +48,21 @@ public class TPCCUtil {
 			throws SQLException {
 		Customer c = new Customer();
 		// TODO: Use column indices: probably faster?
-		c.c_first = rs.getString("c_first");
-		c.c_middle = rs.getString("c_middle");
-		c.c_street_1 = rs.getString("c_street_1");
-		c.c_street_2 = rs.getString("c_street_2");
-		c.c_city = rs.getString("c_city");
-		c.c_state = rs.getString("c_state");
-		c.c_zip = rs.getString("c_zip");
-		c.c_phone = rs.getString("c_phone");
-		c.c_credit = rs.getString("c_credit");
-		c.c_credit_lim = rs.getFloat("c_credit_lim");
-		c.c_discount = rs.getFloat("c_discount");
-		c.c_balance = rs.getFloat("c_balance");
-		c.c_ytd_payment = rs.getFloat("c_ytd_payment");
-		c.c_payment_cnt = rs.getInt("c_payment_cnt");
-		c.c_since = rs.getTimestamp("c_since");
+		c.c_first = rs.getString("C_FIRST");
+		c.c_middle = rs.getString("C_MIDDLE");
+		c.c_street_1 = rs.getString("C_STREET_1");
+		c.c_street_2 = rs.getString("C_STREET_2");
+		c.c_city = rs.getString("C_CITY");
+		c.c_state = rs.getString("C_STATE");
+		c.c_zip = rs.getString("C_ZIP");
+		c.c_phone = rs.getString("C_PHONE");
+		c.c_credit = rs.getString("C_CREDIT");
+		c.c_credit_lim = rs.getFloat("C_CREDIT_LIM");
+		c.c_discount = rs.getFloat("C_DISCOUNT");
+		c.c_balance = rs.getFloat("C_BALANCE");
+		c.c_ytd_payment = rs.getFloat("C_YTD_PAYMENT");
+		c.c_payment_cnt = rs.getInt("C_PAYMENT_CNT");
+		c.c_since = rs.getTimestamp("C_SINCE");
 		return c;
 	}
 	private static final RandomGenerator ran = new RandomGenerator(0);
