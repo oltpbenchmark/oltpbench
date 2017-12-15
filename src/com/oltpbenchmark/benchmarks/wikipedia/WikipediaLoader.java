@@ -421,6 +421,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
             // Oracle handles quoted object identifiers differently, do not escape names
             textSQL = SQLUtil.getInsertSQL(textTable, false);
         }
+
         PreparedStatement textInsert = this.conn.prepareStatement(textSQL);
 
         // REVISION
@@ -452,66 +453,64 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
             int old_text_length = h_textLength.nextValue().intValue();
             assert(old_text_length > 0);
             char old_text[] = TextGenerator.randomChars(rng(), old_text_length);
-            
-            for (int i = 0; i < num_revised; i++) {
-                // Generate the User who's doing the revision and the Page revised
-                // Makes sure that we always update their counter
-                int user_id = h_users.nextInt();
-                assert(user_id > 0 && user_id <= this.num_users) : "Invalid UserId '" + user_id + "'";
-                this.user_revision_ctr[user_id-1]++;
-                
-                // Generate what the new revision is going to be
-                if (i > 0) {
-                    old_text = b.generateRevisionText(old_text);
-                    old_text_length = old_text.length;
-                }
-                
-                int rev_comment_len = Math.min(rev_comment_max, h_commentLength.nextValue().intValue()+1); // HACK
-                String rev_comment = TextGenerator.randomStr(rng(), rev_comment_len);
-                assert(rev_comment.length() <= rev_comment_max) : 
-                    String.format("[len=%d] ==> %s", rev_comment.length(), rev_comment); 
 
-                // The REV_USER_TEXT field is usually the username, but we'll just 
-                // put in gibberish for now
-                String user_text = TextGenerator.randomStr(rng(), h_nameLength.nextValue().intValue()+1);
-                
-                // Insert the text
-                int col = 1;
-                textInsert.setInt(col++, rev_id); // old_id
-                textInsert.setString(col++, new String(old_text)); // old_text
-                textInsert.setString(col++, "utf-8"); // old_flags
-                textInsert.setInt(col++, page_id); // old_page
-                textInsert.addBatch();
+            // Generate the User who's doing the revision and the Page revised
+            // Makes sure that we always update their counter
+            int user_id = h_users.nextInt();
+            assert(user_id > 0 && user_id <= this.num_users) : "Invalid UserId '" + user_id + "'";
+            this.user_revision_ctr[user_id-1]++;
 
-                // Insert the revision
-                col = 1;
-                revisionInsert.setInt(col++, rev_id); // rev_id
-                revisionInsert.setInt(col++, page_id); // rev_page
-                revisionInsert.setInt(col++, rev_id); // rev_text_id
-                revisionInsert.setString(col++, rev_comment); // rev_comment
-                revisionInsert.setInt(col++, user_id); // rev_user
-                revisionInsert.setString(col++, user_text); // rev_user_text
-                revisionInsert.setString(col++, TimeUtil.getCurrentTimeString14()); // rev_timestamp
-                revisionInsert.setInt(col++, h_minorEdit.nextValue().intValue()); // rev_minor_edit
-                revisionInsert.setInt(col++, 0); // rev_deleted
-                revisionInsert.setInt(col++, 0); // rev_len
-                revisionInsert.setInt(col++, 0); // rev_parent_id
-                revisionInsert.addBatch();
-                
-                // Update Last Revision Stuff
-                this.page_last_rev_id[page_id-1] = rev_id;
-                this.page_last_rev_length[page_id-1] = old_text_length;
-                rev_id++;  
-                if (this.getDatabaseType() == DatabaseType.ORACLE) {
-                    PreparedStatement text_seq=this.conn.prepareStatement("select text_seq.nextval from dual");
-                    text_seq.execute();
-                    text_seq.close();
-                    PreparedStatement revision_seq=this.conn.prepareStatement("select revision_seq.nextval from dual");
-                    revision_seq.execute();
-                    revision_seq.close();
-                }
-                batchSize++;
-            } // FOR (revision)
+            // Generate what the new revision is going to be
+                old_text = b.generateRevisionText(old_text);
+                old_text_length = old_text.length;
+
+            int rev_comment_len = Math.min(rev_comment_max, h_commentLength.nextValue().intValue()+1); // HACK
+            String rev_comment = TextGenerator.randomStr(rng(), rev_comment_len);
+            assert(rev_comment.length() <= rev_comment_max) :
+                String.format("[len=%d] ==> %s", rev_comment.length(), rev_comment);
+
+            // The REV_USER_TEXT field is usually the username, but we'll just
+            // put in gibberish for now
+            String user_text = TextGenerator.randomStr(rng(), h_nameLength.nextValue().intValue()+1);
+
+            // Insert the text
+            int col = 1;
+            textInsert.setInt(col++, rev_id); // old_id
+            textInsert.setString(col++, new String(old_text)); // old_text
+            textInsert.setString(col++, "utf-8"); // old_flags
+            textInsert.setInt(col++, page_id); // old_page
+            textInsert.addBatch();
+            textInsert.
+
+            // Insert the revision
+            col = 1;
+            revisionInsert.setInt(col++, rev_id); // rev_id
+            revisionInsert.setInt(col++, page_id); // rev_page
+            revisionInsert.setInt(col++, rev_id); // rev_text_id
+            revisionInsert.setString(col++, rev_comment); // rev_comment
+            revisionInsert.setInt(col++, user_id); // rev_user
+            revisionInsert.setString(col++, user_text); // rev_user_text
+            revisionInsert.setString(col++, TimeUtil.getCurrentTimeString14()); // rev_timestamp
+            revisionInsert.setInt(col++, h_minorEdit.nextValue().intValue()); // rev_minor_edit
+            revisionInsert.setInt(col++, 0); // rev_deleted
+            revisionInsert.setInt(col++, 0); // rev_len
+            revisionInsert.setInt(col++, 0); // rev_parent_id
+            revisionInsert.addBatch();
+
+            // Update Last Revision Stuff
+            this.page_last_rev_id[page_id-1] = rev_id;
+            this.page_last_rev_length[page_id-1] = old_text_length;
+            rev_id++;
+            if (this.getDatabaseType() == DatabaseType.ORACLE) {
+                PreparedStatement text_seq=this.conn.prepareStatement("select text_seq.nextval from dual");
+                text_seq.execute();
+                text_seq.close();
+                PreparedStatement revision_seq=this.conn.prepareStatement("select revision_seq.nextval from dual");
+                revision_seq.execute();
+                revision_seq.close();
+            }
+            batchSize++;
+
             if (batchSize > WikipediaConstants.BATCH_SIZE) {
                 textInsert.executeBatch();
                 revisionInsert.executeBatch();
