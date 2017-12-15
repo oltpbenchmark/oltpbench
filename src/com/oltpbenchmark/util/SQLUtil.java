@@ -352,7 +352,7 @@ public abstract class SQLUtil {
      * @return
      */
     public static String getInsertSQL(Table catalog_tbl, boolean escape_names, int...exclude_columns) {
-        return getInsertSQL(catalog_tbl, false, false, 1, exclude_columns);
+        return getInsertSQL(catalog_tbl, true, false, 1, exclude_columns);
     }
     
     /**
@@ -363,11 +363,11 @@ public abstract class SQLUtil {
      * @return
      */
     public static String getInsertSQL(Table catalog_tbl, int batchSize, int...exclude_columns) {
-        return getInsertSQL(catalog_tbl, false, true, batchSize, exclude_columns);
+        return getInsertSQL(catalog_tbl, true, true, batchSize, exclude_columns);
     }
     
     public static String getInsertSQL(Table catalog_tbl, boolean show_cols, int batchSize, int...exclude_columns) {
-        return getInsertSQL(catalog_tbl, false, true, batchSize, exclude_columns);
+        return getInsertSQL(catalog_tbl, show_cols, true, batchSize, exclude_columns);
     }
     
     /**
@@ -417,7 +417,7 @@ public abstract class SQLUtil {
     		sb.append("(").append(values.toString()).append(")");
     	} // FOR
 //    	sb.append(";");
-    	
+
     	return (sb.toString());
     }
 
