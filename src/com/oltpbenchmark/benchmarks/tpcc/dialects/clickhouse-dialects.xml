@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<dialects>
+    <dialect type="CLICKHOUSE">
+        <procedure name="Delivery">
+            <statement name="delivDeleteNewOrderSQL">
+				/*? ? ?*/
+            </statement>
+            <statement name="delivUpdateCarrierIdSQL">
+				INSERT INTO OORDER SELECT O_W_ID, O_D_ID, O_ID, O_C_ID, ?, O_OL_CNT, O_ALL_LOCAL, O_ENTRY_D, EventDate FROM OORDER WHERE O_ID = ? AND O_D_ID = ? AND O_W_ID = ?
+            </statement>
+            <statement name="delivUpdateDeliveryDateSQL">
+				INSERT INTO ORDER_LINE SELECT OL_W_ID, OL_D_ID, OL_O_ID, OL_NUMBER, OL_I_ID, ?, OL_AMOUNT, OL_SUPPLY_W_ID, OL_QUANTITY, OL_DIST_INFO, EventDate FROM ORDER_LINE WHERE OL_O_ID = ? AND OL_D_ID = ? AND OL_W_ID = ?
+            </statement>
+            <statement name="delivUpdateCustBalDelivCntSQL">
+				INSERT INTO CUSTOMER SELECT C_W_ID, C_D_ID, C_ID, C_DISCOUNT, C_CREDIT, C_LAST, C_FIRST, C_CREDIT_LIM, ?, C_YTD_PAYMENT, C_PAYMENT_CNT, toInt32(C_DELIVERY_CNT + 1), C_STREET_1, C_STREET_2, C_CITY, C_STATE, C_ZIP, C_PHONE, C_SINCE, C_MIDDLE, C_DATA, EventDate FROM CUSTOMER WHERE C_W_ID = ? AND C_D_ID = ? AND C_ID = ?
+            </statement>
+        </procedure>
+        <procedure name="NewOrder">
+			<statement name="stmtInsertNewOrderSQL">
+				INSERT INTO NEW_ORDER (NO_OD_ID, NO_D_ID, NO_W, ID, EventDate, version) VALUES ( ?, ?, ?, toDate(now()), now())
+			</statement>
+            <statement name="stmtUpdateDistSQL">
+                INSERT INTO DISTRICT SELECT D_W_ID, D_ID, D_YTD, D_TAX, toInt32(D_NEXT_OD_ID + 1), D_NAME, D_STREET_1, D_STREET_2, D_CITY, D_STATE, D_ZIP, EventDate FROM DISTRICT WHERE D_W_ID = ? AND D_ID = ?
+            </statement>
+            <statement name="stmtInsertOOrderSQL">
+				INSERT INTO OORDER (O_ID, O_D_ID, O_W_ID, O_C_ID, O_ENTRY_D, O_OL_CNT, O_ALL_LOCAL, EventDate, version) VALUES (?, ?, ?, ?, ?, ?, ?, toDate(now()), now())
+            </statement>
+            <statement name="stmtUpdateStockSQL">
+				INSERT INTO STOCK SELECT S_W_ID, S_I_ID, ?, ?, ?, ?, S_DATA, S_DIST_01, S_DIST_02, S_DIST_03, S_DIST_04, S_DIST_05, S_DIST_06, S_DIST_07, S_DIST_08, S_DIST_09, S_DIST_10, EventDate FROM STOCK WHERE S_I_ID = ? AND S_W_ID = ?
+            </statement>
+            <statement name="stmtInsertOrderLineSQL">
+				INSERT INTO ORDER_LINE (OL_O_ID, OL_D_ID, OL_W_ID, OL_NUMBER, OL_I_ID, OL_SUPPLY_W_ID, OL_QUANTITY, OL_AMOUNT, OL_DIST_INFO, EventDate, version) VALUES (?,?,?,?,?,?,?,?,?, toDate(now()), now())
+            </statement>
+        </procedure>
+        <procedure name="Payment">
+			<statement name="payUpdateWhseSQL">
+				INSERT INTO WAREHOUSE SELECT W_ID, toFloat64(W_YTD + ?), W_TAX, W_NAME, W_STREET_1, W_STREET_2, W_CITY, W_STATE, W_ZIP, EventDate FROM WAREHOUSE WHERE W_ID = ?
+			</statement>
+			<statement name="payUpdateDistSQL">
+				INSERT INTO DISTRICT SELECT D_W_ID, D_ID, toFloat64(D_YTD + ?), D_TAX, D_NEXT_O_ID, D_NAME, D_STREET_1, D_STREET_2, D_CITY, D_STATE, D_ZIP, EventDate FROM DISTRICT WHERE D_W_ID = ? AND D_ID = ?
+			</statement>
+			<statement name="payUpdateCustBalCdataSQL">
+				INSERT INTO CUSTOMER SELECT C_W_ID, C_D_ID, C_ID, C_DISCOUNT, C_CREDIT, C_LAST, C_FIRST, C_CREDIT_LIM, ?, ?, ?, C_DELIVERY_CNT, C_STREET_1, C_STREET_2, C_CITY, C_STATE, C_ZIP, C_PHONE, C_SINCE, C_MIDDLE, ?, EventDate FROM CUSTOMER WHERE C_W_ID = ? AND C_D_ID = ? AND C_ID = ?
+				
+			</statement>
+			<statement name="payUpdateCustBalSQL">
+				INSERT INTO CUSTOMER SELECT C_W_ID, C_D_ID, C_ID, C_DISCOUNT, C_CREDIT, C_LAST, C_FIRST, C_CREDIT_LIM, ?, ?, ?, C_DELIVERY_CNT, C_STREET_1, C_STREET_2, C_CITY, C_STATE, C_ZIP, C_PHONE, C_SINCE, C_MIDDLE, C_DATA, EventDate FROM CUSTOMER WHERE C_W_ID = ? AND C_D_ID = ? AND C_ID = ?
+			</statement>
+			<statement name="payInsertHistSQL">
+				INSERT INTO HISTORY (H_C_D_ID, H_C_W_ID, H_C_ID, H_D_ID, H_W_ID, H_DATE, H_AMOUNT, H_DATA, EventDate, version) VALUES (?,?,?,?,?,?,?,?, toDate(now()), now())
+			</statement>
+        </procedure>
+    </dialect>
+</dialects>
