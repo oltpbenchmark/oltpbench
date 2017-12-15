@@ -29,3 +29,9 @@ results
 
 # Traces
 *.trace
+
+# DBGEN
+tpch/dbgen/
+
+# nohup
+nohup.out
