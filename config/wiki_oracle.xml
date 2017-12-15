@@ -4,9 +4,9 @@
     <!-- Connection details -->
     <dbtype>oracle</dbtype>
     <driver>oracle.jdbc.driver.OracleDriver</driver>
-    <DBUrl>jdbc:oracle:thin:@52.90.242.242:1521:orcl</DBUrl>
-    <username>benchmark_user</username>
-    <password>password</password>
+    <DBUrl>jdbc:oracle:thin:@100.100.100.100:1521:orcl</DBUrl>
+    <username>fake_user</username>
+    <password>fake_password</password>
     <isolation>TRANSACTION_READ_COMMITTED</isolation>
 
     <!-- Scale factor is the number of wikipages *1000 -->

@@ -3,10 +3,10 @@
     <!-- General Workload configuration -->
     <dbtype>oracle</dbtype>
     <driver>oracle.jdbc.driver.OracleDriver</driver>
-    <DBUrl>jdbc:oracle:thin:@52.90.242.242:1521:orcl</DBUrl>
+    <DBUrl>jdbc:oracle:thin:@100.100.100.100:1521:orcl</DBUrl>
     <DBName>tpcc</DBName>
-    <username>benchmark_user</username>
-    <password>password</password>
+    <username>fake_user</username>
+    <password>fake_password</password>
     <terminals>64</terminals>
 
     <works>
