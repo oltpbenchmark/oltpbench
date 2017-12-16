@@ -7,17 +7,17 @@
     <DBUrl>jdbc:cubrid:localhost:33000:tpcc:PUBLIC::</DBUrl>
     <username></username>
     <password></password>
-    <isolation>TRANSACTION_READ_ONLY</isolation>
+    <isolation>TRANSACTION_READ_COMMITTED</isolation>
     
     <!-- Scale factor is the number of warehouses in TPCC -->
-    <scalefactor>2</scalefactor>
+    <scalefactor>16</scalefactor>
     
     <!-- The workload -->
-    <terminals>2</terminals>
+    <terminals>64</terminals>
     <works>
         <work>
-          <time>60</time>
-          <rate>10000</rate>
+          <time>300</time>
+          <rate>unlimited</rate>
           <weights>45,43,4,4,4</weights>
         </work>
     </works>
