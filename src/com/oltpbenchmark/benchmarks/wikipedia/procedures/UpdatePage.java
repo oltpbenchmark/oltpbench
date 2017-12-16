@@ -317,7 +317,7 @@ public class UpdatePage extends Procedure {
 					successful = true;
 				} catch (SQLException esql) {
 					int errorCode = esql.getErrorCode();
-					if (errorCode == 8177) 
+					if (errorCode == 8177)
 						conn.rollback();
 					else
 						throw esql;
