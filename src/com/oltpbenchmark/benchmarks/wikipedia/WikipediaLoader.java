@@ -182,6 +182,12 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
             // Oracle handles quoted object identifiers differently, do not escape names
             sql = SQLUtil.getInsertSQL(catalog_tbl, false);
         } else if(this.getDatabaseType() == DatabaseType.CUBRID) {
+            // In table <useracct>, the primary key <user_id> set 'auto_increment'. When manually inserting records,
+            // we skip this field so the Cubrid can take care of the auto_increment property. This is because
+            // Cubrid does not update the starting value of the auto_increment field when we manually insert
+            // a value. This will cause unique constraint violation on the primary key when we loading
+            // data again in the UpdatePage procedure.
+            // The params means for the insert sql, skip the first column and include the column name.
             sql = SQLUtil.getInsertSQL(catalog_tbl, true, false, 1, 0);
         }
 
@@ -214,6 +220,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
 
             int param = 1;
             if (this.getDatabaseType() != DatabaseType.CUBRID) {
+                // Skip the auto_increment field.
                 userInsert.setInt(param++, i);                // user_id
             }
             userInsert.setString(param++, name);          // user_name
@@ -271,6 +278,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
             // Oracle handles quoted object identifiers differently, do not escape names
             sql = SQLUtil.getInsertSQL(catalog_tbl, false);
         } else if(this.getDatabaseType() == DatabaseType.CUBRID) {
+            // Include the column names and skip the page_id field in the insert query.
             sql = SQLUtil.getInsertSQL(catalog_tbl, true, false, 1, 0);
         }
 
@@ -295,6 +303,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
             
             int param = 1;
             if (this.getDatabaseType() != DatabaseType.CUBRID) {
+                // Skip the page_id field. Cubrid will auto increment it.
                 pageInsert.setInt(param++, i);              // page_id
             }
             pageInsert.setInt(param++, namespace);      // page_namespace
@@ -431,6 +440,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
             // Oracle handles quoted object identifiers differently, do not escape names
             textSQL = SQLUtil.getInsertSQL(textTable, false);
         } else if (this.getDatabaseType() == DatabaseType.CUBRID) {
+            // Include the column names and skip the old_id field in the insert query.
             textSQL = SQLUtil.getInsertSQL(textTable, true, false, 1, 0);
         }
         PreparedStatement textInsert = this.conn.prepareStatement(textSQL);
@@ -442,6 +452,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
             // Oracle handles quoted object identifiers differently, do not escape names
             revSQL = SQLUtil.getInsertSQL(revTable, false);
         } else if (this.getDatabaseType() == DatabaseType.CUBRID) {
+            // Include the column names and skip the rev-id field in the insert query.
             revSQL = SQLUtil.getInsertSQL(revTable, true, false, 1, 0);
         }
         PreparedStatement revisionInsert = this.conn.prepareStatement(revSQL);
@@ -492,9 +503,12 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
                 // Insert the text
                 int col = 1;
                 if (this.getDatabaseType() != DatabaseType.CUBRID) {
+                    // Old_id is a primary key and is auto_incremented. Skip this field here so Cubrid will 
+                    // automatically set it. Cubrid does not update the intial value of the auto_increment field.
+                    // Thus, if we manually set the value here, when we load data again in the UpdatePage, it may 
+                    // cause unique key constraint violation.
                     textInsert.setInt(col++, rev_id); // old_id
                 }
-                
                 textInsert.setString(col++, new String(old_text)); // old_text
                 textInsert.setString(col++, "utf-8"); // old_flags
                 textInsert.setInt(col++, page_id); // old_page
@@ -503,6 +517,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
                 // Insert the revision
                 col = 1;
                 if (this.getDatabaseType() != DatabaseType.CUBRID) {
+                    // skip the rev_id field. Cubrid will auto increment it.
                     revisionInsert.setInt(col++, rev_id); // rev_id
                 }
                 revisionInsert.setInt(col++, page_id); // rev_page
