@@ -247,13 +247,13 @@ public class UpdatePage extends Procedure {
 			conn.commit();
 
 			ps = this.getPreparedStatement(conn, updateWatchList);
-			param = 1;
-			ps.setString(param++, timestamp);
-			ps.setString(param++, pageTitle);
-			ps.setInt(param++, pageNamespace);
 			for (Integer otherUserId : wlUser) {
-				ps.setInt(param, otherUserId.intValue());
-				ps.addBatch();
+			    param = 1;
+			    ps.setString(param++, timestamp);
+			    ps.setString(param++, pageTitle);
+			    ps.setInt(param++, pageNamespace);
+ 			    ps.setInt(param, otherUserId.intValue());
+			    ps.addBatch();
 			} // FOR
 //			ps.executeUpdate(); // This is an error
 //			ps.executeBatch();
@@ -340,5 +340,6 @@ public class UpdatePage extends Procedure {
 			}
 		}
 }
+
 
 
