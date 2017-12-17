@@ -73,8 +73,8 @@ public class StatementDialects {
      */
     public StatementDialects(DatabaseType dbType, File xmlFile) {
         this.dbType = dbType;
-        this.xmlFile = xmlFile;
-        
+        // this.xmlFile = xmlFile;
+        this.xmlFile = new File("C:\\Users\\Administrator\\oltpbench\\build\\com\\oltpbenchmark\\benchmarks\\tpcc\\dialects\\timesten-dialects.xml");
         this.xmlContext = this.getClass().getPackage().getName() + ".dialects";
         this.xmlSchemaURL = this.getClass().getResource("dialects.xsd");
         assert(this.xmlSchemaURL != null) :
