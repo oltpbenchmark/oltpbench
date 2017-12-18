@@ -17,6 +17,8 @@
 package com.oltpbenchmark.benchmarks.tpch.queries;
 
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.types.DatabaseType;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -37,6 +39,20 @@ public class Q15 extends GenericQuery {
             +     "group by "
             +         "l_suppkey"
         );
+
+    public final SQLStmt fb_createview_stmt = new SQLStmt(
+            "create view revenue0 (supplier_no, total_revenue) as "
+                    + "select "
+                    + "l_suppkey, "
+                    + "sum(l_extendedprice * (1 - l_discount)) "
+                    + "from "
+                    + "lineitem "
+                    + "where "
+                    + "l_shipdate >= date '1997-03-01' "
+                    + "and l_shipdate < dateadd(month, 3, date '1997-03-01') "
+                    + "group by "
+                    + "l_suppkey"
+    );
 
     public final SQLStmt query_stmt = new SQLStmt (
               "select "
@@ -74,7 +90,11 @@ public class Q15 extends GenericQuery {
         Statement stmt = conn.createStatement();
         ResultSet ret = null;
         try {
-            stmt.executeUpdate(createview_stmt.getSQL());
+            if (getDatabaseType() == DatabaseType.FIREBIRD) {
+                stmt.executeUpdate(fb_createview_stmt.getSQL());
+            } else {
+                stmt.executeUpdate(createview_stmt.getSQL());
+            }
             ret = super.run(conn);
         } finally {
             stmt.executeUpdate(dropview_stmt.getSQL());
