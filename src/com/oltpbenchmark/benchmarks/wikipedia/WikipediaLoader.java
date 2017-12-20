@@ -111,12 +111,17 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         try {
             // Load Data
             this.loadUsers();
+            LOG.info("Finish Load User");
             this.loadPages();
+            LOG.info("Finish Load Page");
             this.loadWatchlist();
+            LOG.info("Finish Load watchList");
             this.loadRevision();
+            LOG.info("Finish Load Revision");
 
             // Generate Trace File
             this.genTrace();
+             LOG.info("Finish generating trace");
             
         } catch (SQLException e) {
             e.printStackTrace();
@@ -182,7 +187,9 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
             // Oracle handles quoted object identifiers differently, do not escape names
             sql = SQLUtil.getInsertSQL(catalog_tbl, false);
         }
+        LOG.info(sql);
         PreparedStatement userInsert = this.conn.prepareStatement(sql);
+        LOG.info("Prepare Finish");
 
         FlatHistogram<Integer> h_nameLength = new FlatHistogram<Integer>(this.rng(), UserHistograms.NAME_LENGTH);
         FlatHistogram<Integer> h_realNameLength = new FlatHistogram<Integer>(this.rng(), UserHistograms.REAL_NAME_LENGTH);
@@ -452,7 +459,6 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
             int old_text_length = h_textLength.nextValue().intValue();
             assert(old_text_length > 0);
             char old_text[] = TextGenerator.randomChars(rng(), old_text_length);
-            
             for (int i = 0; i < num_revised; i++) {
                 // Generate the User who's doing the revision and the Page revised
                 // Makes sure that we always update their counter
@@ -540,7 +546,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         // Since Oracle handles table names with quote differently, catch this here
         String revTableName = (this.getDatabaseType() == DatabaseType.ORACLE) ? revTable.getName() : revTable.getEscapedName();
         
-        String updateUserSql = "UPDATE " + revTableName + 
+        String updateUserSql = "UPDATE " + revTableName.toUpperCase() + 
                                "   SET user_editcount = ?, " +
                                "       user_touched = ? " +
                                " WHERE user_id = ?";
@@ -572,7 +578,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         // Since Oracle handles table names with quote differently, catch this here
         revTableName = (this.getDatabaseType() == DatabaseType.ORACLE) ? revTable.getName() : revTable.getEscapedName();
         
-        String updatePageSql = "UPDATE " + revTableName + 
+        String updatePageSql = "UPDATE " + revTableName.toUpperCase() + 
                                "   SET page_latest = ?, " +
                                "       page_touched = ?, " +
                                "       page_is_new = 0, " +

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <dialects>
-    <dialect type="ORACLE">
+    <dialect type="SAPHANA">
         <procedure name="UpdatePage">
         	<statement name="insertText">
         		INSERT INTO text (old_id,old_page,old_text,old_flags) VALUES (text_seq.NEXTVAL,?,?,'utf-8')
