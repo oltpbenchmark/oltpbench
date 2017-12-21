@@ -229,8 +229,7 @@ public class TPCHLoader extends Loader<TPCHBenchmark> {
     static void truncateTable(String strTable) throws SQLException {
         LOG.debug("Truncating '" + strTable + "' ...");
         try {
-            System.out.println("truncate " + strTable);
-            conn.createStatement().execute("truncate " + strTable);
+            conn.createStatement().execute("DELETE FROM " + strTable);
             conn.commit();
         } catch (SQLException se) {
             LOG.debug(se.getMessage());
@@ -283,26 +282,17 @@ public class TPCHLoader extends Loader<TPCHBenchmark> {
         loaders[6] = loadRegions();
         loaders[7] = loadSuppliers();
 
-//        for (int i = 0; i < 8; ++i)
-//            if (loaders[i] != null)
-//                loaders[i].start();
+       for (int i = 0; i < 8; ++i)
+           if (loaders[i] != null)
+               loaders[i].start();
 
-//        for (int i = 0; i < 8; ++i) {
-//            try {
-//                if (loaders[i] != null)
-//                    loaders[i].join();
-//            } catch(InterruptedException e) {
-//                LOG.error(e.getMessage());
-//            }
-//        }
-        for (int i = 0; i < 8; ++i) {
-            if (loaders[i] != null)
-            loaders[i].start();
-        try {
-            if (loaders[i] != null)
-                loaders[i].join();
-        } catch(InterruptedException e) {
-            LOG.error(e.getMessage());
+       for (int i = 0; i < 8; ++i) {
+           try {
+               if (loaders[i] != null)
+                   loaders[i].join();
+           } catch(InterruptedException e) {
+               LOG.error(e.getMessage());
+           }
        }
 }
 
