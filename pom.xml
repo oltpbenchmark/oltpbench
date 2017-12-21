@@ -150,6 +150,7 @@
       <artifactId>ojdbc14</artifactId>
       <version>10.2.0.1.0</version>
     </dependency>
+
   </dependencies>
 
 </project>
