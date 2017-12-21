@@ -294,7 +294,6 @@ public class TPCHLoader extends Loader<TPCHBenchmark> {
                LOG.error(e.getMessage());
            }
        }
-}
 
         return this.totalRows;
     }
