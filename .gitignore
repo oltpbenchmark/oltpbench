@@ -1,5 +1,6 @@
 bin/
 /build/
+out/
 output.raw
 output.res
 .classpath
@@ -20,3 +21,17 @@ results
 
 # maven output
 target
+results
+
+# intellij files
+*.idea
+*.iml
+
+# Traces
+*.trace
+
+# DBGEN
+tpch/dbgen/
+
+# nohup
+nohup.out
