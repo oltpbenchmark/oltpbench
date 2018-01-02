@@ -67,18 +67,16 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
         }
     }
     
-    static boolean fastLoad;
-    static String fastLoaderBaseDir;
-
     private int numWarehouses = 0;
     private static final int FIRST_UNPROCESSED_O_ID = 2101;
     
     @Override
-    public List<LoaderThread> createLoaderTheads() throws SQLException {
+    public List<LoaderThread> createLoaderThreads() throws SQLException {
         List<LoaderThread> threads = new ArrayList<LoaderThread>();
         final CountDownLatch itemLatch = new CountDownLatch(1);
         
-        // ITEM Table
+        // ITEM
+        // This will be invoked first and executed in a single thread. 
         threads.add(new LoaderThread() {
             @Override
             public void load(Connection conn) throws SQLException {
@@ -88,10 +86,11 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
         });
         
         // WAREHOUSES
+        // We use a separate thread per warehouse. Each thread will load 
+        // all of the tables that depend on that warehouse. They all have
+        // to wait until the ITEM table is loaded first though.
         for (int w = 1; w <= numWarehouses; w++) {
             final int w_id = w;
-            // We currently can't support multi-threaded loading because we
-            // will need to make multiple connections to the DBMS
             LoaderThread t = new LoaderThread() {
                 @Override
                 public void load(Connection conn) throws SQLException {
@@ -129,7 +128,7 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
     private PreparedStatement getInsertStatement(Connection conn, String tableName) throws SQLException {
         Table catalog_tbl = this.benchmark.getTableCatalog(tableName);
         assert(catalog_tbl != null);
-        String sql = SQLUtil.getInsertSQL(catalog_tbl, this.getDatabaseType().shouldEscapeNames());
+        String sql = SQLUtil.getInsertSQL(catalog_tbl, this.getDatabaseType());
         PreparedStatement stmt = conn.prepareStatement(sql);
         return stmt;
     }
@@ -312,17 +311,6 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 							+ TPCCUtil.randomStr(len - startORIGINAL - 9);
 				}
 
-				stock.s_dist_01 = TPCCUtil.randomStr(24);
-				stock.s_dist_02 = TPCCUtil.randomStr(24);
-				stock.s_dist_03 = TPCCUtil.randomStr(24);
-				stock.s_dist_04 = TPCCUtil.randomStr(24);
-				stock.s_dist_05 = TPCCUtil.randomStr(24);
-				stock.s_dist_06 = TPCCUtil.randomStr(24);
-				stock.s_dist_07 = TPCCUtil.randomStr(24);
-				stock.s_dist_08 = TPCCUtil.randomStr(24);
-				stock.s_dist_09 = TPCCUtil.randomStr(24);
-				stock.s_dist_10 = TPCCUtil.randomStr(24);
-
 				k++;
 				int idx = 1;
 				stckPrepStmt.setLong(idx++, stock.s_w_id);
@@ -332,16 +320,16 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 				stckPrepStmt.setLong(idx++, stock.s_order_cnt);
 				stckPrepStmt.setLong(idx++, stock.s_remote_cnt);
 				stckPrepStmt.setString(idx++, stock.s_data);
-				stckPrepStmt.setString(idx++, stock.s_dist_01);
-				stckPrepStmt.setString(idx++, stock.s_dist_02);
-				stckPrepStmt.setString(idx++, stock.s_dist_03);
-				stckPrepStmt.setString(idx++, stock.s_dist_04);
-				stckPrepStmt.setString(idx++, stock.s_dist_05);
-				stckPrepStmt.setString(idx++, stock.s_dist_06);
-				stckPrepStmt.setString(idx++, stock.s_dist_07);
-				stckPrepStmt.setString(idx++, stock.s_dist_08);
-				stckPrepStmt.setString(idx++, stock.s_dist_09);
-				stckPrepStmt.setString(idx++, stock.s_dist_10);
+				stckPrepStmt.setString(idx++, TPCCUtil.randomStr(24));
+				stckPrepStmt.setString(idx++, TPCCUtil.randomStr(24));
+				stckPrepStmt.setString(idx++, TPCCUtil.randomStr(24));
+				stckPrepStmt.setString(idx++, TPCCUtil.randomStr(24));
+				stckPrepStmt.setString(idx++, TPCCUtil.randomStr(24));
+				stckPrepStmt.setString(idx++, TPCCUtil.randomStr(24));
+				stckPrepStmt.setString(idx++, TPCCUtil.randomStr(24));
+				stckPrepStmt.setString(idx++, TPCCUtil.randomStr(24));
+				stckPrepStmt.setString(idx++, TPCCUtil.randomStr(24));
+				stckPrepStmt.setString(idx++, TPCCUtil.randomStr(24));
 				stckPrepStmt.addBatch();
 				if ((k % TPCCConfig.configCommitCount) == 0) {
 					stckPrepStmt.executeBatch();

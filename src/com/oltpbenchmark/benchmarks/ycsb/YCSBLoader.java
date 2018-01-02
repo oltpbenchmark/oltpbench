@@ -42,7 +42,7 @@ public class YCSBLoader extends Loader<YCSBBenchmark> {
     }
     
     @Override
-    public List<LoaderThread> createLoaderTheads() throws SQLException {
+    public List<LoaderThread> createLoaderThreads() throws SQLException {
         List<LoaderThread> threads = new ArrayList<LoaderThread>();
         int count = 0;
         while (count < this.num_record) {
@@ -65,7 +65,7 @@ public class YCSBLoader extends Loader<YCSBBenchmark> {
         Table catalog_tbl = this.benchmark.getTableCatalog("USERTABLE");
         assert (catalog_tbl != null);
         
-        String sql = SQLUtil.getInsertSQL(catalog_tbl, this.getDatabaseType().shouldEscapeNames());
+        String sql = SQLUtil.getInsertSQL(catalog_tbl, this.getDatabaseType());
         PreparedStatement stmt = conn.prepareStatement(sql);
         long total = 0;
         int batch = 0;

@@ -27,7 +27,7 @@ public class ResourceStresserLoader extends Loader<ResourceStresserBenchmark> {
 	}
 
 	@Override
-	public List<LoaderThread> createLoaderTheads() throws SQLException {
+	public List<LoaderThread> createLoaderThreads() throws SQLException {
         List<LoaderThread> threads = new ArrayList<LoaderThread>();
         threads.add(new LoaderThread() {
         	@Override
@@ -61,7 +61,7 @@ public class ResourceStresserLoader extends Loader<ResourceStresserBenchmark> {
 		assert (catalog_tbl != null);
 
 		if (LOG.isDebugEnabled()) LOG.debug("Start loading " + tableName);
-		String sql = SQLUtil.getInsertSQL(catalog_tbl, this.getDatabaseType().shouldEscapeNames());
+		String sql = SQLUtil.getInsertSQL(catalog_tbl, this.getDatabaseType());
         PreparedStatement stmt = conn.prepareStatement(sql);
         int batch = 0;
         int i;
