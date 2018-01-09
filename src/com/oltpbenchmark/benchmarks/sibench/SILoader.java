@@ -19,13 +19,13 @@ package com.oltpbenchmark.benchmarks.sibench;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 import org.apache.log4j.Logger;
 
 import com.oltpbenchmark.api.Loader;
-import com.oltpbenchmark.api.Loader.LoaderThread;
 import com.oltpbenchmark.catalog.Table;
 import com.oltpbenchmark.util.SQLUtil;
 
@@ -40,43 +40,54 @@ public class SILoader extends Loader<SIBenchmark> {
             LOG.debug("# of RECORDS:  " + this.num_record);
         }
     }
-    
-    @Override
-    public List<LoaderThread> createLoaderThreads() throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     @Override
-    public void load() throws SQLException {
+    public List<LoaderThread> createLoaderThreads() throws SQLException {
+        List<LoaderThread> threads = new ArrayList<LoaderThread>();
+        final int numLoaders = this.benchmark.getWorkloadConfiguration().getLoaderThreads();
+        final int itemsPerThread = Math.max(this.num_record / numLoaders, 1);
+        final int numRecordThreads = (int) Math.ceil((double) this.num_record / itemsPerThread);
+
+        // SITEST
+        for (int i = 0; i < numRecordThreads; i++) {
+            final int lo = i * itemsPerThread + 1;
+            final int hi = Math.min(this.num_record, (i + 1) * itemsPerThread);
+
+            threads.add(new LoaderThread() {
+                @Override
+                public void load(Connection conn) throws SQLException {
+                    SILoader.this.loadSITest(conn, lo, hi);
+                }
+            });
+        }
+
+        return threads;
+    }
+
+    private void loadSITest(Connection conn, int lo, int hi) throws SQLException {
         Random rand = this.benchmark.rng();
         Table catalog_tbl = this.benchmark.getTableCatalog("SITEST");
         assert (catalog_tbl != null);
-        
+
         String sql = SQLUtil.getInsertSQL(catalog_tbl, this.getDatabaseType());
-        PreparedStatement stmt = this.conn.prepareStatement(sql);
-        long total = 0;
+        PreparedStatement stmt = conn.prepareStatement(sql);
         int batch = 0;
-        for (int i = 0; i < this.num_record; i++) {
+        for (int i = lo; i <= hi; i++) {
             stmt.setInt(1, i);
             stmt.setInt(2, rand.nextInt(Integer.MAX_VALUE));
             stmt.addBatch();
-            total++;
+
             if (++batch >= SIConstants.configCommitCount) {
                 int result[] = stmt.executeBatch();
                 assert (result != null);
                 conn.commit();
                 batch = 0;
-                if (LOG.isDebugEnabled())
-                    LOG.debug(String.format("Records Loaded %d / %d", total, this.num_record));
             }
         } // FOR
         if (batch > 0) {
             stmt.executeBatch();
-            if (LOG.isDebugEnabled())
-                LOG.debug(String.format("Records Loaded %d / %d", total, this.num_record));
+            conn.commit();
         }
         stmt.close();
-        if (LOG.isDebugEnabled()) LOG.debug("Finished loading " + catalog_tbl.getName());
     }
 }
