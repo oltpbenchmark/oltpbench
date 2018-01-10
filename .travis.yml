@@ -99,6 +99,11 @@ services:
   - mysql
 
 install:
+  # ancient travis issue, ensure stdout is blocking
+  # otherwise builds may (or may not!) fail with large stdout writes
+  # https://github.com/travis-ci/travis-ci/issues/8902
+  # https://github.com/travis-ci/travis-ci/issues/4704
+  - python -c 'import os,sys,fcntl; flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL); fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags&~os.O_NONBLOCK);'
   - echo $TRAVIS_JDK_VERSION
   - if [ $TRAVIS_JDK_VERSION == oraclejdk8 ]; then
       DB=mysql ;
@@ -142,7 +147,7 @@ script:
            -e "/<DBUrl>/c\<DBUrl>${URLBASE}/${TEST}</DBUrl>"
            -e '/<username>/c\<username>travis</username>'
            -e '/<password>/c\<password>travis</password>'
-           -e '/<scalefactor>/c\<scalefactor>0.5</scalefactor>'
+           -e '/<scalefactor>/c\<scalefactor>0.3</scalefactor>'
            -e '/<terminals>/c\<terminals>3</terminals>'
            -e '/<time>/c\<time>60</time>'
            -e '/<isolation>/c\<isolation>TRANSACTION_READ_COMMITTED</isolation>'
