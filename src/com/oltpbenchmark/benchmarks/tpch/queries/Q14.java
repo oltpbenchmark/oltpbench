@@ -17,6 +17,7 @@
 package com.oltpbenchmark.benchmarks.tpch.queries;
 
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.types.DatabaseType;
 
 public class Q14 extends GenericQuery {
 
@@ -36,7 +37,26 @@ public class Q14 extends GenericQuery {
             +     "and l_shipdate < date '1997-04-01' + interval '1' month"
         );
 
+    public final SQLStmt fb_query_stmt = new SQLStmt(
+            "select "
+                    + "100.00 * sum(case "
+                    + "when p_type like 'PROMO%' "
+                    + "then l_extendedprice * (1 - l_discount) "
+                    + "else 0 "
+                    + "end) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue "
+                    + "from "
+                    + "lineitem, "
+                    + "part "
+                    + "where "
+                    + "l_partkey = p_partkey "
+                    + "and l_shipdate >= date '1997-04-01' "
+                    + "and l_shipdate < dateadd(month, 1, date '1997-04-01') "
+    );
+
     protected SQLStmt get_query() {
+        if (getDatabaseType() == DatabaseType.FIREBIRD) {
+            return fb_query_stmt;
+        }
         return query_stmt;
     }
 }
