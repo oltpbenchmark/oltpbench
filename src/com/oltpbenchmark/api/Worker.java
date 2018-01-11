@@ -80,7 +80,7 @@ public abstract class Worker<T extends BenchmarkModule> implements Runnable {
         try {
             this.conn = this.benchmarkModule.makeConnection();
             this.conn.setAutoCommit(false);
-            conn.setTransactionIsolation(this.wrkld.getIsolationMode());
+            //conn.setTransactionIsolation(this.wrkld.getIsolationMode());
         } catch (SQLException ex) {
             throw new RuntimeException("Failed to connect to database", ex);
         }
@@ -415,11 +415,11 @@ public abstract class Worker<T extends BenchmarkModule> implements Runnable {
 
                     this.txnErrors.put(next);
 
-                    if (savepoint != null) {
-                        this.conn.rollback(savepoint);
-                    } else {
-                        this.conn.rollback();
-                    }
+                    //if (savepoint != null) {
+                    //    this.conn.rollback(savepoint);
+                    //} else {
+                    //    this.conn.rollback();
+                    //}
 
                     if (ex.getSQLState() == null) {
                         continue;
