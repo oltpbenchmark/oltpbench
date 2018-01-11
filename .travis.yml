@@ -135,7 +135,7 @@ before_script:
 script:
   - SCALEFACTOR=0.5
   - if [ $TEST == wikipedia ]; then
-      SCALEFACTOR=0.25
+      SCALEFACTOR=0.25 ;
     fi
   - if [ $TEST == junit ]; then
       ant junit;
