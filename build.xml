@@ -23,7 +23,6 @@
             <exclude name='ant.jar' />
         </fileset>
         <pathelement path="${java.class.path}"/>
-	<pathelement path="/home/ubuntu/work/cassandra-jdbc-wrapper-3.0.3.jar" />
     </path>
     
     <taskdef resource="net/sf/antcontrib/antcontrib.properties">
