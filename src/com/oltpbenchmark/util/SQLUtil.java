@@ -382,7 +382,7 @@ public abstract class SQLUtil {
     public static String getInsertSQL(Table catalog_tbl, boolean show_cols, boolean escape_names, int batchSize, int...exclude_columns) {
     	StringBuilder sb = new StringBuilder();
     	sb.append("INSERT INTO ")
-    	  .append(escape_names ? catalog_tbl.getEscapedName().toUpperCase() : catalog_tbl.getName().toUpperCase());
+    	  .append(escape_names ? catalog_tbl.getEscapedName() : catalog_tbl.getName());
     	
     	StringBuilder values = new StringBuilder();
     	boolean first;

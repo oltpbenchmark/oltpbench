@@ -223,7 +223,6 @@ public abstract class BenchmarkModule {
             this.benchmarkName + "-dialects.xml",
         };
         for(String xmlName : xmlNames) { 
-            LOG.info(xmlName);
             URL ddlURL = this.getClass().getResource( DIALECTS_DIR + File.separator + xmlName);
             if (ddlURL != null) return new File(ddlURL.getPath());
                 if (LOG.isDebugEnabled())
@@ -404,7 +403,7 @@ public abstract class BenchmarkModule {
 
     
     /**
-     * Initialize a TransactionType handle for the  procedure name and id
+     * Initialize a TransactionType handle for the get procedure name and id
      * This should only be invoked a start-up time
      * @param procName
      * @param id

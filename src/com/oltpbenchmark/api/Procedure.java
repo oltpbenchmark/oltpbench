@@ -130,7 +130,6 @@ public abstract class Procedure {
             //       one that fakes the getGeneratedKeys().
             if (is != null && ((this.dbType == DatabaseType.POSTGRES) ||
                 (this.dbType == DatabaseType.SAPHANA))) {
-                LOG.info(stmt.getSQL());
                 pStmt = new AutoIncrementPreparedStatement(this.dbType, conn.prepareStatement(stmt.getSQL()));
             }
             // Everyone else can use the regular getGeneratedKeys() method
@@ -139,7 +138,6 @@ public abstract class Procedure {
             }
             // They don't care about keys
             else {
-                LOG.info(stmt.getSQL());
                 pStmt = conn.prepareStatement(stmt.getSQL());
             }
             this.prepardStatements.put(stmt, pStmt);
