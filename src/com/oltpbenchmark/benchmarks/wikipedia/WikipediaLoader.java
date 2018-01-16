@@ -111,17 +111,12 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         try {
             // Load Data
             this.loadUsers();
-            LOG.info("Finish Load User");
             this.loadPages();
-            LOG.info("Finish Load Page");
             this.loadWatchlist();
-            LOG.info("Finish Load watchList");
             this.loadRevision();
-            LOG.info("Finish Load Revision");
 
             // Generate Trace File
             this.genTrace();
-             LOG.info("Finish generating trace");
             
         } catch (SQLException e) {
             e.printStackTrace();
@@ -179,7 +174,8 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
      * USERACCTS
      */
     private void loadUsers() throws SQLException {
-        Table catalog_tbl = this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_USER);
+        Table catalog_tbl = (this.getDatabaseType() == DatabaseType.SAPHANA) ? 
+            this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_USER.toUpperCase()) : this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_USER);
         assert(catalog_tbl != null);
 
         String sql = SQLUtil.getInsertSQL(catalog_tbl);
@@ -187,9 +183,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
             // Oracle handles quoted object identifiers differently, do not escape names
             sql = SQLUtil.getInsertSQL(catalog_tbl, false);
         }
-        LOG.info(sql);
         PreparedStatement userInsert = this.conn.prepareStatement(sql);
-        LOG.info("Prepare Finish");
 
         FlatHistogram<Integer> h_nameLength = new FlatHistogram<Integer>(this.rng(), UserHistograms.NAME_LENGTH);
         FlatHistogram<Integer> h_realNameLength = new FlatHistogram<Integer>(this.rng(), UserHistograms.REAL_NAME_LENGTH);
@@ -265,7 +259,8 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
      * PAGE
      */
     private void loadPages() throws SQLException {
-        Table catalog_tbl = this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_PAGE);
+        Table catalog_tbl = (this.getDatabaseType() == DatabaseType.SAPHANA) ? 
+            this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_TEXT.toUpperCase()) : this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_TEXT);
         assert(catalog_tbl != null);
 
         String sql = SQLUtil.getInsertSQL(catalog_tbl);
@@ -338,7 +333,8 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
      * WATCHLIST
      */
     private void loadWatchlist() throws SQLException {
-        Table catalog_tbl = this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_WATCHLIST);
+        Table catalog_tbl = (this.getDatabaseType() == DatabaseType.SAPHANA) ? 
+            this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_WATCHLIST.toUpperCase()) : this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_WATCHLIST);
         assert(catalog_tbl != null);
         
         String sql = SQLUtil.getInsertSQL(catalog_tbl, 1);
@@ -422,7 +418,8 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
     private void loadRevision() throws SQLException {
         
         // TEXT
-        Table textTable = this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_TEXT);
+        Table textTable = (this.getDatabaseType() == DatabaseType.SAPHANA) ? 
+            this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_TEXT.toUpperCase()) : this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_TEXT);
         String textSQL = SQLUtil.getInsertSQL(textTable);
         if (this.getDatabaseType() == DatabaseType.ORACLE) {
             // Oracle handles quoted object identifiers differently, do not escape names
@@ -431,7 +428,8 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         PreparedStatement textInsert = this.conn.prepareStatement(textSQL);
 
         // REVISION
-        Table revTable = this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_REVISION);
+        Table revTable = (this.getDatabaseType() == DatabaseType.SAPHANA) ? 
+            this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_REVISION.toUpperCase()) : this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_REVISION);
         String revSQL = SQLUtil.getInsertSQL(revTable);
         if (this.getDatabaseType() == DatabaseType.ORACLE) {
             // Oracle handles quoted object identifiers differently, do not escape names
@@ -459,6 +457,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
             int old_text_length = h_textLength.nextValue().intValue();
             assert(old_text_length > 0);
             char old_text[] = TextGenerator.randomChars(rng(), old_text_length);
+
             for (int i = 0; i < num_revised; i++) {
                 // Generate the User who's doing the revision and the Page revised
                 // Makes sure that we always update their counter
@@ -546,7 +545,9 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         // Since Oracle handles table names with quote differently, catch this here
         String revTableName = (this.getDatabaseType() == DatabaseType.ORACLE) ? revTable.getName() : revTable.getEscapedName();
         
-        String updateUserSql = "UPDATE " + revTableName.toUpperCase() + 
+        revTableName = (this.getDatabaseType() == DatabaseType.SAPHANA) ? revTableName.toUpperCase() : revTableName;
+
+        String updateUserSql = "UPDATE " + revTableName + 
                                "   SET user_editcount = ?, " +
                                "       user_touched = ? " +
                                " WHERE user_id = ?";
@@ -578,7 +579,9 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         // Since Oracle handles table names with quote differently, catch this here
         revTableName = (this.getDatabaseType() == DatabaseType.ORACLE) ? revTable.getName() : revTable.getEscapedName();
         
-        String updatePageSql = "UPDATE " + revTableName.toUpperCase() + 
+        revTableName = (this.getDatabaseType() == DatabaseType.SAPHANA) ? revTableName.toUpperCase() : revTableName;
+
+        String updatePageSql = "UPDATE " + revTableName + 
                                "   SET page_latest = ?, " +
                                "       page_touched = ?, " +
                                "       page_is_new = 0, " +
