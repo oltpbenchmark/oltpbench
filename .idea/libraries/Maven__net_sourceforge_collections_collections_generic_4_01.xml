@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: net.sourceforge.collections:collections-generic:4.01">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/net/sourceforge/collections/collections-generic/4.01/collections-generic-4.01.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/net/sourceforge/collections/collections-generic/4.01/collections-generic-4.01-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/net/sourceforge/collections/collections-generic/4.01/collections-generic-4.01-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
