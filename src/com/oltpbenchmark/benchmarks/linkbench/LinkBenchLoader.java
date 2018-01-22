@@ -55,34 +55,20 @@ public class LinkBenchLoader extends Loader<LinkBenchBenchmark> {
     private final int nLinkLoaders;
     private final long chunkSize;
 
+    private AddLink addLink;
+    private AddNode addNode;
+
     public LinkBenchLoader(LinkBenchBenchmark benchmark, Properties props, Connection conn, Random rng) {
         super(benchmark, conn);
         
         this.profile = new LinkBenchProfile(benchmark, rng, props);
         
-        // is this just single assoc data to be loaded?
-        if (profile.getSingleAssoc()) {
-            LOG.info("Testing single row assoc read.");
-        }
-
         this.genNodes = ConfigUtil.getBool(props, LinkBenchConstants.GENERATE_NODES);
 
         if (genNodes) {
-        	try {
-        		profile.initNodeDataGeneration();
-        	} catch (ClassNotFoundException ex) {
-        	    LOG.error(ex);
-        	    throw new LinkBenchConfigError("Error loading data generator class: "
-        	            + ex.getMessage());
-        	}
+        	profile.initNodeDataGeneration();
         }
-        try {
-        	profile.initLinkDataGeneration();
-        } catch (ClassNotFoundException ex) {
-            LOG.error(ex);
-            throw new LinkBenchConfigError("Error loading data generator class: "
-                    + ex.getMessage());
-        }
+        profile.initLinkDataGeneration();
 
         // Counters for load statistics
         this.sameShuffle = 0;
@@ -91,6 +77,11 @@ public class LinkBenchLoader extends Loader<LinkBenchBenchmark> {
         this.nTotalLoaders = ConfigUtil.getInt(props, LinkBenchConstants.NUM_LOADERS);
         this.nLinkLoaders = genNodes ? nTotalLoaders - 1 : nTotalLoaders;
         this.chunkSize = ConfigUtil.getLong(props, LinkBenchConstants.LOADER_CHUNK_SIZE);
+        
+        if (genNodes) {
+            this.addNode = new AddNode();
+        }
+        this.addLink = new AddLink();
     }
 
     @Override
@@ -156,16 +147,7 @@ public class LinkBenchLoader extends Loader<LinkBenchBenchmark> {
             node.time = (int)(System.currentTimeMillis()/1000L);
             node.data = profile.getNodeAddData();
             
-            try {
-            	profile.loadNode(conn, node);
-        	}  catch (SQLException ex) {
-        	    SQLException next = ex.getNextException();
-        	    LOG.error("Failed to load data for LinkBench", ex);
-        	    if (next != null) LOG.error(ex.getClass().getSimpleName() + " Cause => " + next.getMessage());
-
-        	    LOG.debug("Rolling back changes from last batch");
-        	    transRollback(conn);
-        	}
+            loadNode(conn, node);
         }
     }
     
@@ -215,31 +197,48 @@ public class LinkBenchLoader extends Loader<LinkBenchBenchmark> {
                 }
                 link.link_type = link_type;
 
-                try {
-                	profile.loadLink(conn, link);
-            	} catch (SQLException ex) {
-            	    SQLException next = ex.getNextException();
-            	    LOG.error("Failed to load data for LinkBench", ex);
-            	    if (next != null) LOG.error(ex.getClass().getSimpleName() + " Cause => " + next.getMessage());
-
-            	    LOG.debug("Rolling back changes from last batch");
-            	    transRollback(conn);
-            	}
+                loadLink(conn, link);
             }
 
         }
 
         return nlinks_total;
     }
+
+    private void loadNode(Connection conn, Node node) {
+        try {
+           	addNode.run(conn, node);
+        }  catch (SQLException ex) {
+            SQLException next = ex.getNextException();
+            LOG.error("Failed to load data for LinkBench", ex);
+            if (next != null) LOG.error(ex.getClass().getSimpleName() + " Cause => " + next.getMessage());
+
+            LOG.debug("Rolling back changes from last batch");
+            transRollback(conn);
+        }
+    }
     
-    protected void transRollback(Connection conn) {
+    private void loadLink(Connection conn, Link link) {
+        try {
+        	addLink.run(conn, link, false);
+        } catch (SQLException ex) {
+            SQLException next = ex.getNextException();
+            LOG.error("Failed to load data for LinkBench", ex);
+            if (next != null) LOG.error(ex.getClass().getSimpleName() + " Cause => " + next.getMessage());
+
+            LOG.debug("Rolling back changes from last batch");
+            transRollback(conn);
+        }
+    }
+    
+    private void transRollback(Connection conn) {
         try {
             conn.rollback();
         } catch (SQLException se) {
             LOG.debug(se.getMessage());
         }
     }
-
+    
     @Override
     public void load() throws SQLException {
         // NEEDS PORTING

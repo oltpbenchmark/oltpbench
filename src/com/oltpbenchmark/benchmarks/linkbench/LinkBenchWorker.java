@@ -132,19 +132,8 @@ public class LinkBenchWorker extends Worker<LinkBenchBenchmark> {
         this.requesterID =  id;
         this.nrequesters = nrequesters;
 
-        // is this a single assoc test?
-        if (profile.getSingleAssoc()) {
-            LOG.info("Testing single row assoc read.");
-        }
-
         initRequestProbabilities(this.props);
-        try {
-        	profile.initLinkDataGeneration();
-        } catch (ClassNotFoundException ex) {
-            LOG.error(ex);
-            throw new LinkBenchConfigError("Error loading data generator class: "
-                    + ex.getMessage());
-        }
+        profile.initLinkDataGeneration();
         initLinkRequestDistributions(this.props, requesterID, nrequesters);
         if (pc_getnode > pc_getlinklist) {
             //            // Load stuff for node workload if needed
@@ -152,13 +141,7 @@ public class LinkBenchWorker extends Worker<LinkBenchBenchmark> {
             //                throw new IllegalArgumentException("nodeStore not provided but non-zero " +
             //                "probability of node operation");
             //            }
-        	try {
-        		profile.initNodeDataGeneration();
-        	} catch (ClassNotFoundException ex) {
-        	    LOG.error(ex);
-        	    throw new LinkBenchConfigError("Error loading data generator class: "
-        	            + ex.getMessage());
-        	}
+        	profile.initNodeDataGeneration();
             initNodeRequestDistributions(props);
         }
         listTailHistoryLimit = 2048; // Hardcoded limit for now
