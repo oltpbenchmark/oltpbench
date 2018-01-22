@@ -41,23 +41,10 @@ import com.oltpbenchmark.util.ClassUtil;
 
 public class LinkBenchLoader extends Loader<LinkBenchBenchmark> {
     private static final Logger LOG = Logger.getLogger(LinkBenchLoader.class);
+    
+    private LinkBenchProfile profile;
 
-    private final int num_record;
-    
-    private final long maxid1;
-    private final long startid1;
-    private final boolean singleAssoc;
-    
     private final boolean genNodes;
-    
-    private LogNormalDistribution linkDataSize;
-    private DataGenerator linkAddDataGen;
-    private LogNormalDistribution nodeDataSize;
-    private DataGenerator nodeAddDataGen;
-    
-    private final ID2Chooser id2chooser;
-    
-    private Random rng;
     
     // Counters for load statistics
     private long sameShuffle;
@@ -67,47 +54,36 @@ public class LinkBenchLoader extends Loader<LinkBenchBenchmark> {
     private final int nTotalLoaders;
     private final int nLinkLoaders;
     private final long chunkSize;
-    
-    private Properties props;
-
-    private final AddLink addLink;
-    private AddNode addNode;
 
     public LinkBenchLoader(LinkBenchBenchmark benchmark, Properties props, Connection conn, Random rng) {
         super(benchmark, conn);
-
-        this.num_record = (int) Math.round(this.scaleFactor - LinkBenchConstants.START_ID + 1);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("# of RECORDS:  " + this.num_record);
-        }
         
-        this.startid1 = ConfigUtil.getLong(props, LinkBenchConstants.MIN_ID);
-        this.maxid1 = ConfigUtil.getLong(props, LinkBenchConstants.MAX_ID);
+        this.profile = new LinkBenchProfile(benchmark, rng, props);
         
-        // math functions may cause problems for id1 < 1
-        if (startid1 <= 0) {
-            throw new LinkBenchConfigError("startid1 must be >= 1");
-        }
-        if (maxid1 <= startid1) {
-            throw new LinkBenchConfigError("maxid1 must be > startid1");
-        }
-
         // is this just single assoc data to be loaded?
-        this.singleAssoc = startid1 + 1 == maxid1;
-        if (singleAssoc) {
-            LOG.info("Loading single assoc row.");
+        if (profile.getSingleAssoc()) {
+            LOG.info("Testing single row assoc read.");
         }
-        
+
         this.genNodes = ConfigUtil.getBool(props, LinkBenchConstants.GENERATE_NODES);
 
         if (genNodes) {
-            initNodeDataGeneration(props);    
+        	try {
+        		profile.initNodeDataGeneration();
+        	} catch (ClassNotFoundException ex) {
+        	    LOG.error(ex);
+        	    throw new LinkBenchConfigError("Error loading data generator class: "
+        	            + ex.getMessage());
+        	}
         }
-        initLinkDataGeneration(props);
-        this.id2chooser = new ID2Chooser(props, startid1, maxid1, 1, 1);
-        
-        this.rng = rng;
-        
+        try {
+        	profile.initLinkDataGeneration();
+        } catch (ClassNotFoundException ex) {
+            LOG.error(ex);
+            throw new LinkBenchConfigError("Error loading data generator class: "
+                    + ex.getMessage());
+        }
+
         // Counters for load statistics
         this.sameShuffle = 0;
         this.diffShuffle = 0;
@@ -115,51 +91,6 @@ public class LinkBenchLoader extends Loader<LinkBenchBenchmark> {
         this.nTotalLoaders = ConfigUtil.getInt(props, LinkBenchConstants.NUM_LOADERS);
         this.nLinkLoaders = genNodes ? nTotalLoaders - 1 : nTotalLoaders;
         this.chunkSize = ConfigUtil.getLong(props, LinkBenchConstants.LOADER_CHUNK_SIZE);
-        
-        this.props = props;
-
-        if (genNodes) {
-            this.addNode = new AddNode();
-        }
-        this.addLink = new AddLink();
-    }
-
-    private void initLinkDataGeneration(Properties props) {
-        try {
-            double medLinkDataSize = ConfigUtil.getDouble(props,
-                    LinkBenchConstants.LINK_DATASIZE);
-            linkDataSize = new LogNormalDistribution();
-            linkDataSize.init(0, LinkBenchConstants.MAX_LINK_DATA, medLinkDataSize,
-                    LinkBenchConstants.LINK_DATASIZE_SIGMA);
-            linkAddDataGen = ClassUtil.newInstance(
-                    ConfigUtil.getPropertyRequired(props, LinkBenchConstants.LINK_ADD_DATAGEN),
-                    DataGenerator.class);
-            linkAddDataGen.init(props, LinkBenchConstants.LINK_ADD_DATAGEN_PREFIX);
-        } catch (ClassNotFoundException ex) {
-            LOG.error(ex);
-            throw new LinkBenchConfigError("Error loading data generator class: "
-                    + ex.getMessage());
-        }
-    }
-
-    private void initNodeDataGeneration(Properties props) {
-        try {
-            double medNodeDataSize = ConfigUtil.getDouble(props,
-                    LinkBenchConstants.NODE_DATASIZE);
-            nodeDataSize = new LogNormalDistribution();
-            nodeDataSize.init(0, LinkBenchConstants.MAX_NODE_DATA, medNodeDataSize,
-                    LinkBenchConstants.NODE_DATASIZE_SIGMA);
-
-            String dataGenClass = ConfigUtil.getPropertyRequired(props,
-                    LinkBenchConstants.NODE_ADD_DATAGEN);
-            nodeAddDataGen = ClassUtil.newInstance(dataGenClass,
-                    DataGenerator.class);
-            nodeAddDataGen.init(props, LinkBenchConstants.NODE_ADD_DATAGEN_PREFIX);
-        } catch (ClassNotFoundException ex) {
-            LOG.error(ex);
-            throw new LinkBenchConfigError("Error loading data generator class: "
-                    + ex.getMessage());
-        }
     }
 
     @Override
@@ -185,10 +116,10 @@ public class LinkBenchLoader extends Loader<LinkBenchBenchmark> {
         int chunkNum = 0;
         
         // iterate over the id space and add LoadChunks to thread stacks
-        for (long id1 = startid1; id1 < maxid1; id1 += chunkSize) {
+        for (long id1 = profile.getStartid1(); id1 < profile.getMaxid1(); id1 += chunkSize) {
             int threadInd = chunkNum % nLinkLoaders;
             LoadChunk chunk = new LoadChunk(chunkNum, id1,
-                    Math.min(id1 + chunkSize, maxid1), rng);
+                    Math.min(id1 + chunkSize, profile.getMaxid1()), profile.getRng());
             threadChunks.get(threadInd).add(chunk);
             chunkNum++;
         }
@@ -217,29 +148,24 @@ public class LinkBenchLoader extends Loader<LinkBenchBenchmark> {
     
     private void loadNodes(Connection conn) {
         // reuse Node object
-        Node node = new Node(startid1, LinkBenchConstants.DEFAULT_NODE_TYPE, 1,
+        Node node = new Node(profile.getStartid1(), LinkBenchConstants.DEFAULT_NODE_TYPE, 1,
                 (int)(System.currentTimeMillis()/1000L), null);
         
-        for (long id = startid1; id < maxid1; id++) {
+        for (long id = profile.getStartid1(); id < profile.getMaxid1(); id++) {
             node.id = id;
             node.time = (int)(System.currentTimeMillis()/1000L);
-            int dataLength = (int)nodeDataSize.choose(rng);
-            node.data = nodeAddDataGen.fill(rng, new byte[dataLength]);
+            node.data = profile.getNodeAddData();
             
-            loadNode(conn, node);
-        }
-    }
-    
-    private void loadNode(Connection conn, Node node) {
-        try {
-            addNode.run(conn, node);
-        }  catch (SQLException ex) {
-            SQLException next = ex.getNextException();
-            LOG.error("Failed to load data for LinkBench", ex);
-            if (next != null) LOG.error(ex.getClass().getSimpleName() + " Cause => " + next.getMessage());
+            try {
+            	profile.loadNode(conn, node);
+        	}  catch (SQLException ex) {
+        	    SQLException next = ex.getNextException();
+        	    LOG.error("Failed to load data for LinkBench", ex);
+        	    if (next != null) LOG.error(ex.getClass().getSimpleName() + " Cause => " + next.getMessage());
 
-            LOG.debug("Rolling back changes from last batch");
-            transRollback(conn);
+        	    LOG.debug("Rolling back changes from last batch");
+        	    transRollback(conn);
+        	}
         }
     }
     
@@ -255,7 +181,7 @@ public class LinkBenchLoader extends Loader<LinkBenchBenchmark> {
             long added_links= createOutLinks(conn, chunk.rng, link, id1);
             links_in_chunk += added_links;
         
-            if (!singleAssoc) {
+            if (!profile.getSingleAssoc()) {
                 long nloaded = (id1 - chunk.start) / chunk.step;
                 long percent = 100 * nloaded/(chunk.size);
                 if ((percent % 10 == 0) && (percent > prevPercentPrinted)) {
@@ -268,47 +194,42 @@ public class LinkBenchLoader extends Loader<LinkBenchBenchmark> {
     
     private long createOutLinks(Connection conn, Random rng, Link link, long id1) {
         long nlinks_total = 0;
-        for (long link_type: id2chooser.getLinkTypes()) {
-            long nlinks = id2chooser.calcLinkCount(id1, link_type);
+        for (long link_type: profile.getID2Chooser().getLinkTypes()) {
+            long nlinks = profile.getID2Chooser().calcLinkCount(id1, link_type);
             nlinks_total += nlinks;
 
-            if (id2chooser.sameShuffle) {
+            if (profile.getID2Chooser().sameShuffle) {
                 sameShuffle++;
             } else {
                 diffShuffle++;
             }
 
             for (long outlink_count = 0; outlink_count < nlinks; outlink_count++) {
-                if (singleAssoc) {
+                if (profile.getSingleAssoc()) {
                   // some constant value
                   link.id2 = 45;
                 }
                 else {
-                    link.id2 = id2chooser.chooseForLoad(rng, id1, link_type, outlink_count);
-                      int datasize = (int)linkDataSize.choose(rng);
-                      link.data = linkAddDataGen.fill(rng, new byte[datasize]);
+                    link.id2 = profile.getID2Chooser().chooseForLoad(rng, id1, link_type, outlink_count);
+                      link.data = profile.getLinkAddData();
                 }
                 link.link_type = link_type;
 
-                loadLink(conn, link);
+                try {
+                	profile.loadLink(conn, link);
+            	} catch (SQLException ex) {
+            	    SQLException next = ex.getNextException();
+            	    LOG.error("Failed to load data for LinkBench", ex);
+            	    if (next != null) LOG.error(ex.getClass().getSimpleName() + " Cause => " + next.getMessage());
+
+            	    LOG.debug("Rolling back changes from last batch");
+            	    transRollback(conn);
+            	}
             }
 
         }
 
         return nlinks_total;
-    }
-    
-    private void loadLink(Connection conn, Link link) {
-        try {
-            addLink.run(conn, link, false);
-        } catch (SQLException ex) {
-            SQLException next = ex.getNextException();
-            LOG.error("Failed to load data for LinkBench", ex);
-            if (next != null) LOG.error(ex.getClass().getSimpleName() + " Cause => " + next.getMessage());
-
-            LOG.debug("Rolling back changes from last batch");
-            transRollback(conn);
-        }
     }
     
     protected void transRollback(Connection conn) {
