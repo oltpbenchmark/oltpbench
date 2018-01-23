@@ -98,6 +98,11 @@ env:
 services:
   - mysql
 
+# Increase the size of ramdisk on sudo enabled infrastructure
+# https://github.com/travis-ci/travis-ci/issues/9036#issuecomment-357189213
+before_install:
+  - sudo mount -o remount,size=50% /var/ramfs
+
 install:
   - echo $TRAVIS_JDK_VERSION
   - if [ $TRAVIS_JDK_VERSION == oraclejdk8 ]; then
@@ -131,6 +136,7 @@ before_script:
     fi
 
 script:
+  - SCALEFACTOR=0.5
   - if [ $TEST == junit ]; then
       ant junit;
     else
@@ -142,7 +148,7 @@ script:
            -e "/<DBUrl>/c\<DBUrl>${URLBASE}/${TEST}</DBUrl>"
            -e '/<username>/c\<username>travis</username>'
            -e '/<password>/c\<password>travis</password>'
-           -e '/<scalefactor>/c\<scalefactor>0.5</scalefactor>'
+           -e "/<scalefactor>/c\\<scalefactor>${SCALEFACTOR}</scalefactor>"
            -e '/<terminals>/c\<terminals>3</terminals>'
            -e '/<time>/c\<time>60</time>'
            -e '/<isolation>/c\<isolation>TRANSACTION_READ_COMMITTED</isolation>'
