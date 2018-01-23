@@ -76,6 +76,8 @@ env:
   - TEST=smallbank
   - TEST=twitter
   - TEST=resourcestresser
+  - TEST=linkbench
+  # (works only for MySQL at this time)
 
 # Missing loader com.oltpbenchmark.benchmarks.resourcestresser.ResourceStresserBenchmark.makeLoaderImpl(ResourceStresserBenchmark.java:58)
 # -> org.apache.commons.lang.NotImplementedException: Code is not implemented
@@ -90,8 +92,6 @@ env:
 # Not fully implemented
 #  - TEST=jpab
 #
-# Works only for MySQL at this time
-#  - TEST=linkbench
 #
 
 # While mariadb addon isn't used. Remove if using a addon: mariadb
