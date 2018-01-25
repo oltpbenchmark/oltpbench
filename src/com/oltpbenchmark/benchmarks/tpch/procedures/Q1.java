@@ -17,6 +17,11 @@
 package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.util.RandomGenerator;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class Q1 extends GenericQuery {
 
@@ -35,7 +40,7 @@ public class Q1 extends GenericQuery {
             + "from "
             +     "lineitem "
             + "where "
-            +     "l_shipdate <= date '1998-12-01' - interval '95' day "
+            +     "l_shipdate <= date '1998-12-01' - interval ? day "
             + "group by "
             +     "l_returnflag, "
             +     "l_linestatus "
@@ -44,7 +49,12 @@ public class Q1 extends GenericQuery {
             +     "l_linestatus"
         );
 
-    protected SQLStmt get_query() {
-        return query_stmt;
+    @Override
+    protected PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException {
+        String delta = String.valueOf(rand.number(60, 120));
+
+        PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
+        stmt.setString(1, delta);
+        return stmt;
     }
 }

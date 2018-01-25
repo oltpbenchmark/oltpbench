@@ -17,6 +17,13 @@
 package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHConstants;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHUtil;
+import com.oltpbenchmark.util.RandomGenerator;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class Q5 extends GenericQuery {
 
@@ -38,16 +45,26 @@ public class Q5 extends GenericQuery {
             +     "and c_nationkey = s_nationkey "
             +     "and s_nationkey = n_nationkey "
             +     "and n_regionkey = r_regionkey "
-            +     "and r_name = 'AFRICA' "
-            +     "and o_orderdate >= date '1997-01-01' "
-            +     "and o_orderdate < date '1997-01-01' + interval '1' year "
+            +     "and r_name = ? "
+            +     "and o_orderdate >= date ? "
+            +     "and o_orderdate < date ? + interval '1' year "
             + "group by "
             +     "n_name "
             + "order by "
             +     "revenue desc"
         );
 
-    protected SQLStmt get_query() {
-        return query_stmt;
+    @Override
+    protected PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException {
+        String region = TPCHUtil.choice(TPCHConstants.R_NAME, rand);
+
+        int year = rand.number(1993, 1997);
+        String date = String.format("%d-01-01", year);
+
+        PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
+        stmt.setString(1, region);
+        stmt.setString(2, date);
+        stmt.setString(3, date);
+        return stmt;
     }
 }

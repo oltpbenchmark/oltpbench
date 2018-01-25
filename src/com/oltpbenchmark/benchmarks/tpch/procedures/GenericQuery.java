@@ -24,6 +24,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import com.oltpbenchmark.util.RandomGenerator;
 import org.apache.log4j.Logger;
 
 import com.oltpbenchmark.api.Procedure;
@@ -42,31 +43,12 @@ public abstract class GenericQuery extends Procedure {
         this.owner = w;
     }
 
-    protected static SQLStmt initSQLStmt(String queryFile) {
-        StringBuilder query = new StringBuilder();
+    protected abstract PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException;
 
-        try{
-            FileReader input = new FileReader("src/com/oltpbenchmark/benchmarks/tpch/procedures/" + queryFile);
-            BufferedReader reader = new BufferedReader(input);
-            String line = reader.readLine();
-            while (line != null) {
-                query.append(line);
-                query.append(" ");
-                line = reader.readLine();
-            }
-            reader.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return new SQLStmt(query.toString());
-    }
-
-    protected abstract SQLStmt get_query();
-
-    public ResultSet run(Connection conn) throws SQLException {
+    public ResultSet run(Connection conn, RandomGenerator rand) throws SQLException {
         //initializing all prepared statements
-        stmt = this.getPreparedStatement(conn, get_query());
-        System.out.println(stmt + "\n");
+        stmt = getStatement(conn, rand);
+
         if (owner != null)
             owner.setCurrStatement(stmt);
 

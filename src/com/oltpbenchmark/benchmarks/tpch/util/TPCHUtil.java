@@ -14,39 +14,21 @@
  *  limitations under the License.                                            *
  ******************************************************************************/
 
-package com.oltpbenchmark.benchmarks.tpch;
+package com.oltpbenchmark.benchmarks.tpch.util;
 
-import java.sql.SQLException;
-
-import com.oltpbenchmark.api.Procedure.UserAbortException;
-import com.oltpbenchmark.api.TransactionType;
-import com.oltpbenchmark.api.Worker;
-import com.oltpbenchmark.benchmarks.tpch.procedures.GenericQuery;
-import com.oltpbenchmark.types.TransactionStatus;
 import com.oltpbenchmark.util.RandomGenerator;
 
-public class TPCHWorker extends Worker<TPCHBenchmark> {
+public class TPCHUtil {
 
-    private final RandomGenerator rand = new RandomGenerator(this.rng().nextInt());
-
-    public TPCHWorker(TPCHBenchmark benchmarkModule, int id) {
-        super(benchmarkModule, id);
+    /**
+     * Returns a random element of the array
+     * @param array
+     * @param rand
+     * @param <T>
+     * @return a random element of the array
+     */
+    public static <T> T choice(T[] array, RandomGenerator rand) {
+        return array[rand.number(1, array.length) - 1];
     }
 
-    @Override
-    protected TransactionStatus executeWork(TransactionType nextTransaction) throws UserAbortException, SQLException {
-        try {
-            GenericQuery proc = (GenericQuery) this.getProcedure(nextTransaction.getProcedureClass());
-            proc.setOwner(this);
-            proc.run(conn, rand);
-        } catch (ClassCastException e) {
-            System.err.println("We have been invoked with an INVALID transactionType?!");
-            throw new RuntimeException("Bad transaction type = "+ nextTransaction);
-        }
-
-        conn.commit();
-        return (TransactionStatus.SUCCESS);
-
-    }
 }
-

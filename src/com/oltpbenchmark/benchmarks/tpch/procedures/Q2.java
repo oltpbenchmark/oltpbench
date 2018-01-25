@@ -17,6 +17,13 @@
 package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHConstants;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHUtil;
+import com.oltpbenchmark.util.RandomGenerator;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class Q2 extends GenericQuery {
 
@@ -39,11 +46,11 @@ public class Q2 extends GenericQuery {
             + "where "
             +     "p_partkey = ps_partkey "
             +     "and s_suppkey = ps_suppkey "
-            +     "and p_size = 42 "
-            +     "and p_type like '%STEEL' "
+            +     "and p_size = ? "
+            +     "and p_type like ? "
             +     "and s_nationkey = n_nationkey "
             +     "and n_regionkey = r_regionkey "
-            +     "and r_name = 'AMERICA' "
+            +     "and r_name = ? "
             +     "and ps_supplycost = ( "
             +         "select "
             +             "min(ps_supplycost) "
@@ -57,7 +64,7 @@ public class Q2 extends GenericQuery {
             +             "and s_suppkey = ps_suppkey "
             +             "and s_nationkey = n_nationkey "
             +             "and n_regionkey = r_regionkey "
-            +             "and r_name = 'AMERICA' "
+            +             "and r_name = ? "
             +     ") "
             + "order by "
             +     "s_acctbal desc, "
@@ -66,7 +73,17 @@ public class Q2 extends GenericQuery {
             +     "p_partkey"
         );
 
-    protected SQLStmt get_query() {
-        return query_stmt;
+    @Override
+    protected PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException {
+        int size = rand.number(1, 50);
+        String type = TPCHUtil.choice(TPCHConstants.SYLLABLE_3, rand);
+        String region = TPCHUtil.choice(TPCHConstants.R_NAME, rand);
+
+        PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
+        stmt.setInt(1, size);
+        stmt.setString(2, "%" + type);
+        stmt.setString(3, region);
+        stmt.setString(4, region);
+        return stmt;
     }
 }

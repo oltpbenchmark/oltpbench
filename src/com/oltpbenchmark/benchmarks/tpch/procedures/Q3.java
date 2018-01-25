@@ -17,6 +17,13 @@
 package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHConstants;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHUtil;
+import com.oltpbenchmark.util.RandomGenerator;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class Q3 extends GenericQuery {
 
@@ -31,11 +38,11 @@ public class Q3 extends GenericQuery {
             +     "orders, "
             +     "lineitem "
             + "where "
-            +     "c_mktsegment = 'MACHINERY' "
+            +     "c_mktsegment = ? "
             +     "and c_custkey = o_custkey "
             +     "and l_orderkey = o_orderkey "
-            +     "and o_orderdate < date '1995-03-10' "
-            +     "and l_shipdate > date '1995-03-10' "
+            +     "and o_orderdate < date ? "
+            +     "and l_shipdate > date ? "
             + "group by "
             +     "l_orderkey, "
             +     "o_orderdate, "
@@ -45,7 +52,18 @@ public class Q3 extends GenericQuery {
             +     "o_orderdate"
         );
 
-    protected SQLStmt get_query() {
-        return query_stmt;
+    @Override
+    protected PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException {
+        String segment = TPCHUtil.choice(TPCHConstants.SEGMENTS, rand);
+
+        // date must be randomly selected between [1995-03-01, 1995-03-31]
+        int day = rand.number(1, 31);
+        String date = String.format("1995-03-%d", day);
+
+        PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
+        stmt.setString(1, segment);
+        stmt.setString(2, date);
+        stmt.setString(3, date);
+        return stmt;
     }
 }
