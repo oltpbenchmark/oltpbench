@@ -1,0 +1,115 @@
+<?xml version="1.0"?>
+<dialects>
+    <dialect type="postgres">
+        <procedure name="Q1">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q2">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q3">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q4">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q5">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q6">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q7">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q8">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q9">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q10">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q11">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q12">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q13">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q14">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q15">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q16">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q17">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q18">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q19">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q20">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q21">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+        <procedure name="Q22">
+            <statement name="query_stmt">
+                SELECT 1 FROM region LIMIT 1;
+            </statement>
+        </procedure>
+    </dialect>
+</dialects>

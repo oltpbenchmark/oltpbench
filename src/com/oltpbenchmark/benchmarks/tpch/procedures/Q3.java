@@ -14,44 +14,34 @@
  *  limitations under the License.                                            *
  ******************************************************************************/
 
-package com.oltpbenchmark.benchmarks.tpch.queries;
+package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
 
-public class Q18 extends GenericQuery {
+public class Q3 extends GenericQuery {
 
     public final SQLStmt query_stmt = new SQLStmt(
               "select "
-            +     "c_name, "
-            +     "c_custkey, "
-            +     "o_orderkey, "
+            +     "l_orderkey, "
+            +     "sum(l_extendedprice * (1 - l_discount)) as revenue, "
             +     "o_orderdate, "
-            +     "o_totalprice, "
-            +     "sum(l_quantity) "
+            +     "o_shippriority "
             + "from "
             +     "customer, "
             +     "orders, "
             +     "lineitem "
             + "where "
-            +     "o_orderkey in ( "
-            +         "select "
-            +             "l_orderkey "
-            +         "from "
-            +             "lineitem "
-            +         "group by "
-            +             "l_orderkey having "
-            +                 "sum(l_quantity) > 314 "
-            +     ") "
+            +     "c_mktsegment = 'MACHINERY' "
             +     "and c_custkey = o_custkey "
-            +     "and o_orderkey = l_orderkey "
+            +     "and l_orderkey = o_orderkey "
+            +     "and o_orderdate < date '1995-03-10' "
+            +     "and l_shipdate > date '1995-03-10' "
             + "group by "
-            +     "c_name, "
-            +     "c_custkey, "
-            +     "o_orderkey, "
+            +     "l_orderkey, "
             +     "o_orderdate, "
-            +     "o_totalprice "
+            +     "o_shippriority "
             + "order by "
-            +     "o_totalprice desc, "
+            +     "revenue desc, "
             +     "o_orderdate"
         );
 

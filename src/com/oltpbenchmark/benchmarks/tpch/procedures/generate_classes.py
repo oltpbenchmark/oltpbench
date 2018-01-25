@@ -17,7 +17,7 @@ def prettyprint_sql(sql_filename, out_file):
 ############################################################
 # Template for most queries
 ############################################################
-template_start = """package com.oltpbenchmark.benchmarks.tpch.queries;
+template_start = """package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
 
@@ -45,7 +45,7 @@ for x in xrange(0, 22):
 # Template for query 15
 ############################################################
 
-q15_header = """package com.oltpbenchmark.benchmarks.tpch.queries;
+q15_header = """package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
 import java.sql.Connection;

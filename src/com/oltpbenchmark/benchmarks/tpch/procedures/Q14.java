@@ -14,30 +14,26 @@
  *  limitations under the License.                                            *
  ******************************************************************************/
 
-package com.oltpbenchmark.benchmarks.tpch.queries;
+package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
 
-public class Q17 extends GenericQuery {
+public class Q14 extends GenericQuery {
 
     public final SQLStmt query_stmt = new SQLStmt(
               "select "
-            +     "sum(l_extendedprice) / 7.0 as avg_yearly "
+            +     "100.00 * sum(case "
+            +         "when p_type like 'PROMO%' "
+            +             "then l_extendedprice * (1 - l_discount) "
+            +         "else 0 "
+            +     "end) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue "
             + "from "
             +     "lineitem, "
             +     "part "
             + "where "
-            +     "p_partkey = l_partkey "
-            +     "and p_brand = 'Brand#14' "
-            +     "and p_container = 'MED BOX' "
-            +     "and l_quantity < ( "
-            +         "select "
-            +             "0.2 * avg(l_quantity) "
-            +         "from "
-            +             "lineitem "
-            +         "where "
-            +             "l_partkey = p_partkey "
-            +     ")"
+            +     "l_partkey = p_partkey "
+            +     "and l_shipdate >= date '1997-04-01' "
+            +     "and l_shipdate < date '1997-04-01' + interval '1' month"
         );
 
     protected SQLStmt get_query() {

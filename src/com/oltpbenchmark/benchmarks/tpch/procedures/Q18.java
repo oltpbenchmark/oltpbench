@@ -14,26 +14,45 @@
  *  limitations under the License.                                            *
  ******************************************************************************/
 
-package com.oltpbenchmark.benchmarks.tpch.queries;
+package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
 
-public class Q14 extends GenericQuery {
+public class Q18 extends GenericQuery {
 
     public final SQLStmt query_stmt = new SQLStmt(
               "select "
-            +     "100.00 * sum(case "
-            +         "when p_type like 'PROMO%' "
-            +             "then l_extendedprice * (1 - l_discount) "
-            +         "else 0 "
-            +     "end) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue "
+            +     "c_name, "
+            +     "c_custkey, "
+            +     "o_orderkey, "
+            +     "o_orderdate, "
+            +     "o_totalprice, "
+            +     "sum(l_quantity) "
             + "from "
-            +     "lineitem, "
-            +     "part "
+            +     "customer, "
+            +     "orders, "
+            +     "lineitem "
             + "where "
-            +     "l_partkey = p_partkey "
-            +     "and l_shipdate >= date '1997-04-01' "
-            +     "and l_shipdate < date '1997-04-01' + interval '1' month"
+            +     "o_orderkey in ( "
+            +         "select "
+            +             "l_orderkey "
+            +         "from "
+            +             "lineitem "
+            +         "group by "
+            +             "l_orderkey having "
+            +                 "sum(l_quantity) > 314 "
+            +     ") "
+            +     "and c_custkey = o_custkey "
+            +     "and o_orderkey = l_orderkey "
+            + "group by "
+            +     "c_name, "
+            +     "c_custkey, "
+            +     "o_orderkey, "
+            +     "o_orderdate, "
+            +     "o_totalprice "
+            + "order by "
+            +     "o_totalprice desc, "
+            +     "o_orderdate"
         );
 
     protected SQLStmt get_query() {

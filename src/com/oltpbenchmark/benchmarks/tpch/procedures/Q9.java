@@ -14,34 +14,45 @@
  *  limitations under the License.                                            *
  ******************************************************************************/
 
-package com.oltpbenchmark.benchmarks.tpch.queries;
+package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
 
-public class Q1 extends GenericQuery {
+public class Q9 extends GenericQuery {
 
     public final SQLStmt query_stmt = new SQLStmt(
               "select "
-            +     "l_returnflag, "
-            +     "l_linestatus, "
-            +     "sum(l_quantity) as sum_qty, "
-            +     "sum(l_extendedprice) as sum_base_price, "
-            +     "sum(l_extendedprice * (1 - l_discount)) as sum_disc_price, "
-            +     "sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge, "
-            +     "avg(l_quantity) as avg_qty, "
-            +     "avg(l_extendedprice) as avg_price, "
-            +     "avg(l_discount) as avg_disc, "
-            +     "count(*) as count_order "
+            +     "nation, "
+            +     "o_year, "
+            +     "sum(amount) as sum_profit "
             + "from "
-            +     "lineitem "
-            + "where "
-            +     "l_shipdate <= date '1998-12-01' - interval '95' day "
+            +     "( "
+            +         "select "
+            +             "n_name as nation, "
+            +             "extract(year from o_orderdate) as o_year, "
+            +             "l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity as amount "
+            +         "from "
+            +             "part, "
+            +             "supplier, "
+            +             "lineitem, "
+            +             "partsupp, "
+            +             "orders, "
+            +             "nation "
+            +         "where "
+            +             "s_suppkey = l_suppkey "
+            +             "and ps_suppkey = l_suppkey "
+            +             "and ps_partkey = l_partkey "
+            +             "and p_partkey = l_partkey "
+            +             "and o_orderkey = l_orderkey "
+            +             "and s_nationkey = n_nationkey "
+            +             "and p_name like '%royal%' "
+            +     ") as profit "
             + "group by "
-            +     "l_returnflag, "
-            +     "l_linestatus "
+            +     "nation, "
+            +     "o_year "
             + "order by "
-            +     "l_returnflag, "
-            +     "l_linestatus"
+            +     "nation, "
+            +     "o_year desc"
         );
 
     protected SQLStmt get_query() {

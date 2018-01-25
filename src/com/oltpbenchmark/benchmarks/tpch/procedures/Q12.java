@@ -14,40 +14,41 @@
  *  limitations under the License.                                            *
  ******************************************************************************/
 
-package com.oltpbenchmark.benchmarks.tpch.queries;
+package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
 
-public class Q11 extends GenericQuery {
+public class Q12 extends GenericQuery {
 
     public final SQLStmt query_stmt = new SQLStmt(
               "select "
-            +     "ps_partkey, "
-            +     "sum(ps_supplycost * ps_availqty) as value "
+            +     "l_shipmode, "
+            +     "sum(case "
+            +         "when o_orderpriority = '1-URGENT' "
+            +             "or o_orderpriority = '2-HIGH' "
+            +             "then 1 "
+            +         "else 0 "
+            +     "end) as high_line_count, "
+            +     "sum(case "
+            +         "when o_orderpriority <> '1-URGENT' "
+            +             "and o_orderpriority <> '2-HIGH' "
+            +             "then 1 "
+            +         "else 0 "
+            +     "end) as low_line_count "
             + "from "
-            +     "partsupp, "
-            +     "supplier, "
-            +     "nation "
+            +     "orders, "
+            +     "lineitem "
             + "where "
-            +     "ps_suppkey = s_suppkey "
-            +     "and s_nationkey = n_nationkey "
-            +     "and n_name = 'ETHIOPIA' "
+            +     "o_orderkey = l_orderkey "
+            +     "and l_shipmode in ('AIR', 'REG AIR') "
+            +     "and l_commitdate < l_receiptdate "
+            +     "and l_shipdate < l_commitdate "
+            +     "and l_receiptdate >= date '1997-01-01' "
+            +     "and l_receiptdate < date '1997-01-01' + interval '1' year "
             + "group by "
-            +     "ps_partkey having "
-            +         "sum(ps_supplycost * ps_availqty) > ( "
-            +             "select "
-            +                 "sum(ps_supplycost * ps_availqty) * 0.0000003333 "
-            +             "from "
-            +                 "partsupp, "
-            +                 "supplier, "
-            +                 "nation "
-            +             "where "
-            +                 "ps_suppkey = s_suppkey "
-            +                 "and s_nationkey = n_nationkey "
-            +                 "and n_name = 'ETHIOPIA' "
-            +         ") "
+            +     "l_shipmode "
             + "order by "
-            +     "value desc"
+            +     "l_shipmode"
         );
 
     protected SQLStmt get_query() {

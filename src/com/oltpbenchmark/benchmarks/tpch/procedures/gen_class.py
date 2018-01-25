@@ -4,7 +4,7 @@ def split_string(s, n=40):
         ss.append('"{0}"'.format(s[i:i+n]))
     return ("\n" + " " * 30 + "+ ").join(ss)
 
-template = '''package com.oltpbenchmark.benchmarks.tpch.queries;
+template = '''package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
 

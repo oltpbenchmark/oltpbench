@@ -14,37 +14,30 @@
  *  limitations under the License.                                            *
  ******************************************************************************/
 
-package com.oltpbenchmark.benchmarks.tpch.queries;
+package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
 
-public class Q5 extends GenericQuery {
+public class Q17 extends GenericQuery {
 
     public final SQLStmt query_stmt = new SQLStmt(
               "select "
-            +     "n_name, "
-            +     "sum(l_extendedprice * (1 - l_discount)) as revenue "
+            +     "sum(l_extendedprice) / 7.0 as avg_yearly "
             + "from "
-            +     "customer, "
-            +     "orders, "
             +     "lineitem, "
-            +     "supplier, "
-            +     "nation, "
-            +     "region "
+            +     "part "
             + "where "
-            +     "c_custkey = o_custkey "
-            +     "and l_orderkey = o_orderkey "
-            +     "and l_suppkey = s_suppkey "
-            +     "and c_nationkey = s_nationkey "
-            +     "and s_nationkey = n_nationkey "
-            +     "and n_regionkey = r_regionkey "
-            +     "and r_name = 'AFRICA' "
-            +     "and o_orderdate >= date '1997-01-01' "
-            +     "and o_orderdate < date '1997-01-01' + interval '1' year "
-            + "group by "
-            +     "n_name "
-            + "order by "
-            +     "revenue desc"
+            +     "p_partkey = l_partkey "
+            +     "and p_brand = 'Brand#14' "
+            +     "and p_container = 'MED BOX' "
+            +     "and l_quantity < ( "
+            +         "select "
+            +             "0.2 * avg(l_quantity) "
+            +         "from "
+            +             "lineitem "
+            +         "where "
+            +             "l_partkey = p_partkey "
+            +     ")"
         );
 
     protected SQLStmt get_query() {

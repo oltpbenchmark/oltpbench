@@ -21,7 +21,7 @@ import java.sql.SQLException;
 import com.oltpbenchmark.api.Procedure.UserAbortException;
 import com.oltpbenchmark.api.TransactionType;
 import com.oltpbenchmark.api.Worker;
-import com.oltpbenchmark.benchmarks.tpch.queries.GenericQuery;
+import com.oltpbenchmark.benchmarks.tpch.procedures.GenericQuery;
 import com.oltpbenchmark.types.TransactionStatus;
 
 public class TPCHWorker extends Worker<TPCHBenchmark> {

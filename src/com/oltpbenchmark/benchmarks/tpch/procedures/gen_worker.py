@@ -8,5 +8,5 @@ with open("worker.txt", 'w') as f:
 
         for x in xrange(1, 22):
             print >> f, template.format(x).zfill(2),
-            print >> fi, "import com.oltpbenchmark.benchmarks.tpch.queries.Q{0};".format(x).zfill(2)
+            print >> fi, "import com.oltpbenchmark.benchmarks.tpch.procedures.Q{0};".format(x).zfill(2)
 

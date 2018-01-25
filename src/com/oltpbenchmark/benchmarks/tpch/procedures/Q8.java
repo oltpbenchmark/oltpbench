@@ -14,33 +14,50 @@
  *  limitations under the License.                                            *
  ******************************************************************************/
 
-package com.oltpbenchmark.benchmarks.tpch.queries;
+package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
 
-public class Q13 extends GenericQuery {
+public class Q8 extends GenericQuery {
 
     public final SQLStmt query_stmt = new SQLStmt(
               "select "
-            +     "c_count, "
-            +     "count(*) as custdist "
+            +     "o_year, "
+            +     "sum(case "
+            +         "when nation = 'CANADA' then volume "
+            +         "else 0 "
+            +     "end) / sum(volume) as mkt_share "
             + "from "
             +     "( "
             +         "select "
-            +             "c_custkey, "
-            +             "count(o_orderkey) as c_count "
+            +             "extract(year from o_orderdate) as o_year, "
+            +             "l_extendedprice * (1 - l_discount) as volume, "
+            +             "n2.n_name as nation "
             +         "from "
-            +             "customer left outer join orders on "
-            +                 "c_custkey = o_custkey "
-            +                 "and o_comment not like '%special%deposits%' "
-            +         "group by "
-            +             "c_custkey "
-            +     ") as c_orders "
+            +             "part, "
+            +             "supplier, "
+            +             "lineitem, "
+            +             "orders, "
+            +             "customer, "
+            +             "nation n1, "
+            +             "nation n2, "
+            +             "region "
+            +         "where "
+            +             "p_partkey = l_partkey "
+            +             "and s_suppkey = l_suppkey "
+            +             "and l_orderkey = o_orderkey "
+            +             "and o_custkey = c_custkey "
+            +             "and c_nationkey = n1.n_nationkey "
+            +             "and n1.n_regionkey = r_regionkey "
+            +             "and r_name = 'AMERICA' "
+            +             "and s_nationkey = n2.n_nationkey "
+            +             "and o_orderdate between date '1995-01-01' and date '1996-12-31' "
+            +             "and p_type = 'ECONOMY POLISHED STEEL' "
+            +     ") as all_nations "
             + "group by "
-            +     "c_count "
+            +     "o_year "
             + "order by "
-            +     "custdist desc, "
-            +     "c_count desc"
+            +     "o_year"
         );
 
     protected SQLStmt get_query() {

@@ -14,7 +14,7 @@
  *  limitations under the License.                                            *
  ******************************************************************************/
 
-package com.oltpbenchmark.benchmarks.tpch.queries;
+package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -22,12 +22,10 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
 
-import com.oltpbenchmark.DBWorkload;
 import com.oltpbenchmark.api.Procedure;
 import com.oltpbenchmark.api.SQLStmt;
 import com.oltpbenchmark.api.Worker;
@@ -48,7 +46,7 @@ public abstract class GenericQuery extends Procedure {
         StringBuilder query = new StringBuilder();
 
         try{
-            FileReader input = new FileReader("src/com/oltpbenchmark/benchmarks/tpch/queries/" + queryFile);
+            FileReader input = new FileReader("src/com/oltpbenchmark/benchmarks/tpch/procedures/" + queryFile);
             BufferedReader reader = new BufferedReader(input);
             String line = reader.readLine();
             while (line != null) {
@@ -68,6 +66,7 @@ public abstract class GenericQuery extends Procedure {
     public ResultSet run(Connection conn) throws SQLException {
         //initializing all prepared statements
         stmt = this.getPreparedStatement(conn, get_query());
+        System.out.println(stmt + "\n");
         if (owner != null)
             owner.setCurrStatement(stmt);
 

@@ -14,43 +14,33 @@
  *  limitations under the License.                                            *
  ******************************************************************************/
 
-package com.oltpbenchmark.benchmarks.tpch.queries;
+package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
 
-public class Q16 extends GenericQuery {
+public class Q13 extends GenericQuery {
 
     public final SQLStmt query_stmt = new SQLStmt(
               "select "
-            +     "p_brand, "
-            +     "p_type, "
-            +     "p_size, "
-            +     "count(distinct ps_suppkey) as supplier_cnt "
+            +     "c_count, "
+            +     "count(*) as custdist "
             + "from "
-            +     "partsupp, "
-            +     "part "
-            + "where "
-            +     "p_partkey = ps_partkey "
-            +     "and p_brand <> 'Brand#41' "
-            +     "and p_type not like 'ECONOMY BURNISHED%' "
-            +     "and p_size in (22, 33, 42, 5, 27, 49, 4, 18) "
-            +     "and ps_suppkey not in ( "
+            +     "( "
             +         "select "
-            +             "s_suppkey "
+            +             "c_custkey, "
+            +             "count(o_orderkey) as c_count "
             +         "from "
-            +             "supplier "
-            +         "where "
-            +             "s_comment like '%Customer%Complaints%' "
-            +     ") "
+            +             "customer left outer join orders on "
+            +                 "c_custkey = o_custkey "
+            +                 "and o_comment not like '%special%deposits%' "
+            +         "group by "
+            +             "c_custkey "
+            +     ") as c_orders "
             + "group by "
-            +     "p_brand, "
-            +     "p_type, "
-            +     "p_size "
+            +     "c_count "
             + "order by "
-            +     "supplier_cnt desc, "
-            +     "p_brand, "
-            +     "p_type, "
-            +     "p_size"
+            +     "custdist desc, "
+            +     "c_count desc"
         );
 
     protected SQLStmt get_query() {

@@ -14,50 +14,37 @@
  *  limitations under the License.                                            *
  ******************************************************************************/
 
-package com.oltpbenchmark.benchmarks.tpch.queries;
+package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
 
-public class Q20 extends GenericQuery {
+public class Q5 extends GenericQuery {
 
     public final SQLStmt query_stmt = new SQLStmt(
               "select "
-            +     "s_name, "
-            +     "s_address "
+            +     "n_name, "
+            +     "sum(l_extendedprice * (1 - l_discount)) as revenue "
             + "from "
+            +     "customer, "
+            +     "orders, "
+            +     "lineitem, "
             +     "supplier, "
-            +     "nation "
+            +     "nation, "
+            +     "region "
             + "where "
-            +     "s_suppkey in ( "
-            +         "select "
-            +             "ps_suppkey "
-            +         "from "
-            +             "partsupp "
-            +         "where "
-            +             "ps_partkey in ( "
-            +                 "select "
-            +                     "p_partkey "
-            +                 "from "
-            +                     "part "
-            +                 "where "
-            +                     "p_name like 'orange%' "
-            +             ") "
-            +             "and ps_availqty > ( "
-            +                 "select "
-            +                     "0.5 * sum(l_quantity) "
-            +                 "from "
-            +                     "lineitem "
-            +                 "where "
-            +                     "l_partkey = ps_partkey "
-            +                     "and l_suppkey = ps_suppkey "
-            +                     "and l_shipdate >= date '1997-01-01' "
-            +                     "and l_shipdate < date '1997-01-01' + interval '1' year "
-            +             ") "
-            +     ") "
+            +     "c_custkey = o_custkey "
+            +     "and l_orderkey = o_orderkey "
+            +     "and l_suppkey = s_suppkey "
+            +     "and c_nationkey = s_nationkey "
             +     "and s_nationkey = n_nationkey "
-            +     "and n_name = 'ALGERIA' "
+            +     "and n_regionkey = r_regionkey "
+            +     "and r_name = 'AFRICA' "
+            +     "and o_orderdate >= date '1997-01-01' "
+            +     "and o_orderdate < date '1997-01-01' + interval '1' year "
+            + "group by "
+            +     "n_name "
             + "order by "
-            +     "s_name"
+            +     "revenue desc"
         );
 
     protected SQLStmt get_query() {

@@ -14,45 +14,43 @@
  *  limitations under the License.                                            *
  ******************************************************************************/
 
-package com.oltpbenchmark.benchmarks.tpch.queries;
+package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
 
-public class Q9 extends GenericQuery {
+public class Q16 extends GenericQuery {
 
     public final SQLStmt query_stmt = new SQLStmt(
               "select "
-            +     "nation, "
-            +     "o_year, "
-            +     "sum(amount) as sum_profit "
+            +     "p_brand, "
+            +     "p_type, "
+            +     "p_size, "
+            +     "count(distinct ps_suppkey) as supplier_cnt "
             + "from "
-            +     "( "
+            +     "partsupp, "
+            +     "part "
+            + "where "
+            +     "p_partkey = ps_partkey "
+            +     "and p_brand <> 'Brand#41' "
+            +     "and p_type not like 'ECONOMY BURNISHED%' "
+            +     "and p_size in (22, 33, 42, 5, 27, 49, 4, 18) "
+            +     "and ps_suppkey not in ( "
             +         "select "
-            +             "n_name as nation, "
-            +             "extract(year from o_orderdate) as o_year, "
-            +             "l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity as amount "
+            +             "s_suppkey "
             +         "from "
-            +             "part, "
-            +             "supplier, "
-            +             "lineitem, "
-            +             "partsupp, "
-            +             "orders, "
-            +             "nation "
+            +             "supplier "
             +         "where "
-            +             "s_suppkey = l_suppkey "
-            +             "and ps_suppkey = l_suppkey "
-            +             "and ps_partkey = l_partkey "
-            +             "and p_partkey = l_partkey "
-            +             "and o_orderkey = l_orderkey "
-            +             "and s_nationkey = n_nationkey "
-            +             "and p_name like '%royal%' "
-            +     ") as profit "
+            +             "s_comment like '%Customer%Complaints%' "
+            +     ") "
             + "group by "
-            +     "nation, "
-            +     "o_year "
+            +     "p_brand, "
+            +     "p_type, "
+            +     "p_size "
             + "order by "
-            +     "nation, "
-            +     "o_year desc"
+            +     "supplier_cnt desc, "
+            +     "p_brand, "
+            +     "p_type, "
+            +     "p_size"
         );
 
     protected SQLStmt get_query() {

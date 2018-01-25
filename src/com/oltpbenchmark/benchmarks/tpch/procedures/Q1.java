@@ -14,34 +14,34 @@
  *  limitations under the License.                                            *
  ******************************************************************************/
 
-package com.oltpbenchmark.benchmarks.tpch.queries;
+package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
 
-public class Q4 extends GenericQuery {
+public class Q1 extends GenericQuery {
 
     public final SQLStmt query_stmt = new SQLStmt(
               "select "
-            +     "o_orderpriority, "
-            +     "count(*) as order_count "
+            +     "l_returnflag, "
+            +     "l_linestatus, "
+            +     "sum(l_quantity) as sum_qty, "
+            +     "sum(l_extendedprice) as sum_base_price, "
+            +     "sum(l_extendedprice * (1 - l_discount)) as sum_disc_price, "
+            +     "sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge, "
+            +     "avg(l_quantity) as avg_qty, "
+            +     "avg(l_extendedprice) as avg_price, "
+            +     "avg(l_discount) as avg_disc, "
+            +     "count(*) as count_order "
             + "from "
-            +     "orders "
+            +     "lineitem "
             + "where "
-            +     "o_orderdate >= date '1994-08-01' "
-            +     "and o_orderdate < date '1994-08-01' + interval '3' month "
-            +     "and exists ( "
-            +         "select "
-            +             "* "
-            +         "from "
-            +             "lineitem "
-            +         "where "
-            +             "l_orderkey = o_orderkey "
-            +             "and l_commitdate < l_receiptdate "
-            +     ") "
+            +     "l_shipdate <= date '1998-12-01' - interval '95' day "
             + "group by "
-            +     "o_orderpriority "
+            +     "l_returnflag, "
+            +     "l_linestatus "
             + "order by "
-            +     "o_orderpriority"
+            +     "l_returnflag, "
+            +     "l_linestatus"
         );
 
     protected SQLStmt get_query() {

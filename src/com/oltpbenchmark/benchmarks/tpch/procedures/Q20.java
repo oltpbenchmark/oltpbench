@@ -14,50 +14,50 @@
  *  limitations under the License.                                            *
  ******************************************************************************/
 
-package com.oltpbenchmark.benchmarks.tpch.queries;
+package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
 
-public class Q22 extends GenericQuery {
+public class Q20 extends GenericQuery {
 
     public final SQLStmt query_stmt = new SQLStmt(
               "select "
-            +     "cntrycode, "
-            +     "count(*) as numcust, "
-            +     "sum(c_acctbal) as totacctbal "
+            +     "s_name, "
+            +     "s_address "
             + "from "
-            +     "( "
+            +     "supplier, "
+            +     "nation "
+            + "where "
+            +     "s_suppkey in ( "
             +         "select "
-            +             "substring(c_phone from 1 for 2) as cntrycode, "
-            +             "c_acctbal "
+            +             "ps_suppkey "
             +         "from "
-            +             "customer "
+            +             "partsupp "
             +         "where "
-            +             "substring(c_phone from 1 for 2) in "
-            +                 "('20', '32', '44', '33', '29', '22', '31') "
-            +             "and c_acctbal > ( "
+            +             "ps_partkey in ( "
             +                 "select "
-            +                     "avg(c_acctbal) "
+            +                     "p_partkey "
             +                 "from "
-            +                     "customer "
+            +                     "part "
             +                 "where "
-            +                     "c_acctbal > 0.00 "
-            +                     "and substring(c_phone from 1 for 2) in "
-            +                         "('20', '32', '44', '33', '29', '22', '31') "
+            +                     "p_name like 'orange%' "
             +             ") "
-            +             "and not exists ( "
+            +             "and ps_availqty > ( "
             +                 "select "
-            +                     "* "
+            +                     "0.5 * sum(l_quantity) "
             +                 "from "
-            +                     "orders "
+            +                     "lineitem "
             +                 "where "
-            +                     "o_custkey = c_custkey "
+            +                     "l_partkey = ps_partkey "
+            +                     "and l_suppkey = ps_suppkey "
+            +                     "and l_shipdate >= date '1997-01-01' "
+            +                     "and l_shipdate < date '1997-01-01' + interval '1' year "
             +             ") "
-            +     ") as custsale "
-            + "group by "
-            +     "cntrycode "
+            +     ") "
+            +     "and s_nationkey = n_nationkey "
+            +     "and n_name = 'ALGERIA' "
             + "order by "
-            +     "cntrycode"
+            +     "s_name"
         );
 
     protected SQLStmt get_query() {
