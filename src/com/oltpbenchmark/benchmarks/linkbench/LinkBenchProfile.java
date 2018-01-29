@@ -119,7 +119,7 @@ public class LinkBenchProfile {
     }
     
     public long getMaxid1() {
-    	return startid1;
+    	return maxid1;
     }
     
     public boolean getSingleAssoc() {
