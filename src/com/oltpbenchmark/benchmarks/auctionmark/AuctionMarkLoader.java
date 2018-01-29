@@ -14,16 +14,24 @@
  *  limitations under the License.                                            *
  ******************************************************************************/
 
-
 package com.oltpbenchmark.benchmarks.auctionmark;
 
 import java.io.File;
 import java.lang.reflect.Field;
 import java.sql.Connection;
-import java.sql.Timestamp;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.*;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
@@ -34,8 +42,8 @@ import org.apache.commons.collections15.map.ListOrderedMap;
 import org.apache.log4j.Logger;
 
 import com.oltpbenchmark.api.Loader;
-import com.oltpbenchmark.benchmarks.auctionmark.util.CategoryParser;
 import com.oltpbenchmark.benchmarks.auctionmark.util.Category;
+import com.oltpbenchmark.benchmarks.auctionmark.util.CategoryParser;
 import com.oltpbenchmark.benchmarks.auctionmark.util.GlobalAttributeGroupId;
 import com.oltpbenchmark.benchmarks.auctionmark.util.GlobalAttributeValueId;
 import com.oltpbenchmark.benchmarks.auctionmark.util.ItemId;
@@ -45,39 +53,41 @@ import com.oltpbenchmark.benchmarks.auctionmark.util.UserId;
 import com.oltpbenchmark.benchmarks.auctionmark.util.UserIdGenerator;
 import com.oltpbenchmark.catalog.Column;
 import com.oltpbenchmark.catalog.Table;
-import com.oltpbenchmark.util.*;
+import com.oltpbenchmark.util.CollectionUtil;
+import com.oltpbenchmark.util.CompositeId;
+import com.oltpbenchmark.util.Histogram;
+import com.oltpbenchmark.util.Pair;
 import com.oltpbenchmark.util.RandomDistribution.Flat;
 import com.oltpbenchmark.util.RandomDistribution.Zipf;
+import com.oltpbenchmark.util.SQLUtil;
 
 /**
- * 
  * @author pavlo
  * @author visawee
  */
 public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
     private static final Logger LOG = Logger.getLogger(AuctionMarkLoader.class);
-    
+
     // -----------------------------------------------------------------
     // INTERNAL DATA MEMBERS
     // -----------------------------------------------------------------
-    
+
     protected final AuctionMarkProfile profile;
-    
+
     /**
-     * Data Generator Classes
-     * TableName -> AbstactTableGenerator
+     * Data Generator Classes TableName -> AbstactTableGenerator
      */
     private final Map<String, AbstractTableGenerator> generators = Collections.synchronizedMap(new ListOrderedMap<String, AbstractTableGenerator>());
-    
+
     private final Collection<String> sub_generators = new HashSet<String>();
 
     /** The set of tables that we have finished loading **/
     private final transient Collection<String> finished = Collections.synchronizedCollection(new HashSet<String>());
-    
+
     private final Histogram<String> tableSizes = new Histogram<String>();
 
     private boolean fail = false;
-    
+
     // -----------------------------------------------------------------
     // INITIALIZATION
     // -----------------------------------------------------------------
@@ -91,107 +101,107 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
         super(benchmark, conn);
 
         // BenchmarkProfile
-        profile = new AuctionMarkProfile(benchmark, benchmark.getRandomGenerator());
+        this.profile = new AuctionMarkProfile(benchmark, benchmark.getRandomGenerator());
 
         File category_file = new File(benchmark.getDataDir().getAbsolutePath() + "/table.category.gz");
-        
-        // ---------------------------
-        // Fixed-Size Table Generators
-        // ---------------------------
-        
-        this.registerGenerator(new RegionGenerator());
-        this.registerGenerator(new CategoryGenerator(category_file));
-        this.registerGenerator(new GlobalAttributeGroupGenerator());
-        this.registerGenerator(new GlobalAttributeValueGenerator());
 
-        // ---------------------------
-        // Scaling-Size Table Generators
-        // ---------------------------
-        
-        // USER TABLES
-        this.registerGenerator(new UserGenerator());
-        this.registerGenerator(new UserAttributesGenerator());
-        this.registerGenerator(new UserItemGenerator());
-        this.registerGenerator(new UserWatchGenerator());
-        this.registerGenerator(new UserFeedbackGenerator());
-        
-        // ITEM TABLES
-        this.registerGenerator(new ItemGenerator());
-        this.registerGenerator(new ItemAttributeGenerator());
-        this.registerGenerator(new ItemBidGenerator());
-        this.registerGenerator(new ItemMaxBidGenerator());
-        this.registerGenerator(new ItemCommentGenerator());
-        this.registerGenerator(new ItemImageGenerator());
-        this.registerGenerator(new ItemPurchaseGenerator());
+        try {
+            // ---------------------------
+            // Fixed-Size Table Generators
+            // ---------------------------
+
+            this.registerGenerator(new RegionGenerator());
+            this.registerGenerator(new CategoryGenerator(category_file));
+            this.registerGenerator(new GlobalAttributeGroupGenerator());
+            this.registerGenerator(new GlobalAttributeValueGenerator());
+
+            // ---------------------------
+            // Scaling-Size Table Generators
+            // ---------------------------
+
+            // depends on REGION
+            this.registerGenerator(new UserGenerator());
+            // depends on USERACCT
+            this.registerGenerator(new UserAttributesGenerator());
+
+            // depends on USERACCT, CATEGORY
+            this.registerGenerator(new ItemGenerator());
+            // depends on ITEM
+            this.registerGenerator(new ItemCommentGenerator());
+            // depends on ITEM
+            this.registerGenerator(new ItemImageGenerator());
+            // depends on ITEM
+            this.registerGenerator(new ItemBidGenerator());
+
+            // depends on ITEM, GLOBAL_ATTRIBUTE_GROUP, GLOBAL_ATTRIBUTE_VALUE
+            this.registerGenerator(new ItemAttributeGenerator());
+
+            // depends on ITEM_BID
+            this.registerGenerator(new ItemMaxBidGenerator());
+            // depends on ITEM_BID
+            this.registerGenerator(new ItemPurchaseGenerator());
+            // depends on ITEM_BID
+            this.registerGenerator(new UserItemGenerator());
+            // depends on ITEM_BID
+            this.registerGenerator(new UserWatchGenerator());
+
+            // depends on ITEM_PURCHASE
+            this.registerGenerator(new UserFeedbackGenerator());
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
     }
-    
+
     // -----------------------------------------------------------------
     // LOADING METHODS
     // -----------------------------------------------------------------
-    
-    public List<LoaderThread> createLoaderThreads() throws SQLException {
-        return (null);
+
+    private class CountdownLoaderThread extends LoaderThread {
+        private final AbstractTableGenerator generator;
+        private final CountDownLatch latch;
+
+        public CountdownLoaderThread(AbstractTableGenerator generator, CountDownLatch latch) throws SQLException {
+            this.generator = generator;
+            this.latch = latch;
+        }
+
+        @Override
+        public void load(Connection conn) throws SQLException {
+            LOG.debug(String.format("Started loading %s which depends on %s", this.generator.getTableName(), this.generator.getDependencies()));
+            this.generator.load(conn);
+            this.latch.countDown();
+            LOG.debug(String.format("Finished loading %s", this.generator.getTableName()));
+        }
     }
-    
+
     @Override
-    public void load() {
-        if (LOG.isDebugEnabled())
-            LOG.debug(String.format("Starting loader [scaleFactor=%.2f]", profile.getScaleFactor())); 
-        
-        final EventObservableExceptionHandler handler = new EventObservableExceptionHandler();
-        final List<Thread> threads = new ArrayList<Thread>();
+    public List<LoaderThread> createLoaderThreads() throws SQLException {
+        List<LoaderThread> threads = new ArrayList<LoaderThread>();
+
+        final CountDownLatch loadLatch = new CountDownLatch(this.generators.size());
+
         for (AbstractTableGenerator generator : this.generators.values()) {
-            // if (isSubGenerator(generator)) continue;
-            Thread t = new Thread(generator);
-            t.setName(generator.getTableName());
-            t.setUncaughtExceptionHandler(handler);
-            
-            // Call init() before we start!
-            // This will setup non-data related dependencies
             generator.init();
-            
-            threads.add(t);
-        } // FOR
-        assert(threads.size() > 0);
-        handler.addObserver(new EventObserver<Pair<Thread,Throwable>>() {
+            threads.add(new CountdownLoaderThread(generator, loadLatch));
+        }
+
+        threads.add(new LoaderThread() {
             @Override
-            public void update(EventObservable<Pair<Thread, Throwable>> o, Pair<Thread, Throwable> t) {
-                fail = true;
-                for (Thread thread : threads)
-                    thread.interrupt();
-                t.second.printStackTrace();
+            public void load(Connection conn) throws SQLException {
+                try {
+                    loadLatch.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    throw new RuntimeException(e);
+                }
+                AuctionMarkLoader.this.profile.saveProfile(conn);
             }
         });
-        
-        // Construct a new thread to load each table
-        // Fire off the threads and wait for them to complete
-        // If debug is set to true, then we'll execute them serially
-        try {
-            for (Thread t : threads) {
-                t.start();
-            } // FOR
-            for (Thread t : threads) {
-                t.join();
-            } // FOR
-        } catch (InterruptedException e) {
-            LOG.fatal("Unexpected error", e);
-        } finally {
-            if (handler.hasError()) {
-                throw new RuntimeException("Error while generating table data.", handler.getError());
-            }
-        }
-        
-        // Save the benchmark profile out to disk so that we can send it
-        // to all of the clients
-        try {
-            profile.saveProfile(this.conn);
-        } catch (SQLException ex) {
-            throw new RuntimeException("Failed to save profile information in database", ex);
-        }
-        LOG.info("Finished generating data for all tables");
+
+        return threads;
     }
-    
-    
+
     private void registerGenerator(AbstractTableGenerator generator) {
         // Register this one as well as any sub-generators
         this.generators.put(generator.getTableName(), generator);
@@ -209,7 +219,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
      * Load the tuples for the given table name
      * @param tableName
      */
-    protected void generateTableData(String tableName) throws SQLException {
+    protected void generateTableData(Connection conn, String tableName) throws SQLException {
         LOG.info("*** START " + tableName);
         final AbstractTableGenerator generator = this.generators.get(tableName);
         assert (generator != null);
@@ -282,7 +292,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
     /**********************************************************************************************
      * AbstractTableGenerator
      **********************************************************************************************/
-    protected abstract class AbstractTableGenerator implements Runnable {
+    protected abstract class AbstractTableGenerator extends LoaderThread {
         private final String tableName;
         private final Table catalog_tbl;
         protected final List<Object[]> table = new ArrayList<Object[]>();
@@ -313,7 +323,8 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
          * Constructor
          * @param catalog_tbl
          */
-        public AbstractTableGenerator(String tableName, String...dependencies) {
+        public AbstractTableGenerator(String tableName, String...dependencies) throws SQLException {
+            super();
             this.tableName = tableName;
             this.catalog_tbl = benchmark.getCatalog().getTable(tableName);
             assert(catalog_tbl != null) : "Invalid table name '" + tableName + "'";
@@ -385,8 +396,9 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
          * @param row TODO
          */
         protected abstract int populateRow(Object[] row);
-        
-        public void run() {
+
+        @Override
+        public void load(Connection conn) throws SQLException {
             // First block on the CountDownLatches of all the tables that we depend on
             if (this.dependencyTables.size() > 0 && LOG.isDebugEnabled())
                 LOG.debug(String.format("%s: Table generator is blocked waiting for %d other tables: %s",
@@ -406,7 +418,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
             
             // Then invoke the loader generation method
             try {
-                AuctionMarkLoader.this.generateTableData(this.tableName);
+                AuctionMarkLoader.this.generateTableData(conn, this.tableName);
             } catch (Throwable ex) {
                 ex.printStackTrace();
                 throw new RuntimeException("Unexpected error while generating table data for '" + this.tableName + "'", ex);
@@ -595,7 +607,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
         private boolean stop = false;
         private final String sourceTableName;
 
-        public SubTableGenerator(String tableName, String sourceTableName, String...dependencies) {
+        public SubTableGenerator(String tableName, String sourceTableName, String...dependencies) throws SQLException {
             super(tableName, dependencies);
             this.sourceTableName = sourceTableName;
         }
@@ -670,7 +682,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
      **********************************************************************************************/
     protected class RegionGenerator extends AbstractTableGenerator {
 
-        public RegionGenerator() {
+        public RegionGenerator() throws SQLException {
             super(AuctionMarkConstants.TABLENAME_REGION);
         }
 
@@ -703,7 +715,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
         private final Map<String, Category> categoryMap;
         private final LinkedList<Category> categories = new LinkedList<Category>();
 
-        public CategoryGenerator(File data_file) {
+        public CategoryGenerator(File data_file) throws SQLException {
             super(AuctionMarkConstants.TABLENAME_CATEGORY);
             this.data_file = data_file;
             assert(this.data_file.exists()) : 
@@ -752,7 +764,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
         private final Histogram<Integer> category_groups = new Histogram<Integer>();
         private final LinkedList<GlobalAttributeGroupId> group_ids = new LinkedList<GlobalAttributeGroupId>();
 
-        public GlobalAttributeGroupGenerator() {
+        public GlobalAttributeGroupGenerator() throws SQLException {
             super(AuctionMarkConstants.TABLENAME_GLOBAL_ATTRIBUTE_GROUP,
                   AuctionMarkConstants.TABLENAME_CATEGORY);
         }
@@ -805,7 +817,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
         private GlobalAttributeGroupId gag_current;
         private int gav_counter = -1;
 
-        public GlobalAttributeValueGenerator() {
+        public GlobalAttributeValueGenerator() throws SQLException {
             super(AuctionMarkConstants.TABLENAME_GLOBAL_ATTRIBUTE_VALUE,
                   AuctionMarkConstants.TABLENAME_GLOBAL_ATTRIBUTE_GROUP);
         }
@@ -856,7 +868,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
         private final Zipf randomRating;
         private UserIdGenerator idGenerator;
         
-        public UserGenerator() {
+        public UserGenerator() throws SQLException {
             super(AuctionMarkConstants.TABLENAME_USERACCT,
                   AuctionMarkConstants.TABLENAME_REGION);
             this.randomRegion = new Flat(profile.rng, 0, (int)AuctionMarkConstants.TABLESIZE_REGION);
@@ -927,7 +939,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
     protected class UserAttributesGenerator extends SubTableGenerator<UserId> {
         private final Zipf randomNumUserAttributes;
         
-        public UserAttributesGenerator() {
+        public UserAttributesGenerator() throws SQLException {
             super(AuctionMarkConstants.TABLENAME_USERACCT_ATTRIBUTES,
                   AuctionMarkConstants.TABLENAME_USERACCT);
             
@@ -970,7 +982,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
          */
         private final Map<Long, Pair<Zipf, Zipf>> item_bid_watch_zipfs = new HashMap<Long, Pair<Zipf,Zipf>>();
         
-        public ItemGenerator() {
+        public ItemGenerator() throws SQLException {
             super(AuctionMarkConstants.TABLENAME_ITEM,
                   AuctionMarkConstants.TABLENAME_USERACCT,
                   AuctionMarkConstants.TABLENAME_USERACCT, AuctionMarkConstants.TABLENAME_CATEGORY);
@@ -1120,7 +1132,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
      **********************************************************************************************/
     protected class ItemImageGenerator extends SubTableGenerator<LoaderItemInfo> {
 
-        public ItemImageGenerator() {
+        public ItemImageGenerator() throws SQLException {
             super(AuctionMarkConstants.TABLENAME_ITEM_IMAGE,
                   AuctionMarkConstants.TABLENAME_ITEM);
         }
@@ -1148,7 +1160,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
      **********************************************************************************************/
     protected class ItemAttributeGenerator extends SubTableGenerator<LoaderItemInfo> {
 
-        public ItemAttributeGenerator() {
+        public ItemAttributeGenerator() throws SQLException {
             super(AuctionMarkConstants.TABLENAME_ITEM_ATTRIBUTE,
                   AuctionMarkConstants.TABLENAME_ITEM,
                   AuctionMarkConstants.TABLENAME_GLOBAL_ATTRIBUTE_GROUP, AuctionMarkConstants.TABLENAME_GLOBAL_ATTRIBUTE_VALUE);
@@ -1183,7 +1195,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
      **********************************************************************************************/
     protected class ItemCommentGenerator extends SubTableGenerator<LoaderItemInfo> {
 
-        public ItemCommentGenerator() {
+        public ItemCommentGenerator() throws SQLException {
             super(AuctionMarkConstants.TABLENAME_ITEM_COMMENT,
                   AuctionMarkConstants.TABLENAME_ITEM);
         }
@@ -1234,7 +1246,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
         private float currentPrice;
         private boolean new_item;
         
-        public ItemBidGenerator() {
+        public ItemBidGenerator() throws SQLException {
             super(AuctionMarkConstants.TABLENAME_ITEM_BID,
                   AuctionMarkConstants.TABLENAME_ITEM);
         }
@@ -1336,7 +1348,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
      **********************************************************************************************/
     protected class ItemMaxBidGenerator extends SubTableGenerator<LoaderItemInfo> {
 
-        public ItemMaxBidGenerator() {
+        public ItemMaxBidGenerator() throws SQLException {
             super(AuctionMarkConstants.TABLENAME_ITEM_MAX_BID,
                   AuctionMarkConstants.TABLENAME_ITEM_BID);
         }
@@ -1374,7 +1386,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
      **********************************************************************************************/
     protected class ItemPurchaseGenerator extends SubTableGenerator<LoaderItemInfo> {
 
-        public ItemPurchaseGenerator() {
+        public ItemPurchaseGenerator() throws SQLException {
             super(AuctionMarkConstants.TABLENAME_ITEM_PURCHASE,
                   AuctionMarkConstants.TABLENAME_ITEM_BID);
         }
@@ -1416,7 +1428,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
      **********************************************************************************************/
     protected class UserFeedbackGenerator extends SubTableGenerator<LoaderItemInfo.Bid> {
 
-        public UserFeedbackGenerator() {
+        public UserFeedbackGenerator() throws SQLException {
             super(AuctionMarkConstants.TABLENAME_USERACCT_FEEDBACK,
                   AuctionMarkConstants.TABLENAME_ITEM_PURCHASE);
         }
@@ -1460,7 +1472,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
      **********************************************************************************************/
     protected class UserItemGenerator extends SubTableGenerator<LoaderItemInfo> {
 
-        public UserItemGenerator() {
+        public UserItemGenerator() throws SQLException {
             super(AuctionMarkConstants.TABLENAME_USERACCT_ITEM,
                   AuctionMarkConstants.TABLENAME_ITEM_BID);
         }
@@ -1502,7 +1514,7 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
 
         final Set<UserId> watchers = new HashSet<UserId>();
         
-        public UserWatchGenerator() {
+        public UserWatchGenerator() throws SQLException {
             super(AuctionMarkConstants.TABLENAME_USERACCT_WATCH,
                   AuctionMarkConstants.TABLENAME_ITEM_BID);
         }
