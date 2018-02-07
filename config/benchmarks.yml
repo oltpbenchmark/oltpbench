@@ -1,0 +1,135 @@
+# list of benchmarks supported by oltpbench in alphabetical order
+# (required) benchmark name, the primary name used by util scripts and benchmark itself
+auctionmark:
+  # (optional) displayname, just looks nicer
+  name: AuctionMark
+  # (optional) short description
+  description: A benchmark from H-Store
+  # (optional) shorter names, common typos, only used by util scripts
+  alias:
+    - auction
+  # (optional) original homepage/paper link, could be dead ...
+  url: http://hstore.cs.brown.edu/projects/auctionmark/
+  # (optional) list of contributions in time order, use github id, prefer PR over commit hash for url
+  # not used by actual program, just a place to record you contribution
+  contributions:
+    - time: 2012-01-20
+      author: apavlo
+      url: https://github.com/oltpbenchmark/oltpbench/commit/cac6786e86869fd23ddb7813ced8357406c4aaef
+chbenchmark:
+  name: CH-benCHmark
+  description: A mix of TPC-C and TPC-H run in parallel on a single DBMS
+  alias:
+    # - auction # uncomment this to trigger error in config.py's check_duplicate_name
+    - ch
+    - mix
+  url: https://db.in.tum.de/research/projects/CHbenCHmark/?lang=en
+epinions:
+  name: Epinions
+  description: Epinions.com was a general consumer review site established in 1999. Epinions was acquired by Shopping.com in 2003, which in turn was acquired by eBay in 2005
+  alias:
+    - epion
+    - epionion
+    - consumer-review
+  url: http://www.epinions.com/
+hyadapt:
+  name: HyAdapt
+  description: TODO
+  alias:
+    - hyadap
+  url: https://github.com/oltpbenchmark/oltpbench
+jpab:
+  name: JPAB
+  description: Java Persistence API Performance Benchmark
+  alias:
+    - jpba
+  url: http://www.jpab.org/
+linkbench:
+  name: LinkBench
+  description: a Database Benchmark Based on the Facebook Social Graph
+  alias:
+    - fbgraph
+  url: http://people.cs.uchicago.edu/~tga/pubs/sigmod-linkbench-2013.pdf
+noop:
+  name: Noop
+  description: no table, no query, just SELECT 1;
+  alias:
+    - nop
+  url: https://github.com/oltpbenchmark/oltpbench
+resourcestresser:
+  name: ResourceStresser
+  description: Synthetic Resource Stresser meaningless but CPU/IO heavy statements
+  alias:
+    - stress
+  url: https://github.com/oltpbenchmark/oltpbench
+seats:
+  name: SEATS
+  description: Buy airplane tickets
+  alias:
+    - plane
+  url: https://github.com/oltpbenchmark/oltpbench
+sibench:
+  name: SIBench
+  description: Snapshot Isolation
+  alias:
+    - si
+  url: https://courses.cs.washington.edu/courses/cse444/08au/544M/READING-LIST/fekete-sigmod2008.pdf
+smallbank:
+  name: SmallBank
+  description: A bank with only three tables accounts, saving and checking
+  alias:
+    - sb
+  url: https://ses.library.usyd.edu.au/bitstream/2123/5353/1/michael-cahill-2009-thesis.pdf
+tatp:
+  name: TATP
+  description: Telecom Application Transaction Processing Benchmark
+  alias:
+    - telecom
+  url: http://tatpbenchmark.sourceforge.net/
+tpcc:
+  name: TPC-C
+  description: an On-Line Transaction Processing Benchmark
+  alias:
+    - tpc-c
+  url: http://www.tpc.org/tpcc/
+tpcds:
+  name: TPC-DS
+  description: a Decision Support Benchmark
+  alias:
+    - tpc-ds
+  url: http://www.tpc.org/tpcds/
+  contributions: 
+    - time: 2018-01-20
+      author: mpardesh
+      url: https://github.com/oltpbenchmark/oltpbench/pull/222
+tpch:
+  name: TPC-H
+  description: a Descision Support Benchmark for bussiness oriented ad-hoc queries and concurrent data modifications
+  alias:
+    - tpc-h
+  url: http://www.tpc.org/tpch/
+twitter:
+  name: Twitter
+  description: Twitter
+  alias:
+    - tw
+  url: https://twitter.com/andy_pavlo
+voter:
+  name: Voter
+  description: Japanese "American Idol"
+  alias:
+    - idol
+  url: https://github.com/VoltDB/voltdb/tree/master/examples/voter
+wikipedia:
+  name: Wikipedia
+  description: Wikipedia
+  alias:
+    - wiki
+  url: https://www.wikipedia.org/
+ycsb:
+  name: YCSB
+  description: Yahoo! Cloud Serving Benchmark
+  alias:
+    - ycbs
+    - bscy
+  url: https://github.com/brianfrankcooper/YCSB

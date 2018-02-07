@@ -1,0 +1,68 @@
+# list of databases grouped by type
+### --- start of RDBMS --- ###
+mysql:
+  name: MySQL
+  alias:
+    - dolphin
+  driver: com.mysql.jdbc.Driver
+  port: 3306
+  username: root
+  password: oltpbenchpassword
+  create_db: "CREATE DATABASE IF NOT EXISTS {db}"
+  shell: "mysql -u {username} -p{password}"
+  shell_exec: "mysql -u {username} -p{password} -e \"{sql}\""
+  # TODO: docker and local installation may use different default user and pwd
+postgres:
+  name: PostgreSQL
+  alias:
+    - postgresql
+    - pg
+  driver: org.postgresql.Driver
+  port: 5432
+  # NOTE: this is needed because database name is postgres instead of postgresql
+  dburl: "jdbc:postgresql://{host}:{port}/{db}"
+  username: oltpbench
+  password: oltpbenchpassword
+  # NOTE: https://stackoverflow.com/questions/18389124/simulate-create-database-if-not-exists-for-postgresql
+  create_db: "CREATE DATABASE {db}"
+  shell: "psql -U {username} -h 127.0.0.1"
+  shell_exec: "psql -U {username} -h 127.0.0.1 -c \"{sql}\""
+tidb:
+  name: TiDB
+  alias:
+    - Tidb
+  driver: com.mysql.jdbc.Driver
+  port: 4000
+  # NOTE: this is needed because tidb is mysql compataible
+  dburl: "jdbc:mysql://{host}:{port}/{db}"
+  username: root
+  password: ''
+  create_db: "CREATE DATABASE IF NOT EXISTS {db}"
+  shell: "mysql -u {username} -h 127.0.0.1 -P 4000"
+  shell_exec: "mysql -u {username} -h 127.0.0.1 -P 4000 -e \"{sql}\""
+  require_native_shell: true # tidb's docker container does not ship with mysql client
+memsql:
+  name: MemSQL
+  driver: com.mysql.jdbc.Driver
+   # NOTE: this is needed because memsql is mysql compataible
+  dburl: "jdbc:mysql://{host}:{port}/{db}"
+  port: 3306
+  username: root
+  password: ''
+  create_db: "CREATE DATABASE IF NOT EXISTS {db}"
+  shell: "memsql-shell -u {username}"
+  shell_exec: "memsql-shell -u {username} -e \"{sql}\""
+### --- end of RDBMS --- ###
+### --- start of column family --- ###
+cassandra:
+  name: Cassandra
+  alias:
+    - C*
+  driver: com.github.adejanovski.cassandra.jdbc.CassandraDriver
+  port: 9042
+  username: cassandra
+  password: cassandra
+  create_db: "CREATE KEYSPACE IF NOT EXISTS {db} WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor' : 1}"
+  shell: "cqlsh -u {username} -p {password}"
+  shell_exec: "cqlsh -u {username} -p {password} -e \"{sql}\""
+## --- end of column family --- ###
