@@ -9,3 +9,5 @@ Each directory has the following layout:
 * `ddls` - The location of the DBMS-specific DDL files. The filename has to match the supported systems defined in `com.oltpbenchmark.types.DatabaseType`.
 * `dialects` - The location of the DBMS-specific Dialect xml files. The filename has to match the supported systems defined in `com.oltpbenchmark.types.DatabaseType`.
 * `procedures` - The implementations for all of the transaction types in the benchmark.
+
+After you created a new benchmark, register it in `Bechmarks.java`

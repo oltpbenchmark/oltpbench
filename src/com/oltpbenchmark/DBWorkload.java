@@ -44,6 +44,7 @@ import com.oltpbenchmark.api.BenchmarkModule;
 import com.oltpbenchmark.api.TransactionType;
 import com.oltpbenchmark.api.TransactionTypes;
 import com.oltpbenchmark.api.Worker;
+import com.oltpbenchmark.benchmarks.Benchmarks;
 import com.oltpbenchmark.types.DatabaseType;
 import com.oltpbenchmark.util.ClassUtil;
 import com.oltpbenchmark.util.FileUtil;
@@ -80,20 +81,14 @@ public class DBWorkload {
         
         // create the command line parser
         CommandLineParser parser = new PosixParser();
-        XMLConfiguration pluginConfig=null;
-        try {
-            pluginConfig = new XMLConfiguration("config/plugin.xml");
-        } catch (ConfigurationException e1) {
-            LOG.info("Plugin configuration file config/plugin.xml is missing");
-            e1.printStackTrace();
-        }
-        pluginConfig.setExpressionEngine(new XPathExpressionEngine());
+        // we no longer rely on plugin.xml
+        Benchmarks benchmarks = new Benchmarks();
         Options options = new Options();
         options.addOption(
                 "b",
                 "bench",
                 true,
-                "[required] Benchmark class. Currently supported: "+ pluginConfig.getList("/plugin//@name"));
+                "[required] Benchmark class. Currently supported: "+ benchmarks.workloadsAsList());
         options.addOption(
                 "c", 
                 "config", 
@@ -237,15 +232,15 @@ public class DBWorkload {
             // CREATE BENCHMARK MODULE
             // ----------------------------------------------------------------
 
-            String classname = pluginConfig.getString("/plugin[@name='" + plugin + "']");
-
-            if (classname == null)
-                throw new ParseException("Plugin " + plugin + " is undefined in config/plugin.xml");
-            BenchmarkModule bench = ClassUtil.newInstance(classname,
+            if (!benchmarks.workloads.containsKey(plugin)) {
+                throw new ParseException(plugin + "is not registered in Benchmarks.java");
+            }
+            Class<? extends BenchmarkModule> cls = benchmarks.workloads.get(plugin);
+            BenchmarkModule bench = ClassUtil.newInstance(cls,
                                                           new Object[] { wrkld },
                                                           new Class<?>[] { WorkloadConfiguration.class });
             Map<String, Object> initDebug = new ListOrderedMap<String, Object>();
-            initDebug.put("Benchmark", String.format("%s {%s}", plugin.toUpperCase(), classname));
+            initDebug.put("Benchmark", String.format("%s {%s}", plugin.toUpperCase(), cls.getCanonicalName()));
             initDebug.put("Configuration", configFile);
             initDebug.put("Type", wrkld.getDBType());
             initDebug.put("Driver", wrkld.getDBDriver());
