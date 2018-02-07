@@ -9,6 +9,17 @@ popd > /dev/null
 ORIGINAL_WD=${PWD}
 cd ${SCRIPTPATH}
 
-java -Xmx8G -cp `./classpath.sh bin` -Dlog4j.configuration=log4j.properties com.oltpbenchmark.DBWorkload $@
+
+docker-compose -f ${DB}.yml up -d
+
+if [ "$DB" == 'mysql' ]; then
+    sleep 10
+elif [ "$DB" == 'cassandra' ]; then
+    sleep 15
+else
+    sleep 5
+fi
+
+./create_db.py --bench ${BENCH} --db ${DB}
 
 cd ${ORIGINAL_WD}

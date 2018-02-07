@@ -1,0 +1,15 @@
+# docker-compose up
+# docker-compose down
+version: '3'
+services:
+  # https://hub.docker.com/r/memsql/quickstart/
+  # https://github.com/memsql/memsql-docker-quickstart
+  memsql:
+    image: "memsql/quickstart:${MEMSQL_VERSION:-6.0.14}"
+    environment:
+      # root user is just root
+      - MYSQL_ROOT_PASSWORD=oltpbenchpassword
+    ports:
+      # NOTE: may need to remove local mysql unless you change the port
+      # https://askubuntu.com/questions/172514/how-do-i-uninstall-mysql
+      - "3306:3306" # guest host

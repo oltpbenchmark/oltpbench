@@ -1,0 +1,10 @@
+# docker-compose up
+# docker-compose down
+version: '3'
+services:
+  # https://hub.docker.com/r/pingcap/tidb/
+  tidb:
+    image: "pingcap/tidb:${TIDB_VERSION:-v1.0.7}"
+    # environment:
+    ports:
+      - "4000:4000" # guest host
