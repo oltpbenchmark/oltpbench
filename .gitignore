@@ -20,3 +20,11 @@ results
 
 # maven output
 target
+
+# IDE
+.idea
+*.iml
+.vscode
+
+# Mac
+.DS_Store
