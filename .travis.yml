@@ -18,7 +18,7 @@ env:
   - BENCH=tpcc DB=mysql
   - BENCH=tpcc DB=postgres
   - BENCH=tpcc DB=tidb
-  - BENCH=tpcc DB=memsql
+#  - BENCH=tpcc DB=memsql # FIXME: too many errors that exceeded travis log limit (4MB)
 # --- end tpcc with different databases ---
 # --- begin benchmarks using mysql ---
   - BENCH=auctionmark DB=mysql 
