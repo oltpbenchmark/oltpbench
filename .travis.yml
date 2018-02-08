@@ -21,11 +21,11 @@ env:
   # - BENCH=tpcc DB=memsql
 # --- end tpcc with different databases ---
 # --- begin benchmarks using mysql ---
-  # - BENCH=auctionmark DB=mysql 
-  - BENCH=chbenchmark DB=mysql
+  - BENCH=auctionmark DB=mysql 
+  # - BENCH=chbenchmark DB=mysql # FIXME: too many error https://travis-ci.org/benchhub/oltpbench/jobs/338773148
   - BENCH=epinions DB=mysql
   # - BENCH=hyadapt DB=mysql # TODO: no config
-  - BENCH=jpab DB=mysql
+  # - BENCH=jpab DB=mysql # TODO: no ddl
   - BENCH=linkbench DB=mysql
   - BENCH=noop DB=mysql
   - BENCH=resourcestresser DB=mysql
