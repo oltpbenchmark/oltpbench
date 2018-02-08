@@ -14,25 +14,36 @@ addons:
 # TODO: build matrix for different database and benchmarks
 # https://docs.travis-ci.com/user/environment-variables/#Defining-Multiple-Variables-per-Item
 env:
+# --- begin tpcc with different databases ---
   - BENCH=tpcc DB=mysql
   - BENCH=tpcc DB=postgres
-  - BENCH=tpcc DB=tidb
+  # - BENCH=tpcc DB=tidb
   # - BENCH=tpcc DB=memsql
-  - BENCH=epinions DB=mysql
-  - BENCH=tatp DB=mysql
-  - BENCH=ycsb DB=mysql
-  - BENCH=voter DB=mysql
+# --- end tpcc with different databases ---
+# --- begin benchmarks using mysql ---
   # - BENCH=auctionmark DB=mysql 
-  - BENCH=wikipedia DB=mysql
+  - BENCH=chbenchmark DB=mysql
+  - BENCH=epinions DB=mysql
+  # - BENCH=hyadapt DB=mysql # TODO: no config
+  - BENCH=jpab DB=mysql
+  - BENCH=linkbench DB=mysql
+  - BENCH=noop DB=mysql
+  - BENCH=resourcestresser DB=mysql
   - BENCH=seats DB=mysql
   - BENCH=sibench DB=mysql
-  - BENCH=noop DB=mysql
   - BENCH=smallbank DB=mysql
-  - BENCH=twitter DB=mysql
-  - BENCH=resourcestresser DB=mysql
+  - BENCH=tatp DB=mysql
+  # - BENCH=tpcc DB=mysql # dup
+  # - BENCH=tpch DB=mysql # TODO: require db gen
+  # - BENCH=tpcds DB=mysql # TODO: wonder how it worked, it didn't update plugin.xml when we were still using it
+  - BENCH=twitter DB=mysql # TODO: move traces location
+  - BENCH=voter DB=mysql
+  - BENCH=wikipedia DB=mysql
+  - BENCH=ycsb DB=mysql
+# --- end benchmarks using mysql --- 
+# --- begin other databases ---
   - BENCH=ycsb DB=cassandra
-  # - BENCH=TPCH DB=mysql
-  # - BENCH=TPCH DB=postgres
+# --- end other databases ---
 # https://stackoverflow.com/questions/34377017/what-are-the-differences-between-the-before-install-script-travis-yml-opti
 before_install:
   - python3 --version
