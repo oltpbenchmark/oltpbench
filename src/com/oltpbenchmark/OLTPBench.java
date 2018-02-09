@@ -36,9 +36,9 @@ public class OLTPBench extends OLTPBenchMethods {
 
             try {
                 pluginConfig = new XMLConfiguration("config/plugin.xml");
-            } catch (ConfigurationException var19) {
+            } catch (ConfigurationException ex) {
                 LOG.info("Plugin configuration file config/plugin.xml is missing");
-                var19.printStackTrace();
+                ex.printStackTrace();
             }
 
             pluginConfig.setExpressionEngine(new XPathExpressionEngine());
