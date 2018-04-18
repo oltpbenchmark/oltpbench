@@ -301,7 +301,7 @@ CREATE TABLE ITEM_BID (
 //    FOREIGN KEY (ib_i_id, ib_u_id) REFERENCES ITEM (i_id, i_u_id) ON DELETE CASCADE,
     PRIMARY KEY (ib_id, ib_i_id, ib_u_id)
 );
-
+CREATE INDEX IDX_ITEM_BID ON ITEM_BID (ib_i_id, ib_u_id);
 -- ================================================================
 -- ITEM_MAX_BID
 -- Cross-reference table to the current max bid for an auction
