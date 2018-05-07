@@ -1,0 +1,14 @@
+# docker-compose up
+# docker-compose down
+version: '3'
+services:
+  # https://hub.docker.com/_/postgres/
+  postgres:
+    image: "postgres:${POSTGRES_VERSION:-10.1}"
+    environment:
+      - POSTGRES_PASSWORD=oltpbenchpassword
+      - POSTGRES_USER=oltpbench
+      # allow passwordless shell https://stackoverflow.com/questions/9736085/run-a-postgresql-sql-file-using-command-line-arguments
+      - PGPASSWORD=oltpbenchpassword
+    ports:
+      - "5432:5432" # guest host

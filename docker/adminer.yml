@@ -1,0 +1,9 @@
+# docker-compose up
+# docker-compose down
+version: '3'
+services:
+  # an ancient UI, back in the old days when PHP was cloud native and serverless
+  adminer:
+    image: "adminer"
+    ports:
+      - "8080:8080" # guest host

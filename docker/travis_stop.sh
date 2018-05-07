@@ -9,6 +9,6 @@ popd > /dev/null
 ORIGINAL_WD=${PWD}
 cd ${SCRIPTPATH}
 
-java -Xmx8G -cp `./classpath.sh bin` -Dlog4j.configuration=log4j.properties com.oltpbenchmark.DBWorkload $@
+docker-compose -f ${DB}.yml down
 
 cd ${ORIGINAL_WD}

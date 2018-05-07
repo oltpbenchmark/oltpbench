@@ -1,0 +1,10 @@
+# docker-compose up
+# docker-compose down
+version: '3'
+services:
+  # https://hub.docker.com/_/cassandra/
+  cassandra:
+    image: "cassandra:${CASSANDRA_VERSION:-3.11}"
+#    environment:
+    ports:
+      - "9042:9042" # guest host

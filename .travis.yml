@@ -1,168 +1,69 @@
-dist: trusty
+git:
+  depth: 3
 sudo: required
-group: deprecated-2017Q2
-
-# lib contains jar files to support running tests
-cache:
-  directories:
-    - lib
-
-language: java
+services:
+  - docker
+language: java # default is oracle JDK 1.8.0_151
 jdk:
   - oraclejdk8
-  - openjdk8
-
-# oraclejdk9 failures - https://github.com/oltpbenchmark/oltpbench/issues/137
-#matrix:
-#  allow_failures:
-#    - jdk: oraclejdk9
-
-# Currently oraclejdk8 is mapped to DB=mysql and the
-# others are DB=postgres.
-#
-# a test env of: - DB=mysql  TEST=tatp
-# duplicated for postgres would of been nice however
-# attempting to limit non-junit tests to single jdk with
-# matrix:
-#   exclude:
-#     - jdk: oraclejdk8
-#       env: DB=mysql
-#     - jdk: oraclejdk9
-#       env: DB=mysql
-#     - jdk: oraclejdk8
-#       env: DB=postgres
-#     - jdk: oraclejdk9
-#       env: DB=postgres
-# Failed to exclude any elements.
-
-# Possibilities for future:
-# matrix:
-#   include:
-#    - addons:
-#      mariadb: 5.5
-#    - addons:
-#      mariadb: 10.0
-#    - addons:
-#      mariadb: 10.1
-#    - addons:
-#      mariadb: 10.2
-#    - addons:
-#      postgresql: 9.4
-#    - addons:
-#      postgresql: 9.5
-#    - addons:
-#      postgresql: 9.6
-##    - addons:
-##      postgresql: 9.7
-# https://docs.travis-ci.com/user/database-setup/#Using-a-different-PostgreSQL-Version
-# MariaDB wasn't supported on trusty-containers at time of writing
-# This syntax may not be correct.
-
 addons:
-  postgresql: 9.6
-
+  apt:
+    packages:
+      - "python3"
+      - "python3-pip"
+# TODO: build matrix for different database and benchmarks
+# https://docs.travis-ci.com/user/environment-variables/#Defining-Multiple-Variables-per-Item
 env:
-  - TEST=junit
-  - TEST=epinions
-  - TEST=tatp
-  - TEST=tpcc
-  - TEST=voter
-  - TEST=auctionmark
-  - TEST=wikipedia
-  - TEST=ycsb
-  - TEST=seats
-  - TEST=sibench
-  - TEST=noop
-  - TEST=smallbank
-  - TEST=twitter
-  - TEST=resourcestresser
-
-# Missing loader com.oltpbenchmark.benchmarks.resourcestresser.ResourceStresserBenchmark.makeLoaderImpl(ResourceStresserBenchmark.java:58)
-# -> org.apache.commons.lang.NotImplementedException: Code is not implemented
-#  - TEST=resourcestresser
-
-# Missing sample config file
-#  - TEST=chbenchmark
-#
-# Missing sample config
-#  - TEST=hyadapt
-#
-# Not fully implemented
-#  - TEST=jpab
-#
-# Works only for MySQL at this time
-#  - TEST=linkbench
-#
-
-# While mariadb addon isn't used. Remove if using a addon: mariadb
-services:
-  - mysql
-
-# Increase the size of ramdisk on sudo enabled infrastructure
-# https://github.com/travis-ci/travis-ci/issues/9036#issuecomment-357189213
+# --- begin tpcc with different databases ---
+  - BENCH=tpcc DB=mysql
+  - BENCH=tpcc DB=postgres
+  - BENCH=tpcc DB=tidb
+#  - BENCH=tpcc DB=memsql # FIXME: too many errors that exceeded travis log limit (4MB)
+# --- end tpcc with different databases ---
+# --- begin benchmarks using mysql ---
+  - BENCH=auctionmark DB=mysql 
+  # - BENCH=chbenchmark DB=mysql # FIXME: too many error https://travis-ci.org/benchhub/oltpbench/jobs/338773148
+  - BENCH=epinions DB=mysql
+  # - BENCH=hyadapt DB=mysql # TODO: no config
+  # - BENCH=jpab DB=mysql # TODO: no ddl
+  - BENCH=linkbench DB=mysql
+  - BENCH=noop DB=mysql
+  - BENCH=resourcestresser DB=mysql
+  - BENCH=seats DB=mysql
+  - BENCH=sibench DB=mysql
+  - BENCH=smallbank DB=mysql
+  - BENCH=tatp DB=mysql
+  # - BENCH=tpcc DB=mysql # dup
+  # - BENCH=tpch DB=mysql # TODO: require db gen
+  # - BENCH=tpcds DB=mysql # TODO: wonder how it worked, it didn't update plugin.xml when we were still using it
+  - BENCH=twitter DB=mysql # TODO: move traces location
+  - BENCH=voter DB=mysql
+  - BENCH=wikipedia DB=mysql
+  - BENCH=ycsb DB=mysql
+# --- end benchmarks using mysql --- 
+# --- begin other databases ---
+  - BENCH=ycsb DB=cassandra
+# --- end other databases ---
+# https://stackoverflow.com/questions/34377017/what-are-the-differences-between-the-before-install-script-travis-yml-opti
 before_install:
-  - sudo mount -o remount,size=50% /var/ramfs
-
+  - python3 --version
+  - sudo pip3 install pyyaml
+  - java -version
+  - docker version
+  - docker-compose version
+  # check if common ports are already in use, travis starts a bunch of DBMS by default ....
+  - sudo netstat -nlp | grep :3306
+  - sudo netstat -nlp | grep :5432
+  - sudo service mysql stop
+  - sudo service postgresql stop
+# https://docs.travis-ci.com/user/database-setup/#Multiple-Database-Builds
 install:
-  - echo $TRAVIS_JDK_VERSION
-  - if [ $TRAVIS_JDK_VERSION == oraclejdk8 ]; then
-      DB=mysql ;
-    else
-      DB=postgres ;
-    fi
-  - if [ $DB == mysql ]; then mysql -e "SELECT VERSION()";
-      mysql -e "CREATE DATABASE IF NOT EXISTS ${TEST}" ;
-      mysql -e "CREATE USER 'travis'@'localhost' IDENTIFIED BY 'travis'; GRANT ALL ON *.* TO 'travis'@'localhost'";
-    elif [ $DB == postgres ]; then psql -c "SELECT VERSION()" -U travis;
-      psql -c "create database $TEST" -U postgres ;
-      psql -c "ALTER USER CURRENT_USER WITH PASSWORD 'travis'" -U travis;
-    fi
-
-# MySQL create user is probably one of the trust-container bugs for MySQL
-# Will probably need the following to set a password
-
-# We pass a password here as <password></password> sends no password in the protocol
-# rather than the blank one and therefore fails on MySQL.
-
+  - ant build
+  - ./docker/travis_start.sh
 before_script:
-  - if [ $DB == mysql ]; then
-      URLBASE=jdbc:mysql://localhost:3306 ;
-      DRIVER=com.mysql.jdbc.Driver ;
-      TYPE=mysql ;
-    elif [ $DB == postgres ]; then
-      URLBASE=jdbc:postgresql://localhost:5432 ;
-      DRIVER=org.postgresql.Driver ;
-      TYPE=postgres ;
-    fi
-
+  - ./config/config.py validate
 script:
-  - SCALEFACTOR=0.5
-  - if [ $TEST == junit ]; then
-      ant junit;
-    else
-      ant build;
-      config=config/sample_${TEST}_config.xml ;
-      sed -i
-           -e "/<dbtype>/c\<dbtype>${TYPE}</dbtype>"
-           -e "/<driver>/c\<driver>${DRIVER}</driver>"
-           -e "/<DBUrl>/c\<DBUrl>${URLBASE}/${TEST}</DBUrl>"
-           -e '/<username>/c\<username>travis</username>'
-           -e '/<password>/c\<password>travis</password>'
-           -e "/<scalefactor>/c\\<scalefactor>${SCALEFACTOR}</scalefactor>"
-           -e '/<terminals>/c\<terminals>3</terminals>'
-           -e '/<time>/c\<time>60</time>'
-           -e '/<isolation>/c\<isolation>TRANSACTION_READ_COMMITTED</isolation>'
-           "${config}";
-      ./oltpbenchmark --bench "${TEST}" --config "${config}"  --create true    --load true   --execute true ;
-    fi
-
-
-# With tests, scalefactor and terminals are just to reduce load on travis
-# isolation READ_COMMITTED as the TRANSACTIONAL default caused too many failures for now.
-
+  - ./config/config.py generate --bench ${BENCH} --db ${DB} --scalefactor 1
+  - ./oltpbenchmark --bench ${BENCH} --config config/generated_${BENCH}_${DB}_config.xml --create true --load true --execute true
 after_script:
-  - if [ $DB == mysql ]; then
-      mysql -e "DROP DATABASE IF EXISTS ${TEST}" ;
-    elif [ $DB == postgres ]; then
-      psql -c "DROP DATABASE IF EXISTS ${TEST}" -U postgres ;
-    fi
+  - ./docker/travis_stop.sh
