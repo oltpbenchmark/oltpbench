@@ -68,7 +68,7 @@ public class Q15 extends GenericQuery {
         // With this query, we have to set up a view before we execute the
         // query, then drop it once we're done.
         Statement stmt = conn.createStatement();
-        PreparedStatement ps;
+        String sql;
         ResultSet ret = null;
         try {
             // DATE is the first day of a randomly selected month between
@@ -77,14 +77,13 @@ public class Q15 extends GenericQuery {
             int month = rand.number(1, year == 1997 ? 10 : 12);
             String date = String.format("%d-%02d-01", year, month);
 
-            ps = this.getPreparedStatement(conn, createview_stmt);
-            ps.setString(1, date);
-            ps.setString(2, date);
-            stmt.execute(ps.toString());
+            sql = createview_stmt.getSQL();
+            sql = sql.replace("?", String.format("'%s'", date));
+            stmt.execute(sql);
             ret = super.run(conn, rand);
         } finally {
-            ps = this.getPreparedStatement(conn, dropview_stmt);
-            stmt.execute(ps.toString());
+            sql = dropview_stmt.getSQL();
+            stmt.execute(sql);
         }
 
         return ret;
