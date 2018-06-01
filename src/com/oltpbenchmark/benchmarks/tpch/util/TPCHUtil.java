@@ -31,4 +31,85 @@ public class TPCHUtil {
         return array[rand.number(1, array.length) - 1];
     }
 
+    /**
+     * Returns the region key given the nation
+     * @param nation N_NAME
+     * @return region key
+     */
+    public static int getRegionKeyFromNation(String nation) {
+        switch (nation) {
+            case "ALGERIA":
+            case "ETHIOPIA":
+            case "KENYA":
+            case "MOROCCO":
+            case "MOZAMBIQUE":
+                return 0;
+            case "ARGENTINA":
+            case "BRAZIL":
+            case "CANADA":
+            case "PERU":
+            case "UNITED STATES":
+                return 1;
+            case "INDIA":
+            case "INDONESIA":
+            case "JAPAN":
+            case "CHINA":
+            case "VIETNAM":
+                return 2;
+            case "FRANCE":
+            case "GERMANY":
+            case "ROMANIA":
+            case "RUSSIA":
+            case "UNITED KINGDOM":
+                return 3;
+            case "EGYPT":
+            case "IRAN":
+            case "IRAQ":
+            case "JORDAN":
+            case "SAUDI ARABIA":
+                return 4;
+            default:
+                throw new IllegalArgumentException(String.format("Invalid nation %s", nation));
+        }
+    }
+
+    /**
+     * Returns the region key given the region
+     * @param region R_NAME
+     * @return region key
+     */
+    public static int getRegionKeyFromRegion(String region) {
+        switch (region) {
+            case "AFRICA":
+                return 0;
+            case "AMERICA":
+                return 1;
+            case "ASIA":
+                return 2;
+            case "EUROPE":
+                return 3;
+            case "MIDDLE EAST":
+                return 4;
+            default:
+                throw new IllegalArgumentException(String.format("Invalid region %s", region));
+        }
+    }
+
+    /**
+     * Returns the region given the region key
+     * @param regionKey region key
+     * @return region
+     */
+    public static String getRegionFromRegionKey(int regionKey) {
+        switch (regionKey) {
+            case 0: return "AFRICA";
+            case 1: return "AMERICA";
+            case 2: return "ASIA";
+            case 3: return "EUROPE";
+            case 4: return "MIDDLE EAST";
+            default:
+                throw new IllegalArgumentException(String.format("Invalid region key %s", regionKey));
+        }
+    }
+
 }

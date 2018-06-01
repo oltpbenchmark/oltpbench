@@ -17,6 +17,11 @@
 package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.util.RandomGenerator;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class Q10 extends GenericQuery {
 
@@ -38,8 +43,8 @@ public class Q10 extends GenericQuery {
             + "where "
             +     "c_custkey = o_custkey "
             +     "and l_orderkey = o_orderkey "
-            +     "and o_orderdate >= date '1994-12-01' "
-            +     "and o_orderdate < date '1994-12-01' + interval '3' month "
+            +     "and o_orderdate >= date ? "
+            +     "and o_orderdate < date ? + interval '3' month "
             +     "and l_returnflag = 'R' "
             +     "and c_nationkey = n_nationkey "
             + "group by "
@@ -54,7 +59,16 @@ public class Q10 extends GenericQuery {
             +     "revenue desc"
         );
 
-    protected SQLStmt get_query() {
-        return query_stmt;
+    @Override
+    protected PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException {
+        // DATE is the first day of a randomly selected month from the second month of 1993 to the first month of 1995
+        int year = rand.number(1993, 1995);
+        int month = rand.number(year == 1993 ? 2 : 1, year == 1995 ? 1 : 12);
+        String date = String.format("%d-%d-01", year, month);
+
+        PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
+        stmt.setString(1, date);
+        stmt.setString(2, date);
+        return stmt;
     }
 }

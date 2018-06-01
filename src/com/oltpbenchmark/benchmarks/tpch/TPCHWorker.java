@@ -27,10 +27,12 @@ import com.oltpbenchmark.util.RandomGenerator;
 
 public class TPCHWorker extends Worker<TPCHBenchmark> {
 
-    private final RandomGenerator rand = new RandomGenerator(this.rng().nextInt());
+    private final RandomGenerator rand;
 
     public TPCHWorker(TPCHBenchmark benchmarkModule, int id) {
         super(benchmarkModule, id);
+        this.rng().setSeed(15721);
+        rand = new RandomGenerator(this.rng().nextInt());
     }
 
     @Override

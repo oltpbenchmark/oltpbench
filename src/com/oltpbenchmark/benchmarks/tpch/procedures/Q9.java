@@ -17,6 +17,13 @@
 package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHConstants;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHUtil;
+import com.oltpbenchmark.util.RandomGenerator;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class Q9 extends GenericQuery {
 
@@ -45,7 +52,7 @@ public class Q9 extends GenericQuery {
             +             "and p_partkey = l_partkey "
             +             "and o_orderkey = l_orderkey "
             +             "and s_nationkey = n_nationkey "
-            +             "and p_name like '%royal%' "
+            +             "and p_name like ? "
             +     ") as profit "
             + "group by "
             +     "nation, "
@@ -55,7 +62,13 @@ public class Q9 extends GenericQuery {
             +     "o_year desc"
         );
 
-    protected SQLStmt get_query() {
-        return query_stmt;
+    @Override
+    protected PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException {
+        // COLOR is randomly selected within the list of values defined for the generation of P_NAME in Clause 4.2.3
+        String color = TPCHUtil.choice(TPCHConstants.P_NAME_GENERATOR, rand);
+
+        PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
+        stmt.setString(1, color);
+        return stmt;
     }
 }

@@ -17,6 +17,13 @@
 package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHConstants;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHUtil;
+import com.oltpbenchmark.util.RandomGenerator;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class Q7 extends GenericQuery {
 
@@ -47,8 +54,8 @@ public class Q7 extends GenericQuery {
             +             "and s_nationkey = n1.n_nationkey "
             +             "and c_nationkey = n2.n_nationkey "
             +             "and ( "
-            +                 "(n1.n_name = 'MOZAMBIQUE' and n2.n_name = 'CANADA') "
-            +                 "or (n1.n_name = 'CANADA' and n2.n_name = 'MOZAMBIQUE') "
+            +                 "(n1.n_name = ? and n2.n_name = ?) "
+            +                 "or (n1.n_name = ? and n2.n_name = ?) "
             +             ") "
             +             "and l_shipdate between date '1995-01-01' and date '1996-12-31' "
             +     ") as shipping "
@@ -62,7 +69,23 @@ public class Q7 extends GenericQuery {
             +     "l_year"
         );
 
-    protected SQLStmt get_query() {
-        return query_stmt;
+    @Override
+    protected PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException {
+        // NATION1 is randomly selected within the list of values defined for N_NAME in Clause 4.2.3
+        String nation1 = TPCHUtil.choice(TPCHConstants.N_NAME, rand);
+
+        // NATION2 is randomly selected within the list of values defined for N_NAME in Clause 4.2.3
+        // and must be different from the value selected for NATION1 in item 1 above
+        String nation2 = nation1;
+        while (nation2.equals(nation1)) {
+            nation2 = TPCHUtil.choice(TPCHConstants.N_NAME, rand);
+        }
+
+        PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
+        stmt.setString(1, nation1);
+        stmt.setString(2, nation2);
+        stmt.setString(3, nation2);
+        stmt.setString(4, nation1);
+        return stmt;
     }
 }

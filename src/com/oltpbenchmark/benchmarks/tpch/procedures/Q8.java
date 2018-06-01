@@ -17,6 +17,13 @@
 package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHConstants;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHUtil;
+import com.oltpbenchmark.util.RandomGenerator;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class Q8 extends GenericQuery {
 
@@ -24,7 +31,7 @@ public class Q8 extends GenericQuery {
               "select "
             +     "o_year, "
             +     "sum(case "
-            +         "when nation = 'CANADA' then volume "
+            +         "when nation = ? then volume "
             +         "else 0 "
             +     "end) / sum(volume) as mkt_share "
             + "from "
@@ -49,10 +56,10 @@ public class Q8 extends GenericQuery {
             +             "and o_custkey = c_custkey "
             +             "and c_nationkey = n1.n_nationkey "
             +             "and n1.n_regionkey = r_regionkey "
-            +             "and r_name = 'AMERICA' "
+            +             "and r_name = ? "
             +             "and s_nationkey = n2.n_nationkey "
             +             "and o_orderdate between date '1995-01-01' and date '1996-12-31' "
-            +             "and p_type = 'ECONOMY POLISHED STEEL' "
+            +             "and p_type = ? "
             +     ") as all_nations "
             + "group by "
             +     "o_year "
@@ -60,7 +67,26 @@ public class Q8 extends GenericQuery {
             +     "o_year"
         );
 
-    protected SQLStmt get_query() {
-        return query_stmt;
+    @Override
+    protected PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException {
+        // NATION is randomly selected within the list of values defined for N_NAME in Clause 4.2.3
+        String nation = TPCHUtil.choice(TPCHConstants.N_NAME, rand);
+
+        // REGION is the value defined in Clause 4.2.3 for R_NAME where R_REGIONKEY corresponds to
+        // N_REGIONKEY for the selected NATION in item 1 above
+        int n_regionkey = TPCHUtil.getRegionKeyFromNation(nation);
+        String region = TPCHUtil.getRegionFromRegionKey(n_regionkey);
+
+        // TYPE is randomly selected within the list of 3-syllable strings defined for Types in Clause 4.2.2.13
+        String syllable1 = TPCHUtil.choice(TPCHConstants.SYLLABLE_1, rand);
+        String syllable2 = TPCHUtil.choice(TPCHConstants.SYLLABLE_2, rand);
+        String syllable3 = TPCHUtil.choice(TPCHConstants.SYLLABLE_3, rand);
+        String type = String.format("%s %s %s", syllable1, syllable2, syllable3);
+
+        PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
+        stmt.setString(1, nation);
+        stmt.setString(2, region);
+        stmt.setString(3, type);
+        return stmt;
     }
 }
