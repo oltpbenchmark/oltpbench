@@ -78,9 +78,9 @@ public class Q8 extends GenericQuery {
         String region = TPCHUtil.getRegionFromRegionKey(n_regionkey);
 
         // TYPE is randomly selected within the list of 3-syllable strings defined for Types in Clause 4.2.2.13
-        String syllable1 = TPCHUtil.choice(TPCHConstants.SYLLABLE_1, rand);
-        String syllable2 = TPCHUtil.choice(TPCHConstants.SYLLABLE_2, rand);
-        String syllable3 = TPCHUtil.choice(TPCHConstants.SYLLABLE_3, rand);
+        String syllable1 = TPCHUtil.choice(TPCHConstants.TYPE_S1, rand);
+        String syllable2 = TPCHUtil.choice(TPCHConstants.TYPE_S2, rand);
+        String syllable3 = TPCHUtil.choice(TPCHConstants.TYPE_S3, rand);
         String type = String.format("%s %s %s", syllable1, syllable2, syllable3);
 
         PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);

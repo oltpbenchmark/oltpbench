@@ -17,6 +17,15 @@
 package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHConstants;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHUtil;
+import com.oltpbenchmark.util.RandomGenerator;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Q16 extends GenericQuery {
 
@@ -31,9 +40,9 @@ public class Q16 extends GenericQuery {
             +     "part "
             + "where "
             +     "p_partkey = ps_partkey "
-            +     "and p_brand <> 'Brand#41' "
-            +     "and p_type not like 'ECONOMY BURNISHED%' "
-            +     "and p_size in (22, 33, 42, 5, 27, 49, 4, 18) "
+            +     "and p_brand <> ? "
+            +     "and p_type not like ? "
+            +     "and p_size in (?, ?, ?, ?, ?, ?, ?, ?) "
             +     "and ps_suppkey not in ( "
             +         "select "
             +             "s_suppkey "
@@ -53,7 +62,42 @@ public class Q16 extends GenericQuery {
             +     "p_size"
         );
 
-    protected SQLStmt get_query() {
-        return query_stmt;
+    @Override
+    protected PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException {
+        // BRAND = Brand#MN where M and N are two single character strings representing two numbers randomly and
+        // independently selected within [1 .. 5];
+        int M = rand.number(1, 5);
+        int N = rand.number(1, 5);
+        String brand = String.format("BRAND#%d%d", M, N);
+
+        // TYPE is made of the first 2 syllables of a string randomly selected within the
+        // list of 3-syllable strings defined for Types in Clause 4.2.2.13
+        String syllable1 = TPCHUtil.choice(TPCHConstants.TYPE_S1, rand);
+        String syllable2 = TPCHUtil.choice(TPCHConstants.TYPE_S2, rand);
+        String type = String.format("%s %s", syllable1, syllable2) + "%";
+
+        // SIZE_n is randomly selected as a set of eight different values within [1 .. 50]
+        // for n in [1,8]
+        int[] sizes = new int[8];
+        Set<Integer> seen = new HashSet<>(8);
+
+        for (int i = 0; i < 8; i++) {
+            int num = rand.number(1, 50);
+
+            while (seen.contains(num)) {
+                num = rand.number(1, 50);
+            }
+
+            sizes[i] = num;
+            seen.add(num);
+        }
+
+        PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
+        stmt.setString(1, brand);
+        stmt.setString(2, type);
+        for (int i = 0; i < 8; i++) {
+            stmt.setInt(3 + i, sizes[i]);
+        }
+        return stmt;
     }
 }

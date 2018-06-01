@@ -17,6 +17,13 @@
 package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHConstants;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHUtil;
+import com.oltpbenchmark.util.RandomGenerator;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class Q11 extends GenericQuery {
 
@@ -36,7 +43,7 @@ public class Q11 extends GenericQuery {
             +     "ps_partkey having "
             +         "sum(ps_supplycost * ps_availqty) > ( "
             +             "select "
-            +                 "sum(ps_supplycost * ps_availqty) * 0.0000003333 "
+            +                 "sum(ps_supplycost * ps_availqty) * ? "
             +             "from "
             +                 "partsupp, "
             +                 "supplier, "
@@ -44,13 +51,24 @@ public class Q11 extends GenericQuery {
             +             "where "
             +                 "ps_suppkey = s_suppkey "
             +                 "and s_nationkey = n_nationkey "
-            +                 "and n_name = 'ETHIOPIA' "
+            +                 "and n_name = ? "
             +         ") "
             + "order by "
             +     "value desc"
         );
 
-    protected SQLStmt get_query() {
-        return query_stmt;
+    @Override
+    protected PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException {
+        // NATION is randomly selected within the list of values defined for N_NAME in Clause 4.2.3
+        String nation = TPCHUtil.choice(TPCHConstants.N_NAME, rand);
+
+        // FRACTION is chosen as 0.0001 / SF
+        // TODO: we should technically pass dbgen's SF down here somehow
+        double fraction = 0.0001;
+
+        PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
+        stmt.setDouble(1, fraction);
+        stmt.setString(2, nation);
+        return stmt;
     }
 }

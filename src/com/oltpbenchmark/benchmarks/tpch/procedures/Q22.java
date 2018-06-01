@@ -17,6 +17,13 @@
 package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.util.RandomGenerator;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Q22 extends GenericQuery {
 
@@ -34,7 +41,7 @@ public class Q22 extends GenericQuery {
             +             "customer "
             +         "where "
             +             "substring(c_phone from 1 for 2) in "
-            +                 "('20', '32', '44', '33', '29', '22', '31') "
+            +                 "(?, ?, ?, ?, ?, ?, ?) "
             +             "and c_acctbal > ( "
             +                 "select "
             +                     "avg(c_acctbal) "
@@ -43,7 +50,7 @@ public class Q22 extends GenericQuery {
             +                 "where "
             +                     "c_acctbal > 0.00 "
             +                     "and substring(c_phone from 1 for 2) in "
-            +                         "('20', '32', '44', '33', '29', '22', '31') "
+            +                         "(?, ?, ?, ?, ?, ?, ?) "
             +             ") "
             +             "and not exists ( "
             +                 "select "
@@ -60,7 +67,37 @@ public class Q22 extends GenericQuery {
             +     "cntrycode"
         );
 
-    protected SQLStmt get_query() {
-        return query_stmt;
+    @Override
+    protected PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException {
+        // I1 … I7 are randomly selected without repetition from the possible values
+        // for Country code as defined in Clause 4.2.2.9
+
+        // We are given
+        //      Let i be an index into the list of strings Nations
+        //          (i.e., ALGERIA is 0, ARGENTINA is 1, etc., see Clause 4.2.3),
+        //      Let country_code be the sub-string representation of the number (i + 10)
+        // There are 25 nations, hence country_code ranges from [10, 34]
+
+        Set<Integer> seen = new HashSet<>(7);
+        int[] codes = new int[7];
+        for (int i = 0; i < 7; i++) {
+            int num = rand.number(10, 34);
+
+            while (seen.contains(num)) {
+                num = rand.number(10, 34);
+            }
+
+            codes[i] = num;
+            seen.add(num);
+        }
+
+        PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
+        for (int i = 0; i < 7; i++) {
+            stmt.setInt(1 + i, codes[i]);
+        }
+        for (int i = 0; i < 7; i++) {
+            stmt.setInt(8 + i, codes[i]);
+        }
+        return stmt;
     }
 }

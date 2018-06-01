@@ -17,6 +17,13 @@
 package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHConstants;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHUtil;
+import com.oltpbenchmark.util.RandomGenerator;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class Q17 extends GenericQuery {
 
@@ -28,8 +35,8 @@ public class Q17 extends GenericQuery {
             +     "part "
             + "where "
             +     "p_partkey = l_partkey "
-            +     "and p_brand = 'Brand#14' "
-            +     "and p_container = 'MED BOX' "
+            +     "and p_brand = ? "
+            +     "and p_container = ? "
             +     "and l_quantity < ( "
             +         "select "
             +             "0.2 * avg(l_quantity) "
@@ -40,7 +47,23 @@ public class Q17 extends GenericQuery {
             +     ")"
         );
 
-    protected SQLStmt get_query() {
-        return query_stmt;
+    @Override
+    protected PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException {
+        // BRAND = 'Brand#MN' where MN is a two character string representing two numbers randomly and independently
+        // selected within [1 .. 5]
+        int M = rand.number(1, 5);
+        int N = rand.number(1, 5);
+        String brand = String.format("BRAND#%d%d", M, N);
+
+        // CONTAINER is randomly selected within the list of 2-syllable strings defined for Containers in Clause
+        // 4.2.2.13
+        String containerS1 = TPCHUtil.choice(TPCHConstants.CONTAINERS_S1, rand);
+        String containerS2 = TPCHUtil.choice(TPCHConstants.CONTAINERS_S2, rand);
+        String container = String.format("%s %s", containerS1, containerS2);
+
+        PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
+        stmt.setString(1, brand);
+        stmt.setString(2, container);
+        return stmt;
     }
 }

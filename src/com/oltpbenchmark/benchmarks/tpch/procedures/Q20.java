@@ -17,6 +17,13 @@
 package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHConstants;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHUtil;
+import com.oltpbenchmark.util.RandomGenerator;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class Q20 extends GenericQuery {
 
@@ -40,7 +47,7 @@ public class Q20 extends GenericQuery {
             +                 "from "
             +                     "part "
             +                 "where "
-            +                     "p_name like 'orange%' "
+            +                     "p_name like ? "
             +             ") "
             +             "and ps_availqty > ( "
             +                 "select "
@@ -50,17 +57,33 @@ public class Q20 extends GenericQuery {
             +                 "where "
             +                     "l_partkey = ps_partkey "
             +                     "and l_suppkey = ps_suppkey "
-            +                     "and l_shipdate >= date '1997-01-01' "
-            +                     "and l_shipdate < date '1997-01-01' + interval '1' year "
+            +                     "and l_shipdate >= date ? "
+            +                     "and l_shipdate < date ? + interval '1' year "
             +             ") "
             +     ") "
             +     "and s_nationkey = n_nationkey "
-            +     "and n_name = 'ALGERIA' "
+            +     "and n_name = ? "
             + "order by "
             +     "s_name"
         );
 
-    protected SQLStmt get_query() {
-        return query_stmt;
+    @Override
+    protected PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException {
+        // COLOR is randomly selected within the list of values defined for the generation of P_NAME
+        String color = TPCHUtil.choice(TPCHConstants.P_NAME_GENERATOR, rand) + "%";
+
+        // DATE is the first of January of a randomly selected year within 1993..1997
+        int year = rand.number(1993, 1997);
+        String date = String.format("%d-01-01", year);
+
+        // NATION is randomly selected within the list of values defined for N_NAME in Clause 4.2.3
+        String nation = TPCHUtil.choice(TPCHConstants.N_NAME, rand);
+
+        PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
+        stmt.setString(1, color);
+        stmt.setString(2, date);
+        stmt.setString(3, date);
+        stmt.setString(4, nation);
+        return stmt;
     }
 }

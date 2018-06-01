@@ -17,6 +17,13 @@
 package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHConstants;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHUtil;
+import com.oltpbenchmark.util.RandomGenerator;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class Q12 extends GenericQuery {
 
@@ -40,18 +47,38 @@ public class Q12 extends GenericQuery {
             +     "lineitem "
             + "where "
             +     "o_orderkey = l_orderkey "
-            +     "and l_shipmode in ('AIR', 'REG AIR') "
+            +     "and l_shipmode in (?, ?) "
             +     "and l_commitdate < l_receiptdate "
             +     "and l_shipdate < l_commitdate "
-            +     "and l_receiptdate >= date '1997-01-01' "
-            +     "and l_receiptdate < date '1997-01-01' + interval '1' year "
+            +     "and l_receiptdate >= date ? "
+            +     "and l_receiptdate < date ? + interval '1' year "
             + "group by "
             +     "l_shipmode "
             + "order by "
             +     "l_shipmode"
         );
 
-    protected SQLStmt get_query() {
-        return query_stmt;
+    @Override
+    protected PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException {
+        // SHIPMODE1 is randomly selected within the list of values defined for Modes in Clause 4.2.2.13
+        String shipMode1 = TPCHUtil.choice(TPCHConstants.MODES, rand);
+
+        // SHIPMODE2 is randomly selected within the list of values defined for Modes in Clause 4.2.2.13 and must be
+        // different from the value selected for SHIPMODE1 in item 1
+        String shipMode2 = shipMode1;
+        while (shipMode1.equals(shipMode2)) {
+            shipMode2 = TPCHUtil.choice(TPCHConstants.MODES, rand);
+        }
+
+        // DATE is the first of January of a randomly selected year within [1993 .. 1997]
+        int year = rand.number(1993, 1997);
+        String date = String.format("%d-01-01", year);
+
+        PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
+        stmt.setString(1, shipMode1);
+        stmt.setString(2, shipMode2);
+        stmt.setString(3, date);
+        stmt.setString(4, date);
+        return stmt;
     }
 }

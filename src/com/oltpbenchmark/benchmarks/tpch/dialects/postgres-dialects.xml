@@ -156,5 +156,112 @@
                      revenue desc
             </statement>
         </procedure>
+
+        <procedure name="Q12">
+            <statement name="query_stmt">
+                select
+                     l_shipmode,
+                     sum(case
+                         when o_orderpriority = '1-URGENT'
+                             or o_orderpriority = '2-HIGH'
+                             then 1
+                         else 0
+                     end) as high_line_count,
+                     sum(case
+                         when o_orderpriority &lt;> '1-URGENT'
+                             and o_orderpriority &lt;> '2-HIGH'
+                             then 1
+                         else 0
+                     end) as low_line_count
+                from
+                    orders,
+                    lineitem
+                where
+                    o_orderkey = l_orderkey
+                    and l_shipmode in (?, ?)
+                    and l_commitdate &lt; l_receiptdate and l_shipdate &lt; l_commitdate and l_receiptdate >= ?::date
+                    and l_receiptdate &lt; ?::date + interval '1' year
+                group by
+                    l_shipmode
+                order by
+                    l_shipmode
+            </statement>
+        </procedure>
+
+        <procedure name="Q14">
+            <statement name="query_stmt">
+                select
+                     100.00 * sum(case
+                         when p_type like 'PROMO%'
+                            then l_extendedprice * (1 - l_discount)
+                        else 0
+                    end) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue
+                from
+                    lineitem,
+                    part
+                where
+                    l_partkey = p_partkey
+                    and l_shipdate >= ?::date
+                    and l_shipdate &lt; ?::date + interval '1' month
+            </statement>
+        </procedure>
+
+        <procedure name="Q15">
+            <statement name="createview_stmt">
+                create view revenue0 (supplier_no, total_revenue) as
+                    select
+                        l_suppkey,
+                        sum(l_extendedprice * (1 - l_discount))
+                    from
+                        lineitem
+                    where
+                        l_shipdate >= ?::date
+                        and l_shipdate &lt; ?::date + interval '3' month
+                    group by
+                        l_suppkey
+            </statement>
+        </procedure>
+
+        <procedure name="Q20">
+            <statement name="query_stmt">
+                select
+                    s_name,
+                    s_address
+                from
+                    supplier,
+                    nation
+                where
+                    s_suppkey in (
+                        select
+                            ps_suppkey
+                        from
+                            partsupp
+                        where
+                            ps_partkey in (
+                                select
+                                    p_partkey
+                                from
+                                    part
+                                where
+                                    p_name like ?
+                            )
+                            and ps_availqty > (
+                                select
+                                    0.5 * sum(l_quantity)
+                                from
+                                    lineitem
+                                where
+                                    l_partkey = ps_partkey
+                                    and l_suppkey = ps_suppkey
+                                    and l_shipdate >= ?::date
+                                    and l_shipdate &lt; ?::date + interval '1' year
+                            )
+                    )
+                    and s_nationkey = n_nationkey
+                    and n_name = ?
+                order by
+                    s_name
+            </statement>
+        </procedure>
     </dialect>
 </dialects>

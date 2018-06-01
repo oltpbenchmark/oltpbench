@@ -58,7 +58,7 @@ public class Q3 extends GenericQuery {
 
         // date must be randomly selected between [1995-03-01, 1995-03-31]
         int day = rand.number(1, 31);
-        String date = String.format("1995-03-%d", day);
+        String date = String.format("1995-03-%02d", day);
 
         PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
         stmt.setString(1, segment);

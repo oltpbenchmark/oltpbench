@@ -17,6 +17,13 @@
 package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHConstants;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHUtil;
+import com.oltpbenchmark.util.RandomGenerator;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class Q21 extends GenericQuery {
 
@@ -54,7 +61,7 @@ public class Q21 extends GenericQuery {
             +             "and l3.l_receiptdate > l3.l_commitdate "
             +     ") "
             +     "and s_nationkey = n_nationkey "
-            +     "and n_name = 'SAUDI ARABIA' "
+            +     "and n_name = ? "
             + "group by "
             +     "s_name "
             + "order by "
@@ -62,7 +69,13 @@ public class Q21 extends GenericQuery {
             +     "s_name"
         );
 
-    protected SQLStmt get_query() {
-        return query_stmt;
+    @Override
+    protected PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException {
+        // NATION is randomly selected within the list of values defined for N_NAME in Clause 4.2.3
+        String nation = TPCHUtil.choice(TPCHConstants.N_NAME, rand);
+
+        PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
+        stmt.setString(1, nation);
+        return stmt;
     }
 }

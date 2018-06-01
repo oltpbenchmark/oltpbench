@@ -17,6 +17,12 @@
 package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.benchmarks.tpch.util.TPCHUtil;
+import com.oltpbenchmark.util.RandomGenerator;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class Q13 extends GenericQuery {
 
@@ -32,7 +38,7 @@ public class Q13 extends GenericQuery {
             +         "from "
             +             "customer left outer join orders on "
             +                 "c_custkey = o_custkey "
-            +                 "and o_comment not like '%special%deposits%' "
+            +                 "and o_comment not like ? "
             +         "group by "
             +             "c_custkey "
             +     ") as c_orders "
@@ -43,7 +49,18 @@ public class Q13 extends GenericQuery {
             +     "c_count desc"
         );
 
-    protected SQLStmt get_query() {
-        return query_stmt;
+    @Override
+    protected PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException {
+        // WORD1 is randomly selected from 4 possible values: special, pending, unusual, express
+        String word1 = TPCHUtil.choice(new String[]{"special", "pending", "unusual", "express"}, rand);
+
+        // WORD2 is randomly selected from 4 possible values: packages, requests, accounts, deposits
+        String word2 = TPCHUtil.choice(new String[]{"packages", "requests", "accounts", "deposits"}, rand);
+
+        String filter = "%" + word1 + "%" + word2 + "%";
+
+        PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
+        stmt.setString(1, filter);
+        return stmt;
     }
 }

@@ -17,6 +17,11 @@
 package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
+import com.oltpbenchmark.util.RandomGenerator;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class Q14 extends GenericQuery {
 
@@ -32,11 +37,20 @@ public class Q14 extends GenericQuery {
             +     "part "
             + "where "
             +     "l_partkey = p_partkey "
-            +     "and l_shipdate >= date '1997-04-01' "
-            +     "and l_shipdate < date '1997-04-01' + interval '1' month"
+            +     "and l_shipdate >= date ? "
+            +     "and l_shipdate < date ? + interval '1' month"
         );
 
-    protected SQLStmt get_query() {
-        return query_stmt;
+    @Override
+    protected PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException {
+        // DATE is the first day of a month randomly selected from a random year within [1993 .. 1997]
+        int year = rand.number(1993, 1997);
+        int month = rand.number(1, 12);
+        String date = String.format("%d-%02d-01", year, month);
+
+        PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
+        stmt.setString(1, date);
+        stmt.setString(2, date);
+        return stmt;
     }
 }

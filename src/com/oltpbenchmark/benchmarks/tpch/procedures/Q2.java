@@ -76,7 +76,7 @@ public class Q2 extends GenericQuery {
     @Override
     protected PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException {
         int size = rand.number(1, 50);
-        String type = TPCHUtil.choice(TPCHConstants.SYLLABLE_3, rand);
+        String type = TPCHUtil.choice(TPCHConstants.TYPE_S3, rand);
         String region = TPCHUtil.choice(TPCHConstants.R_NAME, rand);
 
         PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);

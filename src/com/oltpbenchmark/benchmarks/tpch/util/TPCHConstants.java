@@ -21,17 +21,26 @@ import java.util.Map;
 
 public class TPCHConstants {
 
+    // 4.2.2.13 CONTAINERS SYLLABLE 1
+    public static final String[] CONTAINERS_S1 = {"SM", "LG", "MED", "JUMBO", "WRAP"};
+
+    // 4.2.2.13 CONTAINERS SYLLABLE 2
+    public static final String[] CONTAINERS_S2 = {"CASE", "BOX", "BAG", "JAR", "PKG", "PACK", "CAN", "DRUM"};
+
+    // 4.2.2.13 MODES
+    public static final String[] MODES = {"REG AIR", "AIR", "RAIL", "SHIP", "TRUCK", "MAIL", "FOB"};
+
     // 4.2.2.13 SEGMENTS
     public static final String[] SEGMENTS = {"AUTOMOBILE", "BUILDING", "FURNITURE", "MACHINERY", "HOUSEHOLD"};
 
-    // 4.2.2.13 SYLLABLE_1
-    public static final String[] SYLLABLE_1 = {"STANDARD", "SMALL", "MEDIUM", "LARGE", "ECONOMY", "PROMO"};
+    // 4.2.2.13 TYPE SYLLABLE 1
+    public static final String[] TYPE_S1 = {"STANDARD", "SMALL", "MEDIUM", "LARGE", "ECONOMY", "PROMO"};
 
-    // 4.2.2.13 SYLLABLE_2
-    public static final String[] SYLLABLE_2 = {"ANODIZED", "BURNISHED", "PLATED", "POLISHED", "BRUSHED"};
+    // 4.2.2.13 TYPE SYLLABLE 2
+    public static final String[] TYPE_S2 = {"ANODIZED", "BURNISHED", "PLATED", "POLISHED", "BRUSHED"};
 
-    // 4.2.2.13 SYLLABLE_3
-    public static final String[] SYLLABLE_3 = {"TIN", "NICKEL", "BRASS", "STEEL", "COPPER"};
+    // 4.2.2.13 TYPE SYLLABLE 3
+    public static final String[] TYPE_S3 = {"TIN", "NICKEL", "BRASS", "STEEL", "COPPER"};
 
     // 4.2.3 N_NAME
     public static final String[] N_NAME = {"ALGERIA", "ARGENTINA", "BRAZIL", "CANADA", "EGYPT", "ETHIOPIA",

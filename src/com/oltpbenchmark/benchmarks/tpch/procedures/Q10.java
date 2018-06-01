@@ -64,7 +64,7 @@ public class Q10 extends GenericQuery {
         // DATE is the first day of a randomly selected month from the second month of 1993 to the first month of 1995
         int year = rand.number(1993, 1995);
         int month = rand.number(year == 1993 ? 2 : 1, year == 1995 ? 1 : 12);
-        String date = String.format("%d-%d-01", year, month);
+        String date = String.format("%d-%02d-01", year, month);
 
         PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
         stmt.setString(1, date);

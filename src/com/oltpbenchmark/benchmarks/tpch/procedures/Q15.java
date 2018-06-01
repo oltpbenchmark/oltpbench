@@ -17,10 +17,9 @@
 package com.oltpbenchmark.benchmarks.tpch.procedures;
 
 import com.oltpbenchmark.api.SQLStmt;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.sql.SQLException;
+import com.oltpbenchmark.util.RandomGenerator;
+
+import java.sql.*;
 
 public class Q15 extends GenericQuery {
 
@@ -32,8 +31,8 @@ public class Q15 extends GenericQuery {
             +     "from "
             +         "lineitem "
             +     "where "
-            +         "l_shipdate >= date '1997-03-01' "
-            +         "and l_shipdate < date '1997-03-01' + interval '3' month "
+            +         "l_shipdate >= date ? "
+            +         "and l_shipdate < date ? + interval '3' month "
             +     "group by "
             +         "l_suppkey"
         );
@@ -64,22 +63,35 @@ public class Q15 extends GenericQuery {
               "drop view revenue0"
         );
 
-    protected SQLStmt get_query() {
-        return query_stmt;
-    }
-
-    public ResultSet run(Connection conn) throws SQLException {
+    @Override
+    public ResultSet run(Connection conn, RandomGenerator rand) throws SQLException {
         // With this query, we have to set up a view before we execute the
         // query, then drop it once we're done.
         Statement stmt = conn.createStatement();
+        PreparedStatement ps;
         ResultSet ret = null;
         try {
-            stmt.executeUpdate(createview_stmt.getSQL());
-            ret = super.run(conn);
+            // DATE is the first day of a randomly selected month between
+            // the first month of 1993 and the 10th month of 1997
+            int year = rand.number(1993, 1997);
+            int month = rand.number(1, year == 1997 ? 10 : 12);
+            String date = String.format("%d-%02d-01", year, month);
+
+            ps = this.getPreparedStatement(conn, createview_stmt);
+            ps.setString(1, date);
+            ps.setString(2, date);
+            stmt.execute(ps.toString());
+            ret = super.run(conn, rand);
         } finally {
-            stmt.executeUpdate(dropview_stmt.getSQL());
+            ps = this.getPreparedStatement(conn, dropview_stmt);
+            stmt.execute(ps.toString());
         }
 
         return ret;
+    }
+
+    @Override
+    protected PreparedStatement getStatement(Connection conn, RandomGenerator rand) throws SQLException {
+        return this.getPreparedStatement(conn, query_stmt);
     }
 }
