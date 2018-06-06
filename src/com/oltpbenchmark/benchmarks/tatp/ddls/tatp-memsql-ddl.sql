@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS SUBSCRIBER;
 CREATE TABLE SUBSCRIBER (
    s_id INTEGER NOT NULL PRIMARY KEY,
-   sub_nbr VARCHAR(15) NOT NULL UNIQUE,
+   sub_nbr VARCHAR(15) NOT NULL,
    bit_1 TINYINT,
    bit_2 TINYINT,
    bit_3 TINYINT,
@@ -33,7 +33,8 @@ CREATE TABLE SUBSCRIBER (
    byte2_9 SMALLINT,
    byte2_10 SMALLINT,
    msc_location INTEGER,
-   vlr_location INTEGER
+   vlr_location INTEGER,
+   UNIQUE (s_id, sub_nbr)
 );
 
 DROP TABLE IF EXISTS ACCESS_INFO;
@@ -44,8 +45,7 @@ CREATE TABLE ACCESS_INFO (
    data2 SMALLINT,
    data3 VARCHAR(3),
    data4 VARCHAR(5),
-   PRIMARY KEY(s_id, ai_type),
-   FOREIGN KEY (s_id) REFERENCES SUBSCRIBER (s_id)
+   PRIMARY KEY(s_id, ai_type)
 );
 
 DROP TABLE IF EXISTS SPECIAL_FACILITY;
@@ -56,8 +56,7 @@ CREATE TABLE SPECIAL_FACILITY (
    error_cntrl SMALLINT,
    data_a SMALLINT,
    data_b VARCHAR(5),
-   PRIMARY KEY (s_id, sf_type),
-   FOREIGN KEY (s_id) REFERENCES SUBSCRIBER (s_id)
+   PRIMARY KEY (s_id, sf_type)
 );
 
 DROP TABLE IF EXISTS CALL_FORWARDING;
@@ -67,7 +66,7 @@ CREATE TABLE CALL_FORWARDING (
    start_time TINYINT NOT NULL,
    end_time TINYINT,
    numberx VARCHAR(15),
-   PRIMARY KEY (s_id, sf_type, start_time),
-   FOREIGN KEY (s_id, sf_type) REFERENCES SPECIAL_FACILITY(s_id, sf_type)
+   PRIMARY KEY (s_id, sf_type, start_time)
 );
+
 CREATE INDEX IDX_CF ON CALL_FORWARDING (S_ID);
