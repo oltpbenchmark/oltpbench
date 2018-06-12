@@ -66,9 +66,14 @@ public class Q11 extends GenericQuery {
         // TODO: we should technically pass dbgen's SF down here somehow
         double fraction = 0.0001;
 
+        String sql = query_stmt.getSQL();
+        String hack = sql;
+        hack = hack.replaceFirst("\\?", String.valueOf(fraction));
+        query_stmt.setSQL(hack);
+
         PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
-        stmt.setDouble(1, fraction);
-        stmt.setString(2, nation);
+        //stmt.setDouble(1, fraction);
+        stmt.setString(1, nation);
         return stmt;
     }
 }

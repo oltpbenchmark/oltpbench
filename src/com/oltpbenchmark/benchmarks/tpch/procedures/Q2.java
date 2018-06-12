@@ -79,11 +79,15 @@ public class Q2 extends GenericQuery {
         String type = TPCHUtil.choice(TPCHConstants.TYPE_S3, rand);
         String region = TPCHUtil.choice(TPCHConstants.R_NAME, rand);
 
+        String sql = query_stmt.getSQL();
+        String hack = sql.replaceFirst("\\?", String.valueOf(size));
+        query_stmt.setSQL(hack);
+
         PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
-        stmt.setInt(1, size);
-        stmt.setString(2, "%" + type);
+        //stmt.setInt(1, size);
+        stmt.setString(1, "%" + type);
+        stmt.setString(2, region);
         stmt.setString(3, region);
-        stmt.setString(4, region);
         return stmt;
     }
 }

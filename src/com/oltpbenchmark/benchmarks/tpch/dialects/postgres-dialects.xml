@@ -114,9 +114,9 @@
                 from
                      lineitem
                 where
-                     l_shipdate >= ?::date
-                     and l_shipdate &lt; ?::date + interval '1' year
-                     and l_discount between ?::decimal - 0.01 and ?::decimal + 0.01
+                     l_shipdate >= date '?'
+                     and l_shipdate &lt; date '?' + interval '1' year
+                     and l_discount between ? - 0.01 and ? + 0.01
                      and l_quantity &lt; ?
             </statement>
         </procedure>
@@ -215,8 +215,8 @@
                     from
                         lineitem
                     where
-                        l_shipdate >= ?::date
-                        and l_shipdate &lt; ?::date + interval '3' month
+                        l_shipdate >= date ?
+                        and l_shipdate &lt; date ? + interval '3' month
                     group by
                         l_suppkey
             </statement>

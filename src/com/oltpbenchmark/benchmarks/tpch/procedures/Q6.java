@@ -49,12 +49,20 @@ public class Q6 extends GenericQuery {
         // QUANTITY is randomly selected within [24 .. 25]
         int quantity = rand.number(24, 25);
 
+        String sql = query_stmt.getSQL();
+        String hack = sql;
+        hack = hack.replaceFirst("\\?", date);
+        hack = hack.replaceFirst("\\?", date);
+        hack = hack.replaceFirst("\\?", discount);
+        hack = hack.replaceFirst("\\?", discount);
+        query_stmt.setSQL(hack);
+
         PreparedStatement stmt = this.getPreparedStatement(conn, query_stmt);
-        stmt.setString(1, date);
-        stmt.setString(2, date);
-        stmt.setString(3, discount);
-        stmt.setString(4, discount);
-        stmt.setInt(5, quantity);
+        //stmt.setString(1, date);
+        //stmt.setString(2, date);
+        //stmt.setString(3, discount);
+        //stmt.setString(4, discount);
+        stmt.setInt(1, quantity);
         return stmt;
     }
 }

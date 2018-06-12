@@ -80,6 +80,7 @@ public class Q15 extends GenericQuery {
             sql = createview_stmt.getSQL();
             sql = sql.replace("?", String.format("'%s'", date));
             stmt.execute(sql);
+            conn.commit();
             ret = super.run(conn, rand);
         } finally {
             sql = dropview_stmt.getSQL();
