@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
@@ -43,7 +44,8 @@ import java.util.regex.Pattern;
 import org.apache.log4j.Logger;
 
 import com.oltpbenchmark.api.Loader;
-import com.oltpbenchmark.api.Loader.LoaderThread;
+import com.oltpbenchmark.benchmarks.tpch.util.CopyUtil;
+import com.oltpbenchmark.types.DatabaseType;
 
 public class TPCHLoader extends Loader<TPCHBenchmark> {
     private static final Logger LOG = Logger.getLogger(TPCHLoader.class);
@@ -171,6 +173,48 @@ public class TPCHLoader extends Loader<TPCHBenchmark> {
 
     @Override
     public void load() throws SQLException {
+        DatabaseType dbType = workConf.getDBType();
+        String[] copySQL = null;
+
+        switch (dbType) {
+            case PELOTON: {
+                copySQL = CopyUtil.copyPELOTON(workConf);
+                break;
+            }
+            case POSTGRES: {
+                copySQL = CopyUtil.copyPOSTGRES(workConf, conn, LOG);
+                break;
+            }
+            case MYSQL: {
+                copySQL = CopyUtil.copyMYSQL(workConf);
+                break;
+            }
+            case MEMSQL: {
+                copySQL = CopyUtil.copyMEMSQL(workConf);
+                break;
+            }
+            default:
+                // not sure what they support, we'll manually insert
+        }
+
+        try {
+            if (copySQL != null) {
+                // we should support COPY, use it and return
+                Statement stmt = conn.createStatement();
+                for (String sql : copySQL) {
+                    LOG.info(String.format("Executing %s", sql));
+                    stmt.execute(sql);
+                }
+                LOG.info("Finished loading");
+                return;
+            } else {
+                LOG.info("No COPY support detected. Loading with INSERT.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            LOG.error("Something bad happened. Loading with INSERT.");
+        }
+
         try {
             customerPrepStmt = conn.prepareStatement("INSERT INTO customer "
                     + "(c_custkey, c_name, c_address, c_nationkey,"
