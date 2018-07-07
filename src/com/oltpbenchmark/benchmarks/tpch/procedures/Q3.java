@@ -50,7 +50,8 @@ public class Q3 extends GenericQuery {
             +     "o_shippriority "
             + "order by "
             +     "revenue desc, "
-            +     "o_orderdate"
+            +     "o_orderdate "
+            + "limit 10"
         );
 
     @Override

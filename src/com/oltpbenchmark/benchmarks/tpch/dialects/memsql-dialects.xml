@@ -49,6 +49,7 @@
                 order by
                     revenue desc,
                     o_orderdate
+                limit 10
             </statement>
         </procedure>
 
@@ -240,6 +241,7 @@
                      c_comment
                 order by
                      revenue desc
+                limit 20
             </statement>
         </procedure>
 
