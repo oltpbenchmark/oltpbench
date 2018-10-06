@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<parameters>
+	
+    <!-- Connection details -->
+    <dbtype>saphana</dbtype>
+    <driver>com.sap.db.jdbc.Driver</driver>
+    <DBUrl>jdbc:sap://ottertune-dev.pdl.cmu.edu:39015/tpcc</DBUrl>
+    <username>SYSTEM</username>
+    <password>1234Aa*-</password>
+    <isolation>TRANSACTION_READ_COMMITTED</isolation>
+    
+    <!-- Scale factor is the number of warehouses in TPCC -->
+    <scalefactor>16</scalefactor>
+    
+    <!-- The workload -->
+    <terminals>32</terminals>
+    <works>
+        <work>
+          <time>300</time>
+          <rate>unlimited</rate>
+          <weights>45,43,4,4,4</weights>
+        </work>
+    </works>
+	
+	<!-- TPCC specific -->  
+   	<transactiontypes>
+    	<transactiontype>
+    		<name>NewOrder</name>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>Payment</name>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>OrderStatus</name>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>Delivery</name>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>StockLevel</name>
+    	</transactiontype>
+   	</transactiontypes>	
+</parameters>
