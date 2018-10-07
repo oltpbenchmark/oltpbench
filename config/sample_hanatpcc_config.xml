@@ -2,18 +2,18 @@
 <parameters>
 	
     <!-- Connection details -->
-    <dbtype>saphana</dbtype>
+    <dbtype>hana</dbtype>
     <driver>com.sap.db.jdbc.Driver</driver>
-    <DBUrl>jdbc:sap://ottertune-dev.pdl.cmu.edu:39015/tpcc</DBUrl>
-    <username>SYSTEM</username>
-    <password>1234Aa*-</password>
+    <DBUrl>jdbc:sap://server:39015/tpcc</DBUrl>
+    <username>user</username>
+    <password>password</password>
     <isolation>TRANSACTION_READ_COMMITTED</isolation>
     
     <!-- Scale factor is the number of warehouses in TPCC -->
     <scalefactor>16</scalefactor>
     
     <!-- The workload -->
-    <terminals>32</terminals>
+    <terminals>64</terminals>
     <works>
         <work>
           <time>300</time>
