@@ -48,7 +48,6 @@ dependencies {
     implementation 'org.slf4j:slf4j-simple:1.7.5'
     implementation 'org.xerial:sqlite-jdbc:3.7.2' // was 3.6.20.1, but that's not in central.
 
-//  compile fileTree(dir: 'lib', include: ['*.jar'])
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
 }
@@ -99,5 +98,14 @@ test {
 
 application {
   mainClassName = 'com.oltpbenchmark.DBWorkload'
-//  applicationDefaultJvmArgs = ["-Dlog4j.configuration=${basedir}/log4j.properties"]
+  applicationName = 'oltpbenchmark'
+  applicationDefaultJvmArgs = ["-Dlog4j.configuration=log4j.properties"]
+}
+
+applicationDistribution.from("config") {
+    into "config"
+}
+
+installDist {
+  into 'dist/'
 }
