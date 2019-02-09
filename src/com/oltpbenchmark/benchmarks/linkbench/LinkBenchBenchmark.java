@@ -44,18 +44,19 @@ public class LinkBenchBenchmark extends BenchmarkModule {
     private static final Logger LOG = Logger.getLogger(LinkBenchBenchmark.class);
     private LinkBenchConfiguration linkBenchConf;
     private Properties props;
+    private Random masterRandom;
 
     public LinkBenchBenchmark(WorkloadConfiguration workConf) throws Exception {
         super("linkbench", workConf, true);
         this.linkBenchConf = new LinkBenchConfiguration(workConf);
         props = new Properties();
         props.load(new FileInputStream(this.linkBenchConf.getConfigFile()));
+        masterRandom = createMasterRNG(props, LinkBenchConstants.REQUEST_RANDOM_SEED);
     }
 
     @Override
     protected List<Worker<? extends BenchmarkModule>> makeWorkersImpl(boolean verbose) throws IOException {
         List<Worker<? extends BenchmarkModule>> workers = new ArrayList<Worker<? extends BenchmarkModule>>();
-        Random masterRandom = createMasterRNG(props, LinkBenchConstants.REQUEST_RANDOM_SEED);
         for (int i = 0; i < workConf.getTerminals(); ++i) {
             workers.add(new LinkBenchWorker(this, i, new Random(masterRandom.nextLong()), props, workConf.getTerminals()));
         } // FOR
@@ -64,7 +65,7 @@ public class LinkBenchBenchmark extends BenchmarkModule {
 
     @Override
     protected Loader<LinkBenchBenchmark> makeLoaderImpl(Connection conn) throws SQLException {
-        return new LinkBenchLoader(this, conn);
+        return new LinkBenchLoader(this, props, conn, new Random(masterRandom.nextLong()));
     }
 
     @Override
