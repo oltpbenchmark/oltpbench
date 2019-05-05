@@ -116,6 +116,11 @@
       <version>1.0.0</version>
     </dependency>
     <dependency>
+      <groupId>com.oracle</groupId>
+      <artifactId>ojdbc14</artifactId>
+      <version>10.2.0.4.0</version>
+    </dependency>
+    <dependency>
       <groupId>org.hibernate.javax.persistence</groupId>
       <artifactId>hibernate-jpa-2.0-api</artifactId>
       <version>1.0.1.Final</version>
