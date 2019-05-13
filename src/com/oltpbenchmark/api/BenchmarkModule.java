@@ -319,9 +319,9 @@ public abstract class BenchmarkModule {
                 // PAVLO: 2016-12-23
                 // We are going to eventually migrate everything over to use the
                 // same API for creating multi-threaded loaders. For now we will support
-                // both. So if createLoaderTheads() returns null, we will use the old load()
+                // both. So if createLoaderThreads() returns null, we will use the old load()
                 // method.
-                List<? extends LoaderThread> loaderThreads = loader.createLoaderTheads();
+                List<? extends LoaderThread> loaderThreads = loader.createLoaderThreads();
                 assert(loaderThreads != null);
                 int maxConcurrent = workConf.getLoaderThreads();
                 assert(maxConcurrent > 0);

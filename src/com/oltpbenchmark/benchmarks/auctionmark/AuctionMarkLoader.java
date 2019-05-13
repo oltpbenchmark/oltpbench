@@ -156,7 +156,6 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
     // -----------------------------------------------------------------
     // LOADING METHODS
     // -----------------------------------------------------------------
-
     private class CountdownLoaderThread extends LoaderThread {
         private final AbstractTableGenerator generator;
         private final CountDownLatch latch;

@@ -105,7 +105,7 @@ public abstract class Loader<T extends BenchmarkModule> {
      *  
      * @return The list of LoaderThreads the framework will launch.
      */
-    public abstract List<LoaderThread> createLoaderTheads() throws SQLException;
+    public abstract List<LoaderThread> createLoaderThreads() throws SQLException;
 
     public void setTableCount(String tableName, int size) {
         this.tableSizes.set(tableName, size);

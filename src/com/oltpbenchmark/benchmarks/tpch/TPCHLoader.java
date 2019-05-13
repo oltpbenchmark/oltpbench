@@ -35,6 +35,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -165,65 +166,63 @@ public class TPCHLoader extends Loader<TPCHBenchmark> {
     
     @Override
     public List<LoaderThread> createLoaderThreads() throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
-    }
+        List<LoaderThread> threads = new ArrayList<LoaderThread>();
 
-    @Override
-    public void load() throws SQLException {
-        try {
-            customerPrepStmt = conn.prepareStatement("INSERT INTO customer "
-                    + "(c_custkey, c_name, c_address, c_nationkey,"
-                    + " c_phone, c_acctbal, c_mktsegment, c_comment ) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        threads.add(new LoaderThread() {
+            @Override
+            public void load(Connection conn) {
+                try {
+                    customerPrepStmt = conn.prepareStatement("INSERT INTO customer "
+                            + "(c_custkey, c_name, c_address, c_nationkey,"
+                            + " c_phone, c_acctbal, c_mktsegment, c_comment ) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
 
-            lineitemPrepStmt = conn.prepareStatement("INSERT INTO lineitem "
-                    + "(l_orderkey, l_partkey, l_suppkey, l_linenumber,"
-                    + " l_quantity, l_extendedprice, l_discount, l_tax,"
-                    + " l_returnflag, l_linestatus, l_shipdate, l_commitdate,"
-                    + " l_receiptdate, l_shipinstruct, l_shipmode, l_comment) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    lineitemPrepStmt = conn.prepareStatement("INSERT INTO lineitem "
+                            + "(l_orderkey, l_partkey, l_suppkey, l_linenumber,"
+                            + " l_quantity, l_extendedprice, l_discount, l_tax,"
+                            + " l_returnflag, l_linestatus, l_shipdate, l_commitdate,"
+                            + " l_receiptdate, l_shipinstruct, l_shipmode, l_comment) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-            nationPrepStmt = conn.prepareStatement("INSERT INTO nation "
-                    + "(n_nationkey, n_name, n_regionkey, n_comment) "
-                    + "VALUES (?, ?, ?, ?)");
+                    nationPrepStmt = conn.prepareStatement("INSERT INTO nation "
+                            + "(n_nationkey, n_name, n_regionkey, n_comment) "
+                            + "VALUES (?, ?, ?, ?)");
 
-            ordersPrepStmt = conn.prepareStatement("INSERT INTO orders "
-                    + "(o_orderkey, o_custkey, o_orderstatus, o_totalprice,"
-                    + " o_orderdate, o_orderpriority, o_clerk, o_shippriority,"
-                    + " o_comment) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    ordersPrepStmt = conn.prepareStatement("INSERT INTO orders "
+                            + "(o_orderkey, o_custkey, o_orderstatus, o_totalprice,"
+                            + " o_orderdate, o_orderpriority, o_clerk, o_shippriority,"
+                            + " o_comment) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-            partPrepStmt = conn.prepareStatement("INSERT INTO part "
-                    + "(p_partkey, p_name, p_mfgr, p_brand, p_type,"
-                    + " p_size, p_container, p_retailprice, p_comment) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    partPrepStmt = conn.prepareStatement("INSERT INTO part "
+                            + "(p_partkey, p_name, p_mfgr, p_brand, p_type,"
+                            + " p_size, p_container, p_retailprice, p_comment) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-            partsuppPrepStmt = conn.prepareStatement("INSERT INTO partsupp "
-                    + "(ps_partkey, ps_suppkey, ps_availqty, ps_supplycost,"
-                    + " ps_comment) "
-                    + "VALUES (?, ?, ?, ?, ?)");
+                    partsuppPrepStmt = conn.prepareStatement("INSERT INTO partsupp "
+                            + "(ps_partkey, ps_suppkey, ps_availqty, ps_supplycost,"
+                            + " ps_comment) "
+                            + "VALUES (?, ?, ?, ?, ?)");
 
-            regionPrepStmt = conn.prepareStatement("INSERT INTO region "
-                    + " (r_regionkey, r_name, r_comment) "
-                    + "VALUES (?, ?, ?)");
+                    regionPrepStmt = conn.prepareStatement("INSERT INTO region "
+                            + " (r_regionkey, r_name, r_comment) "
+                            + "VALUES (?, ?, ?)");
 
-            supplierPrepStmt = conn.prepareStatement("INSERT INTO supplier "
-                    + "(s_suppkey, s_name, s_address, s_nationkey, s_phone,"
-                    + " s_acctbal, s_comment) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?)");
+                    supplierPrepStmt = conn.prepareStatement("INSERT INTO supplier "
+                            + "(s_suppkey, s_name, s_address, s_nationkey, s_phone,"
+                            + " s_acctbal, s_comment) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?)");
 
-        } catch (SQLException se) {
-            LOG.debug(se.getMessage());
-            conn.rollback();
+                    loadHelper();
+                    conn.commit();
+                } catch (Exception ex) {
+                    throw new RuntimeException("Failed to load database", ex);
+                }
+            }
+        });
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            conn.rollback();
-        } // end try
+        return (threads);
 
-        loadHelper();
-        conn.commit();
     }
 
     static void truncateTable(String strTable) throws SQLException {

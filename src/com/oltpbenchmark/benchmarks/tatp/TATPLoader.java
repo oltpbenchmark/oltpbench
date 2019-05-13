@@ -35,7 +35,8 @@ public class TATPLoader extends Loader<TATPBenchmark> {
     private static final Logger LOG = Logger.getLogger(TATPLoader.class);
     
     private final long subscriberSize;
-    
+    private final int batchSize = 100; // FIXME
+
     public TATPLoader(TATPBenchmark benchmark, Connection c) {
     	super(benchmark, c);
     	this.subscriberSize = Math.round(TATPConstants.DEFAULT_NUM_SUBSCRIBERS * this.scaleFactor);

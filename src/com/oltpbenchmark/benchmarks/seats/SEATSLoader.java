@@ -21,6 +21,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLDataException;
 import java.sql.SQLException;
+<<<<<<< HEAD
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,6 +35,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
+=======
+import java.util.*;
+import java.util.Map.Entry;
+>>>>>>> 0c2fc63... Cleaning up benchmark loading code. We don't need this for jdk10. It's just a nice thing to do...
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -412,10 +417,7 @@ public class SEATSLoader extends Loader<SEATSBenchmark> {
 
     /**
      * The fixed tables are those that are generated from the static data files
-     * The number of tuples in these tables will not change based on the scale
-     * factor.
-     *
-     * @param catalog_db
+     * The number of tuples in these tables will not change based on the scale factor.
      */
     protected void loadFixedTable(Connection conn, String table_name) {
         LOG.debug(String.format("Loading table '%s' from fixed file", table_name));
@@ -430,10 +432,8 @@ public class SEATSLoader extends Loader<SEATSBenchmark> {
     }
 
     /**
-     * The scaling tables are things that we will scale the number of tuples
-     * based on the given scaling factor at runtime
-     *
-     * @param catalog_db
+     * The scaling tables are things that we will scale the number of tuples based
+     * on the given scaling factor at runtime 
      */
     protected void loadScalingTable(Connection conn, String table_name) {
         try {
@@ -776,8 +776,6 @@ public class SEATSLoader extends Loader<SEATSBenchmark> {
 
         /**
          * Generate a special value for this particular column index
-         *
-         * @param idx
          * @return
          */
         protected abstract Object specialValue(long id, int column_idx);

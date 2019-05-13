@@ -38,15 +38,10 @@ public class NoOpLoader extends Loader<NoOpBenchmark> {
     
     @Override
     public List<LoaderThread> createLoaderThreads() throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public void load() throws SQLException {
         // Nothing to do
         if (LOG.isDebugEnabled())
             LOG.debug("No data is no loaded because there is no table!");
-        
+        return null;
     }
+
 }
