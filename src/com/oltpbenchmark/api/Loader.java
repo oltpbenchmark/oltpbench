@@ -105,24 +105,8 @@ public abstract class Loader<T extends BenchmarkModule> {
      *  
      * @return The list of LoaderThreads the framework will launch.
      */
-    public abstract List<LoaderThread> createLoaderThreads() throws SQLException;
-    
-    /**
-     * This is the old and deprecated way of invoking a loader.
-     * If a benchmark is using createLoaderThreads, then this method will not
-     * be invoked.
-     * 
-     * @throws SQLException
-     */
-    @Deprecated
-    public void load() throws SQLException {
-        List<LoaderThread> threads = this.createLoaderThreads();
-        for (LoaderThread t : threads) {
-            t.run();
-        }
-    }
-    
-    
+    public abstract List<LoaderThread> createLoaderTheads() throws SQLException;
+
     public void setTableCount(String tableName, int size) {
         this.tableSizes.set(tableName, size);
     }

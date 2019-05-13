@@ -41,14 +41,11 @@ public class LinkBenchLoader extends Loader<LinkBenchBenchmark> {
     }
     
     @Override
-    public List<LoaderThread> createLoaderThreads() throws SQLException {
-        // TODO Auto-generated method stub
+
+    public List<LoaderThread> createLoaderTheads() throws SQLException {
+        // NEEDS PORTING
+        // TODO https://github.com/mdcallag/linkbench/blob/master/src/main/java/com/facebook/LinkBench/LinkBenchLoad.java#L99
         return null;
     }
 
-    @Override
-    public void load() throws SQLException {
-        // NEEDS PORTING
-        // TODO https://github.com/mdcallag/linkbench/blob/master/src/main/java/com/facebook/LinkBench/LinkBenchLoad.java#L99
-    }
 }

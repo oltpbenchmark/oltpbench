@@ -57,7 +57,7 @@ public class TwitterLoader extends Loader<TwitterBenchmark> {
     }
 
     @Override
-    public List<LoaderThread> createLoaderThreads() throws SQLException {
+    public List<LoaderThread> createLoaderTheads() throws SQLException {
         List<LoaderThread> threads = new ArrayList<LoaderThread>();
         final int numLoaders = this.benchmark.getWorkloadConfiguration().getLoaderThreads();
         // first we load USERS
@@ -125,7 +125,7 @@ public class TwitterLoader extends Loader<TwitterBenchmark> {
             });
         }
 
-        return threads;
+        return (threads);
     }
 
     /**
