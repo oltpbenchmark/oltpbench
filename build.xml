@@ -20,6 +20,9 @@
         <fileset dir='${lib.dir}'>
             <include name='*.jar' />
             <exclude name='ant.jar' />
+
+            <!-- We need to make sure that we use hsqldb-2 -->
+            <exclude name='hsqldb-1.*.jar'/>
         </fileset>
         <pathelement path="${java.class.path}"/>
     </path>
