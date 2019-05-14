@@ -26,7 +26,6 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-
 import com.oltpbenchmark.WorkloadConfiguration;
 import com.oltpbenchmark.api.BenchmarkModule;
 import com.oltpbenchmark.api.Loader;

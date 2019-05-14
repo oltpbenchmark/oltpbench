@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project basedir="." default="build" name="benchmark">
+<project name="oltpbench" default="build" xmlns:ivy="antlib:org.apache.ivy.ant">
     <property environment="env"/>
     <property name="debuglevel" value="source,lines,vars"/>
-    <property name="javac.target" value="1.7"/>
-    <property name="javac.source" value="1.7"/>
+    <property name="javac.target" value="1.10"/>
+    <property name="javac.source" value="1.10"/>
 
     <!-- *************************************** CONFIGURATION *************************************** -->
     
@@ -44,6 +44,22 @@
             <assertions id="assertions"><disable /></assertions>
         </else>
     </if>
+
+    <!-- ************************************** BOOTSTRAP IVY ************************************** -->
+
+    <!-- You have to invoke this *before* you can download the dependencies -->
+
+    <target name="bootstrap" description="Used to install the ivy task jar">
+        <mkdir dir="${user.home}/.ant/lib"/>
+        <get dest="${user.home}/.ant/lib/ivy.jar"
+             src="http://search.maven.org/remotecontent?filepath=org/apache/ivy/ivy/2.2.0/ivy-2.2.0.jar"/>
+    </target>
+
+    <!-- ************************************* DEPENDENCIES ************************************* -->
+
+    <target name="resolve" description="Retrieve dependencies with ivy">
+        <ivy:retrieve />
+    </target>
 
     <!-- *************************************** BUILDING *************************************** -->
     
