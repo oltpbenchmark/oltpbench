@@ -76,6 +76,7 @@ public abstract class AbstractTestLoader<T extends BenchmarkModule> extends Abst
             Table catalog_tbl = this.catalog.getTable(tableName);
             
             sql = SQLUtil.getCountSQL(this.workConf.getDBType(), catalog_tbl);
+            LOG.info("SQL: " + sql);
             result = stmt.executeQuery(sql);
             assertNotNull(result);
             boolean adv = result.next();

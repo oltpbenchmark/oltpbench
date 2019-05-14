@@ -40,8 +40,7 @@ public abstract class Loader<T extends BenchmarkModule> {
     private static final Logger LOG = Logger.getLogger(Loader.class);
 
     protected final T benchmark;
-    @Deprecated
-    protected Connection conn;
+    private Connection conn;
     protected final WorkloadConfiguration workConf;
     protected final double scaleFactor;
     private final Histogram<String> tableSizes = new Histogram<String>(true);
@@ -63,6 +62,7 @@ public abstract class Loader<T extends BenchmarkModule> {
         public final void run() {
             try {
                 this.load(this.conn);
+                this.conn.commit();
             } catch (SQLException ex) {
                 SQLException next_ex = ex.getNextException();
                 String msg = String.format("Unexpected error when loading %s database",

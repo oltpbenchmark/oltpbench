@@ -34,7 +34,6 @@
 		<dependency org="ch.ethz.ganymed" name="ganymed-ssh2" rev="261" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.commons" name="commons-math3" rev="3.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="commons-cli" name="commons-cli" rev="1.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="javax.jdo" name="jdo2-api" rev="2.3-eb" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.eclipse.persistence" name="org.eclipse.persistence.jpa" rev="2.4.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.hibernate" name="hibernate-core" rev="3.3.0.GA" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.openjpa" name="openjpa-persistence-jdbc" rev="1.0.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
@@ -44,6 +43,9 @@
 		<dependency org="commons-jxpath" name="commons-jxpath" rev="1.3" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="commons-io" name="commons-io" rev="2.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.postgresql" name="postgresql" rev="9.4.1209" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+
+		<dependency org="javax.activation" name="activation" rev="1.1.1"/>
+		<dependency org="javax.jdo" name="jdo2-api" rev="2.3-eb" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="javax.xml.bind" name="jaxb-api" rev="2.3.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="com.sun.xml.bind" name="jaxb-core" rev="2.3.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="com.sun.xml.bind" name="jaxb-impl" rev="2.3.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>

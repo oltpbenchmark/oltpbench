@@ -21,7 +21,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLDataException;
 import java.sql.SQLException;
-<<<<<<< HEAD
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,10 +34,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
-=======
-import java.util.*;
-import java.util.Map.Entry;
->>>>>>> 0c2fc63... Cleaning up benchmark loading code. We don't need this for jdk10. It's just a nice thing to do...
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;

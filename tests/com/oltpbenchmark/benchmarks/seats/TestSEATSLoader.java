@@ -36,7 +36,8 @@ public class TestSEATSLoader extends AbstractTestLoader<SEATSBenchmark> {
     public void testSaveLoadProfile() throws Exception {
         SEATSLoader loader = (SEATSLoader)this.benchmark.makeLoaderImpl(conn);
         assertNotNull(loader);
-        super.testLoad();
+        this.benchmark.createDatabase();
+        this.benchmark.loadDatabase();
 
         SEATSProfile orig = loader.profile;
         assertNotNull(orig);

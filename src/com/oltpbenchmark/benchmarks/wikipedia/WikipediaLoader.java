@@ -148,7 +148,6 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
                     e.printStackTrace();
                     throw new RuntimeException(e);
                 }
-
                 WikipediaLoader.this.loadWatchlist(conn);
             }
         });
@@ -416,7 +415,6 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
      * REVISIONS
      */
     private void loadRevision(Connection conn) throws SQLException {
-
         // TEXT
         Table textTable = this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_TEXT);
         String textSQL = SQLUtil.getInsertSQL(textTable, this.getDatabaseType());
@@ -536,10 +534,11 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
 
         // UPDATE USER
         revTable = this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_USER);
-
         String revTableName = (this.getDatabaseType().shouldEscapeNames()) ? revTable.getEscapedName() : revTable.getName();
-
-        String updateUserSql = "UPDATE " + revTableName + "   SET user_editcount = ?, " + "       user_touched = ? " + " WHERE user_id = ?";
+        String updateUserSql = "UPDATE " + revTableName +
+                "   SET user_editcount = ?, " +
+                "       user_touched = ? " +
+                " WHERE user_id = ?";
         PreparedStatement userUpdate = conn.prepareStatement(updateUserSql);
         batchSize = 0;
         for (int i = 0; i < this.num_users; i++) {
@@ -564,11 +563,14 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
 
         // UPDATE PAGES
         revTable = this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_PAGE);
-
         revTableName = (this.getDatabaseType().shouldEscapeNames()) ? revTable.getEscapedName() : revTable.getName();
-
-        String updatePageSql = "UPDATE " + revTableName + "   SET page_latest = ?, " + "       page_touched = ?, " + "       page_is_new = 0, " + "       page_is_redirect = 0, "
-                + "       page_len = ? " + " WHERE page_id = ?";
+        String updatePageSql = "UPDATE " + revTableName +
+                               "   SET page_latest = ?, " +
+                               "       page_touched = ?, " +
+                               "       page_is_new = 0, " +
+                               "       page_is_redirect = 0, " +
+                               "       page_len = ? " +
+                               " WHERE page_id = ?";
         PreparedStatement pageUpdate = conn.prepareStatement(updatePageSql);
         batchSize = 0;
         for (int i = 0; i < this.num_pages; i++) {

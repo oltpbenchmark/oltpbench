@@ -86,6 +86,8 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
 
     private final Histogram<String> tableSizes = new Histogram<String>();
 
+    private final File category_file;
+
     private boolean fail = false;
 
     // -----------------------------------------------------------------
@@ -984,7 +986,8 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
         public ItemGenerator() throws SQLException {
             super(AuctionMarkConstants.TABLENAME_ITEM,
                   AuctionMarkConstants.TABLENAME_USERACCT,
-                  AuctionMarkConstants.TABLENAME_USERACCT, AuctionMarkConstants.TABLENAME_CATEGORY);
+                  AuctionMarkConstants.TABLENAME_USERACCT,
+                  AuctionMarkConstants.TABLENAME_CATEGORY);
         }
         
         @Override
@@ -1162,7 +1165,8 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
         public ItemAttributeGenerator() throws SQLException {
             super(AuctionMarkConstants.TABLENAME_ITEM_ATTRIBUTE,
                   AuctionMarkConstants.TABLENAME_ITEM,
-                  AuctionMarkConstants.TABLENAME_GLOBAL_ATTRIBUTE_GROUP, AuctionMarkConstants.TABLENAME_GLOBAL_ATTRIBUTE_VALUE);
+                  AuctionMarkConstants.TABLENAME_GLOBAL_ATTRIBUTE_GROUP,
+                  AuctionMarkConstants.TABLENAME_GLOBAL_ATTRIBUTE_VALUE);
         }
         @Override
         public short getElementCounter(LoaderItemInfo itemInfo) {
