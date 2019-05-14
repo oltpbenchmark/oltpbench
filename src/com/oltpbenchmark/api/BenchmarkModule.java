@@ -285,11 +285,16 @@ public abstract class BenchmarkModule {
     }
 
     /**
-     * Invoke this benchmark's database loader
+     * Invoke this benchmark's database loader.
+     * We return the handle to Loader object that we created to do this.
+     * You probably don't need it and can simply ignore. There are some
+     * test cases that use it. That's why it's here.
+     * @return
      */
-    public final void loadDatabase() {
+    public final Loader<? extends BenchmarkModule> loadDatabase() {
+        Loader<? extends BenchmarkModule> loader = null;
         try {
-            Loader<? extends BenchmarkModule> loader = this.makeLoaderImpl();
+            loader = this.makeLoaderImpl();
             if (loader != null) {
                 List<? extends LoaderThread> loaderThreads = loader.createLoaderThreads();
                 assert(loaderThreads != null);
@@ -314,6 +319,7 @@ public abstract class BenchmarkModule {
         if (LOG.isDebugEnabled())
             LOG.debug(String.format("Finished loading the %s database",
                                     this.getBenchmarkName().toUpperCase()));
+        return (loader);
     }
 
     /**

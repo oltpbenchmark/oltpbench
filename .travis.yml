@@ -9,6 +9,10 @@ cache:
 
 language: java
 jdk:
+  - oraclejdk10
+  - openjdk10
+  - oraclejdk9
+  - openjdk9
   - oraclejdk8
   - openjdk8
 
@@ -105,7 +109,7 @@ before_install:
 
 install:
   - echo $TRAVIS_JDK_VERSION
-  - if [ $TRAVIS_JDK_VERSION == oraclejdk8 ]; then
+  - if [ $TRAVIS_JDK_VERSION == oraclejdk10 ]; then
       DB=mysql ;
     else
       DB=postgres ;
@@ -137,7 +141,9 @@ before_script:
 
 script:
   - SCALEFACTOR=0.5
-  - if [ $TEST == junit ]; then
+    ant bootstrap;
+    ant resolve;
+    if [ $TEST == junit ]; then
       ant junit;
     else
       ant build;
