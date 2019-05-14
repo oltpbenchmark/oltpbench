@@ -99,13 +99,13 @@ public class AuctionMarkLoader extends Loader<AuctionMarkBenchmark> {
      * 
      * @param args
      */
-    public AuctionMarkLoader(AuctionMarkBenchmark benchmark, Connection conn) {
-        super(benchmark, conn);
+    public AuctionMarkLoader(AuctionMarkBenchmark benchmark) {
+        super(benchmark);
 
         // BenchmarkProfile
         this.profile = new AuctionMarkProfile(benchmark, benchmark.getRandomGenerator());
 
-        File category_file = new File(benchmark.getDataDir().getAbsolutePath() + "/table.category.gz");
+        this.category_file = new File(benchmark.getDataDir().getAbsolutePath() + "/table.category.gz");
 
         try {
             // ---------------------------

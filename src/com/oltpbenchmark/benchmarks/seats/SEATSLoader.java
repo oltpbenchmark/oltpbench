@@ -108,16 +108,13 @@ public class SEATSLoader extends Loader<SEATSBenchmark> {
     // INITIALIZATION
     // -----------------------------------------------------------------
 
-    public SEATSLoader(SEATSBenchmark benchmark, Connection c) {
-        super(benchmark, c);
-
-        this.rng = benchmark.getRandomGenerator();
-        // TODO: Sync with the base class rng
-        this.profile = new SEATSProfile(benchmark, this.rng);
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("CONSTRUCTOR: " + SEATSLoader.class.getName());
-        }
+    public SEATSLoader(SEATSBenchmark benchmark) {
+    	super(benchmark);
+    	
+    	this.rng = benchmark.getRandomGenerator(); // TODO: Sync with the base class rng
+    	this.profile = new SEATSProfile(benchmark, this.rng);
+    	
+    	if (LOG.isDebugEnabled()) LOG.debug("CONSTRUCTOR: " + SEATSLoader.class.getName());
     }
 
     // -----------------------------------------------------------------

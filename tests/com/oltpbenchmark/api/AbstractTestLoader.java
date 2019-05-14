@@ -61,11 +61,10 @@ public abstract class AbstractTestLoader<T extends BenchmarkModule> extends Abst
         Statement stmt = conn.createStatement();
         ResultSet result = null;
         String sql = null;
-        
-        
+
         // All we really can do here is just invoke the loader 
         // and then check to make sure that our tables aren't empty
-        this.benchmark.loadDatabase(this.conn);
+        this.benchmark.loadDatabase();
         assertFalse("Failed to get table names for " + benchmark.getBenchmarkName().toUpperCase(),
                     this.catalog.getTableNames().isEmpty());
         

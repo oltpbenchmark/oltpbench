@@ -136,13 +136,10 @@ public abstract class BenchmarkModule {
      * configured for you, and the base class will commit+close it once this
      * method returns
      * 
-     * @param conn
-     *            TODO
      * @return TODO
      * @throws SQLException
-     *             TODO
      */
-    protected abstract Loader<? extends BenchmarkModule> makeLoaderImpl(Connection conn) throws SQLException;
+    protected abstract Loader<? extends BenchmarkModule> makeLoaderImpl() throws SQLException;
 
     /**
      * @param txns
@@ -292,29 +289,8 @@ public abstract class BenchmarkModule {
      */
     public final void loadDatabase() {
         try {
-            Connection conn = this.makeConnection();
-            this.loadDatabase(conn);
-            conn.close();
-        } catch (SQLException ex) {
-            throw new RuntimeException(String.format("Unexpected error when trying to load the %s database", this.benchmarkName), ex);
-        }
-    }
-
-    /**
-     * Invoke this benchmark's database loader using the given Connection handle
-     * @param conn
-     */
-    protected final void loadDatabase(final Connection conn) {
-        try {
-            Loader<? extends BenchmarkModule> loader = this.makeLoaderImpl(conn);
+            Loader<? extends BenchmarkModule> loader = this.makeLoaderImpl();
             if (loader != null) {
-                conn.setAutoCommit(false);
-                
-                // PAVLO: 2016-12-23
-                // We are going to eventually migrate everything over to use the
-                // same API for creating multi-threaded loaders. For now we will support
-                // both. So if createLoaderThreads() returns null, we will use the old load()
-                // method.
                 List<? extends LoaderThread> loaderThreads = loader.createLoaderThreads();
                 assert(loaderThreads != null);
                 int maxConcurrent = workConf.getLoaderThreads();
@@ -325,7 +301,6 @@ public abstract class BenchmarkModule {
                                             loader.getClass().getSimpleName(),
                                             maxConcurrent));
                 ThreadUtil.runNewPool(loaderThreads, maxConcurrent);
-                conn.commit();
 
                 if (loader.getTableCounts().isEmpty() == false) {
                     LOG.info("Table Counts:\n" + loader.getTableCounts());
@@ -342,16 +317,15 @@ public abstract class BenchmarkModule {
     }
 
     /**
-     * @param DB_CONN
      * @throws SQLException
      */
     public final void clearDatabase() {
         try {
-            Connection conn = this.makeConnection();
-            Loader<? extends BenchmarkModule> loader = this.makeLoaderImpl(conn);
+            Loader<? extends BenchmarkModule> loader = this.makeLoaderImpl();
             if (loader != null) {
+                Connection conn = this.makeConnection();
                 conn.setAutoCommit(false);
-                loader.unload(this.catalog);
+                loader.unload(conn, this.catalog);
                 conn.commit();
             }
         } catch (SQLException ex) {

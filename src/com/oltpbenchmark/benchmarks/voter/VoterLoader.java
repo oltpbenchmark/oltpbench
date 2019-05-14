@@ -76,8 +76,8 @@ public class VoterLoader extends Loader<VoterBenchmark> {
         "VA","VA","VA","VA","VA","VA","VT","WA","WA","WA","WA","WA","WA","WI","WI",
         "WI","WI","WI","WV","WY"};
 
-    public VoterLoader(VoterBenchmark benchmark, Connection conn) {
-        super(benchmark, conn);
+    public VoterLoader(VoterBenchmark benchmark) {
+        super(benchmark);
     }
 
     @Override

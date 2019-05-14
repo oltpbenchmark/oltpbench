@@ -37,8 +37,8 @@ public class JPABLoader extends Loader<JPABBenchmark> {
 
 
     String persistanceUnit;
-    public JPABLoader(JPABBenchmark benchmark, Connection conn, String persistanceUnit) throws SQLException {
-        super(benchmark, conn);
+    public JPABLoader(JPABBenchmark benchmark, String persistanceUnit) throws SQLException {
+        super(benchmark);
         this.persistanceUnit=persistanceUnit;
     }
     

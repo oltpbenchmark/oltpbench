@@ -36,7 +36,7 @@ public class MockBenchmark extends BenchmarkModule {
         return null;
     }
     @Override
-    protected Loader<MockBenchmark> makeLoaderImpl(Connection conn) throws SQLException {
+    protected Loader<MockBenchmark> makeLoaderImpl() throws SQLException {
         // TODO Auto-generated method stub
         return null;
     }

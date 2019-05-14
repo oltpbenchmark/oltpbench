@@ -34,7 +34,7 @@ public class TestSEATSLoader extends AbstractTestLoader<SEATSBenchmark> {
      * testSaveLoadProfile
      */
     public void testSaveLoadProfile() throws Exception {
-        SEATSLoader loader = (SEATSLoader)this.benchmark.makeLoaderImpl(conn);
+        SEATSLoader loader = (SEATSLoader)this.benchmark.makeLoaderImpl();
         assertNotNull(loader);
         this.benchmark.createDatabase();
         this.benchmark.loadDatabase();

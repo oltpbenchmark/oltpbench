@@ -32,8 +32,8 @@ import com.oltpbenchmark.api.Loader;
 public class NoOpLoader extends Loader<NoOpBenchmark> {
     private static final Logger LOG = Logger.getLogger(NoOpLoader.class);
 
-    public NoOpLoader(NoOpBenchmark benchmark, Connection c) {
-        super(benchmark, c);
+    public NoOpLoader(NoOpBenchmark benchmark) {
+        super(benchmark);
     }
     
     @Override

@@ -68,12 +68,9 @@ public class TPCHLoader extends Loader<TPCHBenchmark> {
 
     private static Date now;
     private static long lastTimeMS;
-    private static Connection conn;
 
-
-    public TPCHLoader(TPCHBenchmark benchmark, Connection c) {
-        super(benchmark, c);
-        conn =c;
+    public TPCHLoader(TPCHBenchmark benchmark) {
+        super(benchmark);
     }
 
     private static enum CastTypes { LONG, DOUBLE, STRING, DATE };
@@ -225,7 +222,7 @@ public class TPCHLoader extends Loader<TPCHBenchmark> {
 
     }
 
-    static void truncateTable(String strTable) throws SQLException {
+    static void truncateTable(Connection conn, String strTable) throws SQLException {
         LOG.debug("Truncating '" + strTable + "' ...");
         try {
             conn.createStatement().execute("DELETE FROM " + strTable);
@@ -356,7 +353,9 @@ public class TPCHLoader extends Loader<TPCHBenchmark> {
             long lastTimeMS = new java.util.Date().getTime();
 
             try {
-                truncateTable(this.tableName.toLowerCase());
+                // FIXME: This should be the Connection given to the LoaderThread
+                this.conn = benchmark.makeConnection();
+                truncateTable(this.conn, this.tableName.toLowerCase());
             } catch (SQLException e) {
                 LOG.error("Failed to truncate table \""
                         + this.tableName.toLowerCase()
@@ -364,11 +363,7 @@ public class TPCHLoader extends Loader<TPCHBenchmark> {
             }
 
             try {
-                this.conn = DriverManager.getConnection(workConf.getDBConnection(),
-                        workConf.getDBUsername(),
-                        workConf.getDBPassword());
                 this.conn.setAutoCommit(false);
-
                 try {
                     now = new java.util.Date();
                     LOG.debug("\nStart " + tableName + " load @ " + now + "...");

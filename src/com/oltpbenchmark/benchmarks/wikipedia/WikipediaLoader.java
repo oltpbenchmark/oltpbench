@@ -74,10 +74,9 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
      * Constructor
      *
      * @param benchmark
-     * @param c
      */
-    public WikipediaLoader(WikipediaBenchmark benchmark, Connection c) {
-        super(benchmark, c);
+    public WikipediaLoader(WikipediaBenchmark benchmark) {
+        super(benchmark);
         this.num_users = (int) Math.round(WikipediaConstants.USERS * this.scaleFactor);
         this.num_pages = (int) Math.round(WikipediaConstants.PAGES * this.scaleFactor);
 
@@ -178,6 +177,10 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         assert (catalog_tbl != null);
 
         String sql = SQLUtil.getInsertSQL(catalog_tbl, this.getDatabaseType());
+        if(this.getDatabaseType() == DatabaseType.ORACLE) {
+            // Oracle handles quoted object identifiers differently, do not escape names
+            sql = SQLUtil.getInsertSQL(catalog_tbl, false);
+        }
         PreparedStatement userInsert = conn.prepareStatement(sql);
 
         Random rand = new Random();
@@ -248,7 +251,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         }
         userInsert.close();
         if (this.getDatabaseType() == DatabaseType.POSTGRES) {
-            this.updateAutoIncrement(catalog_tbl.getColumn(0), this.num_users);
+            this.updateAutoIncrement(conn, catalog_tbl.getColumn(0), this.num_users);
         }
         if (LOG.isDebugEnabled()) {
             LOG.debug("Users  % " + this.num_users);
@@ -263,6 +266,10 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         assert (catalog_tbl != null);
 
         String sql = SQLUtil.getInsertSQL(catalog_tbl, this.getDatabaseType());
+        if (this.getDatabaseType() == DatabaseType.ORACLE) {
+            // Oracle handles quoted object identifiers differently, do not escape names
+            sql = SQLUtil.getInsertSQL(catalog_tbl, false);
+        }
         PreparedStatement pageInsert = conn.prepareStatement(sql);
 
         Random rand = new Random();
@@ -317,7 +324,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         }
         pageInsert.close();
         if (this.getDatabaseType() == DatabaseType.POSTGRES) {
-            this.updateAutoIncrement(catalog_tbl.getColumn(0), this.num_pages);
+            this.updateAutoIncrement(conn, catalog_tbl.getColumn(0), this.num_pages);
         }
         if (LOG.isDebugEnabled()) {
             LOG.debug("Users  % " + this.num_pages);
@@ -418,11 +425,19 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         // TEXT
         Table textTable = this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_TEXT);
         String textSQL = SQLUtil.getInsertSQL(textTable, this.getDatabaseType());
+        if (this.getDatabaseType() == DatabaseType.ORACLE) {
+            // Oracle handles quoted object identifiers differently, do not escape names
+            textSQL = SQLUtil.getInsertSQL(textTable, false);
+        }
         PreparedStatement textInsert = conn.prepareStatement(textSQL);
 
         // REVISION
         Table revTable = this.benchmark.getTableCatalog(WikipediaConstants.TABLENAME_REVISION);
         String revSQL = SQLUtil.getInsertSQL(revTable, this.getDatabaseType());
+        if (this.getDatabaseType() == DatabaseType.ORACLE) {
+            // Oracle handles quoted object identifiers differently, do not escape names
+            revSQL = SQLUtil.getInsertSQL(revTable, false);
+        }
         PreparedStatement revisionInsert = conn.prepareStatement(revSQL);
 
         Random rand = new Random();
@@ -528,8 +543,8 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         revisionInsert.close();
         textInsert.close();
         if (this.getDatabaseType() == DatabaseType.POSTGRES) {
-            this.updateAutoIncrement(textTable.getColumn(0), rev_id);
-            this.updateAutoIncrement(revTable.getColumn(0), rev_id);
+            this.updateAutoIncrement(conn, textTable.getColumn(0), rev_id);
+            this.updateAutoIncrement(conn, revTable.getColumn(0), rev_id);
         }
 
         // UPDATE USER

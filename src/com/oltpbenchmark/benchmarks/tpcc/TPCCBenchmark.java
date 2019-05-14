@@ -63,8 +63,8 @@ public class TPCCBenchmark extends BenchmarkModule {
 	}
 
 	@Override
-	protected Loader<TPCCBenchmark> makeLoaderImpl(Connection conn) throws SQLException {
-		return new TPCCLoader(this, conn);
+	protected Loader<TPCCBenchmark> makeLoaderImpl() throws SQLException {
+		return new TPCCLoader(this);
 	}
 
 	protected ArrayList<TPCCWorker> createTerminals() throws SQLException {

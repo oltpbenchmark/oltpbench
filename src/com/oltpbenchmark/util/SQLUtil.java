@@ -350,7 +350,7 @@ public abstract class SQLUtil {
      * @return
      */
     public static String getInsertSQL(Table catalog_tbl, boolean escape_names, int...exclude_columns) {
-        return getInsertSQL(catalog_tbl, false, false, 1, exclude_columns);
+        return getInsertSQL(catalog_tbl, false, escape_names, 1, exclude_columns);
     }
     
     /**
@@ -363,7 +363,20 @@ public abstract class SQLUtil {
      * @return
      */
     public static String getInsertSQL(Table catalog_tbl, DatabaseType db_type, int... exclude_columns) {
-        return SQLUtil.getInsertSQL(catalog_tbl, db_type, 1, exclude_columns);
+        return SQLUtil.getInsertSQL(catalog_tbl, false, false, 1, exclude_columns);
+    }
+
+    /**
+     *
+     * @param catalog_tbl
+     * @param show_cols
+     * @param batchSize
+     * @param exclude_columns
+     * @return
+     */
+    @Deprecated
+    public static String getInsertSQL(Table catalog_tbl, boolean show_cols, int batchSize, int...exclude_columns) {
+        return getInsertSQL(catalog_tbl, false, true, batchSize, exclude_columns);
     }
 
     /**
@@ -377,10 +390,7 @@ public abstract class SQLUtil {
      * @param exclude_columns
      * @return
      */
-    public static String getInsertSQL(Table catalog_tbl, DatabaseType db_type, int batchSize, int... exclude_columns) {
-        boolean show_cols = db_type.shouldIncludeColumnNames();
-        boolean escape_names = db_type.shouldEscapeNames();
-
+    public static String getInsertSQL(Table catalog_tbl, boolean show_cols, boolean escape_names, int batchSize, int... exclude_columns) {
     	StringBuilder sb = new StringBuilder();
     	sb.append("INSERT INTO ")
     	  .append(escape_names ? catalog_tbl.getEscapedName() : catalog_tbl.getName());

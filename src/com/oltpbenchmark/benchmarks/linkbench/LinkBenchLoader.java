@@ -32,8 +32,8 @@ public class LinkBenchLoader extends Loader<LinkBenchBenchmark> {
     private static final Logger LOG = Logger.getLogger(LinkBenchLoader.class);
     private final int num_record;
 
-    public LinkBenchLoader(LinkBenchBenchmark benchmark, Connection c) {
-        super(benchmark, c);
+    public LinkBenchLoader(LinkBenchBenchmark benchmark) {
+        super(benchmark);
         this.num_record = (int) Math.round(this.scaleFactor - LinkBenchConstants.START_ID + 1);
         if (LOG.isDebugEnabled()) {
             LOG.debug("# of RECORDS:  " + this.num_record);

@@ -44,7 +44,7 @@ public class TestAuctionMarkLoader extends AbstractTestLoader<AuctionMarkBenchma
      */
     public void testSaveLoadProfile() throws Exception {
         AuctionMarkProfile.clearCachedProfile();
-        AuctionMarkLoader loader = (AuctionMarkLoader)this.benchmark.makeLoaderImpl(conn);
+        AuctionMarkLoader loader = (AuctionMarkLoader)this.benchmark.makeLoaderImpl();
         assertNotNull(loader);
         super.testLoad();
 
@@ -74,7 +74,7 @@ public class TestAuctionMarkLoader extends AbstractTestLoader<AuctionMarkBenchma
         // set of ItemInfo records that are not found in any other profile's lists
         int num_clients = 9;
         this.workConf.setTerminals(num_clients);
-        AuctionMarkLoader loader = (AuctionMarkLoader)this.benchmark.makeLoaderImpl(conn);
+        AuctionMarkLoader loader = (AuctionMarkLoader)this.benchmark.makeLoaderImpl();
         assertNotNull(loader);
         
         Set<ItemInfo> allItemInfos = new HashSet<ItemInfo>();

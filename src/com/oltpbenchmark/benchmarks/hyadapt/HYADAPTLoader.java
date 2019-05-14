@@ -36,8 +36,8 @@ public class HYADAPTLoader extends Loader<HYADAPTBenchmark> {
     private final int num_record;
     private static final Random rand = new Random();
 
-    public HYADAPTLoader(HYADAPTBenchmark benchmark, Connection c) {
-        super(benchmark, c);
+    public HYADAPTLoader(HYADAPTBenchmark benchmark) {
+        super(benchmark);
         this.num_record = (int) Math.round(HYADAPTConstants.RECORD_COUNT * this.scaleFactor);
         LOG.info("# of RECORDS:  " + this.num_record);        
     }    
@@ -73,7 +73,7 @@ public class HYADAPTLoader extends Loader<HYADAPTBenchmark> {
                     Table catalog_tbl = benchmark.getTableCatalog("HTABLE");
                     assert (catalog_tbl != null);
 
-                    String sql = SQLUtil.getInsertSQL(catalog_tbl);
+                    String sql = SQLUtil.getInsertSQL(getDatabaseType(), catalog_tbl);
                     PreparedStatement stmt = conn.prepareStatement(sql);
                     long total = 0;
                     int batch = 0;

@@ -40,7 +40,6 @@ public abstract class Loader<T extends BenchmarkModule> {
     private static final Logger LOG = Logger.getLogger(Loader.class);
 
     protected final T benchmark;
-    private Connection conn;
     protected final WorkloadConfiguration workConf;
     protected final double scaleFactor;
     private final Histogram<String> tableSizes = new Histogram<String>(true);
@@ -81,9 +80,8 @@ public abstract class Loader<T extends BenchmarkModule> {
         
     }
     
-    public Loader(T benchmark, Connection conn) {
+    public Loader(T benchmark) {
         this.benchmark = benchmark;
-        this.conn = conn;
         this.workConf = benchmark.getWorkloadConfiguration();
         this.scaleFactor = workConf.getScaleFactor();
     }
@@ -163,7 +161,7 @@ public abstract class Loader<T extends BenchmarkModule> {
      * @param catalog The catalog containing all loaded tables
      * @throws SQLException
      */
-    public void unload(Catalog catalog) throws SQLException {
+    public void unload(Connection conn, Catalog catalog) throws SQLException {
         conn.setAutoCommit(false);
         conn.setTransactionIsolation(workConf.getIsolationMode());
         Statement st = conn.createStatement();
@@ -175,7 +173,14 @@ public abstract class Loader<T extends BenchmarkModule> {
         conn.commit();
     }
 
-    protected void updateAutoIncrement(Column catalog_col, int value) throws SQLException {
+    /**
+     * 
+     * @param conn
+     * @param catalog_col
+     * @param value
+     * @throws SQLException
+     */
+    protected void updateAutoIncrement(Connection conn, Column catalog_col, int value) throws SQLException {
         String sql = null;
         switch (getDatabaseType()) {
             case POSTGRES:
@@ -189,7 +194,7 @@ public abstract class Loader<T extends BenchmarkModule> {
         if (sql != null) {
             if (LOG.isDebugEnabled())
                 LOG.debug(String.format("Updating %s auto-increment counter with value '%d'", catalog_col.fullName(), value));
-            Statement stmt = this.conn.createStatement();
+            Statement stmt = conn.createStatement();
             boolean result = stmt.execute(sql);
             if (LOG.isDebugEnabled())
                 LOG.debug(String.format("%s => [%s]", sql, result));
