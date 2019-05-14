@@ -46,8 +46,8 @@ public class TestAuctionMarkLoader extends AbstractTestLoader<AuctionMarkBenchma
         AuctionMarkProfile.clearCachedProfile();
         AuctionMarkLoader loader = (AuctionMarkLoader)this.benchmark.makeLoaderImpl(conn);
         assertNotNull(loader);
-        loader.load();
-        
+        super.testLoad();
+
         AuctionMarkProfile orig = loader.profile;
         assertNotNull(orig);
         assertFalse(orig.users_per_itemCount.isEmpty());
