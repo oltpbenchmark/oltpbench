@@ -125,7 +125,7 @@ public class SEATSLoader extends Loader<SEATSBenchmark> {
     // -----------------------------------------------------------------
 
     @Override
-    public List<LoaderThread> createLoaderTheads() throws SQLException {
+    public List<LoaderThread> createLoaderThreads() throws SQLException {
         List<LoaderThread> threads = new ArrayList<LoaderThread>();
 
         // High level locking overview, where step N+1 depends on step N

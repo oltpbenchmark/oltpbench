@@ -330,6 +330,30 @@ public abstract class SQLUtil {
     }
 
     /**
+     * Automatically generate the 'INSERT' SQL string to insert
+     * one record into this table.
+     * @param dbType
+     * @param catalog_tbl
+     * @param exclude_columns
+     * @return
+     */
+    public static String getInsertSQL(DatabaseType dbType, Table catalog_tbl, int...exclude_columns) {
+        return getInsertSQL(catalog_tbl, false, dbType.shouldEscapeNames(), 1, exclude_columns);
+    }
+
+    /**
+     * Automatically generate the 'INSERT' SQL string to insert
+     * one record into this table, with a flag to escape names or not
+     *
+     * @param catalog_tbl Table affected
+     * @param escape_names Flag to escape object names
+     * @return
+     */
+    public static String getInsertSQL(Table catalog_tbl, boolean escape_names, int...exclude_columns) {
+        return getInsertSQL(catalog_tbl, false, false, 1, exclude_columns);
+    }
+    
+    /**
      * Automatically generate the 'INSERT' SQL string for this table
      * with a batch size of 1
      *
