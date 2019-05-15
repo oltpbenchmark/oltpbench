@@ -141,9 +141,9 @@ before_script:
 
 script:
   - SCALEFACTOR=0.5
-    ant bootstrap;
-    ant resolve;
-    if [ $TEST == junit ]; then
+  - ant bootstrap
+  - ant resolve
+  - if [ $TEST == junit ]; then
       ant junit;
     else
       ant build;
