@@ -297,18 +297,19 @@ public abstract class BenchmarkModule {
             loader = this.makeLoaderImpl();
             if (loader != null) {
                 List<? extends LoaderThread> loaderThreads = loader.createLoaderThreads();
-                assert(loaderThreads != null);
-                int maxConcurrent = workConf.getLoaderThreads();
-                assert(maxConcurrent > 0);
-                if (LOG.isDebugEnabled())
-                    LOG.debug(String.format("Starting %d %s.LoaderThreads [maxConcurrent=%d]",
-                                            loaderThreads.size(),
-                                            loader.getClass().getSimpleName(),
-                                            maxConcurrent));
-                ThreadUtil.runNewPool(loaderThreads, maxConcurrent);
+                if (loaderThreads != null) {
+                    int maxConcurrent = workConf.getLoaderThreads();
+                    assert (maxConcurrent > 0);
+                    if (LOG.isDebugEnabled())
+                        LOG.debug(String.format("Starting %d %s.LoaderThreads [maxConcurrent=%d]",
+                                loaderThreads.size(),
+                                loader.getClass().getSimpleName(),
+                                maxConcurrent));
+                    ThreadUtil.runNewPool(loaderThreads, maxConcurrent);
 
-                if (loader.getTableCounts().isEmpty() == false) {
-                    LOG.info("Table Counts:\n" + loader.getTableCounts());
+                    if (loader.getTableCounts().isEmpty() == false) {
+                        LOG.info("Table Counts:\n" + loader.getTableCounts());
+                    }
                 }
             }
         } catch (SQLException ex) {
