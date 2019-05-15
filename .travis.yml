@@ -7,15 +7,14 @@ cache:
   directories:
     - lib
 
+# We only are going to test on jdk8 + jdk10.
+# openjdk9 + oraclejdk10 were both removed from Ubuntu
 language: java
 jdk:
   - openjdk10
-  - openjdk9
-  - oraclejdk9
   - openjdk8
   - oraclejdk8
 
-# oraclejdk9 failures - https://github.com/oltpbenchmark/oltpbench/issues/137
 #matrix:
 #  allow_failures:
 #    - jdk: oraclejdk9
@@ -108,7 +107,7 @@ before_install:
 
 install:
   - echo $TRAVIS_JDK_VERSION
-  - if [ $TRAVIS_JDK_VERSION == oraclejdk10 ]; then
+  - if [ $TRAVIS_JDK_VERSION == oraclejdk8 ]; then
       DB=mysql ;
     else
       DB=postgres ;
