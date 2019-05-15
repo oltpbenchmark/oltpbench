@@ -10,6 +10,10 @@ cache:
 language: java
 jdk:
   - openjdk10
+  - openjdk9
+  - oraclejdk9
+  - openjdk8
+  - oraclejdk8
 
 # oraclejdk9 failures - https://github.com/oltpbenchmark/oltpbench/issues/137
 #matrix:
@@ -154,7 +158,7 @@ script:
            -e '/<time>/c\<time>60</time>'
            -e '/<isolation>/c\<isolation>TRANSACTION_READ_COMMITTED</isolation>'
            "${config}";
-      ./oltpbenchmark --bench "${TEST}" --config "${config}"  --create true    --load true   --execute true ;
+      ./oltpbenchmark --bench "${TEST}" --config "${config}" --create true --load true --execute true ;
     fi
 
 
