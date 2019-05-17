@@ -129,6 +129,11 @@ public class DBWorkload {
                 "upload",
                 true,
                 "Upload the result");
+        options.addOption(
+                null,
+                "uploadHash",
+                true,
+                "git hash to be associated with the upload");
 
         options.addOption("v", "verbose", false, "Display Messages");
         options.addOption("h", "help", false, "Print this help");
@@ -545,7 +550,9 @@ public class DBWorkload {
         // Execute Loader
         if (isBooleanOptionSet(argsLine, "load")) {
             for (BenchmarkModule benchmark : benchList) {
-                LOG.info("Loading data into " + benchmark.getBenchmarkName().toUpperCase() + " database...");
+                LOG.info(String.format("Loading data into %s database with %d threads...",
+                                       benchmark.getBenchmarkName().toUpperCase(),
+                                       benchmark.getWorkloadConfiguration().getLoaderThreads()));
                 runLoader(benchmark, verbose);
                 LOG.info("Finished!");
                 LOG.info(SINGLE_LINE);
@@ -658,7 +665,7 @@ public class DBWorkload {
         PrintStream rs = null;
         String baseFileName = "oltpbench";
         if (argsLine.hasOption("o")) {
-            if (argsLine.getOptionValue("o") == "-") {
+            if (argsLine.getOptionValue("o").equals("-")) {
                 ps = System.out;
                 rs = System.out;
                 baseFileName = null;
@@ -740,7 +747,7 @@ public class DBWorkload {
         if (argsLine.hasOption("s")) {
             nextName = FileUtil.getNextFilename(FileUtil.joinPath(outputDirectory, baseFile + ".res"));
             ps = new PrintStream(new File(nextName));
-            LOG.info("Output into file: " + nextName);
+            LOG.info("Output throughput samples into file: " + nextName);
             
             int windowSize = Integer.parseInt(argsLine.getOptionValue("s"));
             LOG.info("Grouped into Buckets of " + windowSize + " seconds");
