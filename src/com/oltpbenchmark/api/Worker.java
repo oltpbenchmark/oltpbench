@@ -421,11 +421,13 @@ public abstract class Worker<T extends BenchmarkModule> implements Runnable {
 
                     this.txnErrors.put(next);
 
-                    if (savepoint != null) {
-                        this.conn.rollback(savepoint);
-                    } else {
-                        this.conn.rollback();
-                    }
+		    if (this.wrkld.getDBType().shouldUseTransactions()) {
+			if (savepoint != null) {
+			    this.conn.rollback(savepoint);
+			} else {
+			    this.conn.rollback();
+			}
+		    }
 
                     if (ex.getSQLState() == null) {
                         continue;
@@ -454,6 +456,9 @@ public abstract class Worker<T extends BenchmarkModule> implements Runnable {
                         continue;
                     } else if (ex.getErrorCode() == 0 && ex.getSQLState() != null && ex.getSQLState().equals("53200")) {
                         // Postgres OOM error
+                        throw ex;
+                    } else if (ex.getErrorCode() == 0 && ex.getSQLState() != null && ex.getSQLState().equals("XX000")) {
+                        // Postgres no pinned buffers available
                         throw ex;
                         
                     // ------------------

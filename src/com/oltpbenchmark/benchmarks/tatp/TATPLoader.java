@@ -35,9 +35,10 @@ public class TATPLoader extends Loader<TATPBenchmark> {
     private static final Logger LOG = Logger.getLogger(TATPLoader.class);
     
     private final long subscriberSize;
-    
-    public TATPLoader(TATPBenchmark benchmark, Connection c) {
-    	super(benchmark, c);
+    private final int batchSize = 100; // FIXME
+
+    public TATPLoader(TATPBenchmark benchmark) {
+    	super(benchmark);
     	this.subscriberSize = Math.round(TATPConstants.DEFAULT_NUM_SUBSCRIBERS * this.scaleFactor);
         if (LOG.isDebugEnabled()) LOG.debug("CONSTRUCTOR: " + TATPLoader.class.getName());
     }
@@ -46,7 +47,7 @@ public class TATPLoader extends Loader<TATPBenchmark> {
     public List<LoaderThread> createLoaderThreads() throws SQLException {
         List<LoaderThread> threads = new ArrayList<LoaderThread>();
         final int numLoaders = this.benchmark.getWorkloadConfiguration().getLoaderThreads();
-        final long itemsPerThread = Long.max(this.subscriberSize / numLoaders, 1);
+        final long itemsPerThread = Math.max(this.subscriberSize / numLoaders, 1);
         final int numSubThreads = (int) Math.ceil((double) this.subscriberSize / itemsPerThread);
         final CountDownLatch subLatch = new CountDownLatch(numSubThreads);
 
