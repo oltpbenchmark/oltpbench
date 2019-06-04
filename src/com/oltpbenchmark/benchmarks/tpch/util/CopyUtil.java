@@ -31,10 +31,11 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 
+/**
+ * copyDATABASE methods return null if they weren't successful, and return
+ * a possibly empty String[] of SQL statements to execute otherwise
+ */
 public class CopyUtil {
-
-    // copyDATABASE methods return null if they weren't successful, and return
-    // a possibly empty String[] of SQL statements to execute otherwise
 
     private static String getTablePath(WorkloadConfiguration workConf, String tableName) {
         String fileFormat = workConf.getXmlConfig().getString("fileFormat");
