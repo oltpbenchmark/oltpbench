@@ -101,8 +101,12 @@ public abstract class DBCollector {
         return results;
     }
 
-    public static DBCollector createCollector(DatabaseType dbType, WorkloadConfiguration workConf) {
-        return createCollector(dbType, workConf.getDBConnection(), workConf.getDBUsername(), workConf.getDBPassword());
+    public static DBCollector createCollector(WorkloadConfiguration workConf) {
+        return createCollector(
+                workConf.getDBType(),
+                workConf.getDBConnection(),
+                workConf.getDBUsername(),
+                workConf.getDBPassword());
     }
 
     public static DBCollector createCollector(DatabaseType dbType, String dbUrl, String dbUsername, String dbPassword) {
