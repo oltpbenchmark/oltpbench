@@ -17,9 +17,9 @@
 package com.oltpbenchmark.util;
 
 import com.oltpbenchmark.Results;
+import com.oltpbenchmark.WorkloadConfiguration;
 import com.oltpbenchmark.api.TransactionType;
 import com.oltpbenchmark.api.collectors.DBCollector;
-import com.oltpbenchmark.types.DatabaseType;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.ParseException;
@@ -63,41 +63,26 @@ public class ResultUploader {
             "terminals"
     };
 
-    XMLConfiguration expConf;
     Results results;
+    WorkloadConfiguration workConf;
     CommandLine argsLine;
     DBCollector collector;
-
-    String dbUrl;
-    DatabaseType dbType;
-    String username, password;
-    String benchType;
-//    int windowSize;
-    String uploadCode, uploadUrl;
+    String uploadCode;
+    String uploadUrl;
     String uploadHash;
 
-    public ResultUploader(Results r, XMLConfiguration conf, CommandLine argsLine) {
-        this.expConf = conf;
+    public ResultUploader(Results r, WorkloadConfiguration workConf, CommandLine argsLine) {
+        this.workConf = workConf;
         this.results = r;
         this.argsLine = argsLine;
 
-        dbUrl = expConf.getString("DBUrl");
-        dbType = DatabaseType.get(expConf.getString("dbtype"));
-        username = expConf.getString("username");
-        password = expConf.getString("password");
-        benchType = argsLine.getOptionValue("b");
-//        windowSize = 1;
-//        if (argsLine.hasOption("s")) {
-//        	windowSize = Integer.parseInt(argsLine.getOptionValue("s"));
-//        } else {
-//        	windowSize = 1;
-//        }
-        uploadCode = expConf.getString("uploadCode");
-        uploadUrl = expConf.getString("uploadUrl");
+        XMLConfiguration xmlConf = workConf.getXmlConfig();
+        uploadCode = xmlConf.getString("uploadCode");
+        uploadUrl = xmlConf.getString("uploadUrl");
         uploadHash = argsLine.getOptionValue("uploadHash");
         uploadHash = uploadHash == null ? "" : uploadHash;
 
-        this.collector = DBCollector.createCollector(dbType, dbUrl, username, password);
+        this.collector = DBCollector.createCollector(workConf.getDB());
         assert(this.collector != null);
     }
     
@@ -114,7 +99,7 @@ public class ResultUploader {
     }
 
     public void writeBenchmarkConf(PrintStream os) throws ConfigurationException {
-        XMLConfiguration outputConf = (XMLConfiguration) expConf.clone();
+        XMLConfiguration outputConf = (XMLConfiguration) this.workConf.getXmlConfig().clone();
         for (String key: IGNORE_CONF) {
             outputConf.clearProperty(key);
         }
@@ -126,13 +111,13 @@ public class ResultUploader {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         Date now = new Date();
         summaryMap.put("Current Timestamp (milliseconds)", now.getTime());
-        summaryMap.put("DBMS Type", dbType.name().toLowerCase());
+        summaryMap.put("DBMS Type", workConf.getDBType().name().toLowerCase());
         summaryMap.put("DBMS Version", this.collector.getVersion());
-        summaryMap.put("Benchmark Type", benchType);
+        summaryMap.put("Benchmark Type", workConf.getBenchmarkName());
         summaryMap.put("Latency Distribution", results.latencyDistribution.toMap());
         summaryMap.put("Throughput (requests/second)", results.getRequestsPerSecond());
         for (String field: BENCHMARK_KEY_FIELD) {
-            summaryMap.put(field, expConf.getString(field));
+            summaryMap.put(field, workConf.getXmlConfig().getString(field));
         }
         os.println(JSONUtil.format(JSONUtil.toJSONString(summaryMap)));
     }

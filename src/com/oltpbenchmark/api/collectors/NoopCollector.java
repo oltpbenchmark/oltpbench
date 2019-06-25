@@ -1,9 +1,11 @@
 package com.oltpbenchmark.api.collectors;
 
+import com.oltpbenchmark.Database;
+
 public class NoopCollector extends DBCollector {
 
-    public NoopCollector(String dbUrl, String dbUsername, String dbPassword) {
-        super(dbUrl, dbUsername, dbPassword);
+    public NoopCollector(Database database) {
+        super(database);
     }
 
     @Override

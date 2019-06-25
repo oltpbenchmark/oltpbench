@@ -21,6 +21,8 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.oltpbenchmark.Database;
+
 public class MySQLCollector extends DBCollector {
 
     private static final Logger LOG = Logger.getLogger(MySQLCollector.class);
@@ -29,8 +31,8 @@ public class MySQLCollector extends DBCollector {
 
     private static final String METRICS_SQL = "SHOW GLOBAL STATUS";
 
-    public MySQLCollector(String dbUrl, String dbUsername, String dbPassword) {
-        super(dbUrl, dbUsername, dbPassword);
+    public MySQLCollector(Database database) {
+        super(database);
     }
 
     @Override

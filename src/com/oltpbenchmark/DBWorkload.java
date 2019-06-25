@@ -188,6 +188,10 @@ public class DBWorkload {
         String configFile = argsLine.getOptionValue("c");
         XMLConfiguration xmlConfig = new XMLConfiguration(configFile);
         xmlConfig.setExpressionEngine(new XPathExpressionEngine());
+        
+        DatabaseType dbType = DatabaseType.get(xmlConfig.getString("dbtype"));
+        Database database = new Database(dbType, xmlConfig.getString("DBName"), xmlConfig.getString("driver"),
+                xmlConfig.getString("DBUrl"), xmlConfig.getString("username"), xmlConfig.getString("password"));
 
         // Load the configuration for each benchmark
         int lastTxnId = 0;
@@ -210,12 +214,8 @@ public class DBWorkload {
             }
 
             // Pull in database configuration
-            wrkld.setDBType(DatabaseType.get(xmlConfig.getString("dbtype")));
-            wrkld.setDBDriver(xmlConfig.getString("driver"));
-            wrkld.setDBConnection(xmlConfig.getString("DBUrl"));
-            wrkld.setDBName(xmlConfig.getString("DBName"));
-            wrkld.setDBUsername(xmlConfig.getString("username"));
-            wrkld.setDBPassword(xmlConfig.getString("password"));
+            wrkld.setDBType(dbType);
+            wrkld.setDB(database);
             
             int terminals = xmlConfig.getInt("terminals[not(@bench)]", 0);
             terminals = xmlConfig.getInt("terminals" + pluginTest, terminals);
@@ -256,8 +256,8 @@ public class DBWorkload {
             initDebug.put("Benchmark", String.format("%s {%s}", plugin.toUpperCase(), classname));
             initDebug.put("Configuration", configFile);
             initDebug.put("Type", wrkld.getDBType());
-            initDebug.put("Driver", wrkld.getDBDriver());
-            initDebug.put("URL", wrkld.getDBConnection());
+            initDebug.put("Driver", wrkld.getDB().getDriver());
+            initDebug.put("URL", wrkld.getDB().getUrl());
             initDebug.put("Isolation", wrkld.getIsolationString());
             initDebug.put("Scale Factor", wrkld.getScaleFactor());
             
@@ -586,7 +586,7 @@ public class DBWorkload {
             assert(r != null);
 
             // WRITE OUTPUT
-            writeOutputs(r, activeTXTypes, argsLine, xmlConfig);
+            writeOutputs(r, activeTXTypes, argsLine, benchList.get(0).getWorkloadConfiguration());
             
             // WRITE HISTOGRAMS
             if (argsLine.hasOption("histograms")) {
@@ -641,7 +641,8 @@ public class DBWorkload {
      * @param xmlConfig
      * @throws Exception
      */
-    private static void writeOutputs(Results r, List<TransactionType> activeTXTypes, CommandLine argsLine, XMLConfiguration xmlConfig) throws Exception {
+    private static void writeOutputs(Results r, List<TransactionType> activeTXTypes, CommandLine argsLine,
+            WorkloadConfiguration wkldConfig) throws Exception {
         
         // If an output directory is used, store the information
         String outputDirectory = "results";
@@ -654,9 +655,10 @@ public class DBWorkload {
         }
         
         // Special result uploader
+        XMLConfiguration xmlConfig = wkldConfig.getXmlConfig();
         ResultUploader ru = null;
         if (xmlConfig.containsKey("uploadUrl")) {
-            ru = new ResultUploader(r, xmlConfig, argsLine);
+            ru = new ResultUploader(r, wkldConfig, argsLine);
             LOG.info("Upload Results URL: " + ru);
         }
         

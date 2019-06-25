@@ -111,10 +111,7 @@ public abstract class BenchmarkModule {
      * @throws SQLException
      */
     public final Connection makeConnection() throws SQLException {
-        Connection conn = DriverManager.getConnection(
-                workConf.getDBConnection(),
-                workConf.getDBUsername(),
-                workConf.getDBPassword());
+        Connection conn = workConf.getDB().getConnection();
         Catalog.setSeparator(conn);
         return (conn);
     }

@@ -19,7 +19,6 @@ package com.oltpbenchmark.api.collectors;
 import java.io.PrintStream;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -31,9 +30,7 @@ import java.util.TreeMap;
 
 import org.apache.log4j.Logger;
 
-import com.oltpbenchmark.WorkloadConfiguration;
-import com.oltpbenchmark.catalog.Catalog;
-import com.oltpbenchmark.types.DatabaseType;
+import com.oltpbenchmark.Database;
 import com.oltpbenchmark.util.JSONUtil;
 
 public abstract class DBCollector {
@@ -42,16 +39,10 @@ public abstract class DBCollector {
 
     protected static final String EMPTY_JSON = "{}";
 
-    protected final String dbUrl;
+    protected final Database database;
 
-    protected final String dbUsername;
-
-    protected final String dbPassword;
-
-    public DBCollector(String dbUrl, String dbUsername, String dbPassword) {
-        this.dbUrl = dbUrl;
-        this.dbUsername = dbUsername;
-        this.dbPassword = dbPassword;
+    public DBCollector(Database database) {
+        this.database = database;
     }
 
     public abstract String collectParameters();
@@ -70,7 +61,7 @@ public abstract class DBCollector {
         String version;
         Connection conn = null;
         try {
-            conn = this.makeConnection();
+            conn = this.database.getConnection();
             DatabaseMetaData meta = conn.getMetaData();
             int majorVersion = meta.getDatabaseMajorVersion();
             int minorVersion = meta.getDatabaseMinorVersion();
@@ -83,17 +74,11 @@ public abstract class DBCollector {
         return version;
     }
 
-    protected Connection makeConnection() throws SQLException {
-        Connection conn = DriverManager.getConnection(this.dbUrl, this.dbUsername, this.dbPassword);
-        Catalog.setSeparator(conn);
-        return conn;
-    }
-
     protected Map<String, String> getKeyValueResults(String sql) throws SQLException {
         Map<String, String> results = null;
         Connection conn = null;
         try {
-            conn = this.makeConnection();
+            conn = this.database.getConnection();
             results = getKeyValueResults(conn, sql);
         } finally {
             closeConnection(conn);
@@ -101,33 +86,25 @@ public abstract class DBCollector {
         return results;
     }
 
-    public static DBCollector createCollector(WorkloadConfiguration workConf) {
-        return createCollector(
-                workConf.getDBType(),
-                workConf.getDBConnection(),
-                workConf.getDBUsername(),
-                workConf.getDBPassword());
-    }
-
-    public static DBCollector createCollector(DatabaseType dbType, String dbUrl, String dbUsername, String dbPassword) {
+    public static DBCollector createCollector(Database database) {
         DBCollector collector;
 
-        switch (dbType) {
+        switch (database.getType()) {
         case MEMSQL: // Uses MySQLCollector
         case MYSQL: {
-            collector = new MySQLCollector(dbUrl, dbUsername, dbPassword);
+            collector = new MySQLCollector(database);
             break;
         }
         case MYROCKS: {
-            collector = new MyRocksCollector(dbUrl, dbUsername, dbPassword);
+            collector = new MyRocksCollector(database);
             break;
         }
         case POSTGRES: {
-            collector = new PostgresCollector(dbUrl, dbUsername, dbPassword);
+            collector = new PostgresCollector(database);
             break;
         }
         default:
-            collector = new NoopCollector(dbUrl, dbUsername, dbPassword);
+            collector = new NoopCollector(database);
         }
         return collector;
     }

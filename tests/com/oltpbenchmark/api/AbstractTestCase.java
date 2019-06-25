@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 
 import junit.framework.TestCase;
 
+import com.oltpbenchmark.Database;
 import com.oltpbenchmark.WorkloadConfiguration;
 import com.oltpbenchmark.catalog.Catalog;
 import com.oltpbenchmark.types.DatabaseType;
@@ -104,7 +105,7 @@ public abstract class AbstractTestCase<T extends BenchmarkModule> extends TestCa
         this.dbName = String.format("%s-%d.db", clazz.getSimpleName(), new Random().nextInt());
         this.workConf.setTransTypes(txnTypes);
         this.workConf.setDBType(DB_TYPE);
-        this.workConf.setDBConnection(DB_CONNECTION + this.dbName);
+        this.workConf.setDB(new Database(DB_TYPE, this.dbName, null, DB_CONNECTION + this.dbName, null, null));
         this.workConf.setScaleFactor(DB_SCALE_FACTOR);
         
         this.benchmark = (T) ClassUtil.newInstance(clazz,

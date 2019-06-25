@@ -24,6 +24,8 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.oltpbenchmark.Database;
+
 public class PostgresCollector extends DBCollector {
 
     private static final Logger LOG = Logger.getLogger(PostgresCollector.class);
@@ -43,8 +45,8 @@ public class PostgresCollector extends DBCollector {
             "pg_statio_user_indexes"
     };
 
-    public PostgresCollector(String dbUrl, String dbUsername, String dbPassword) {
-        super(dbUrl, dbUsername, dbPassword);
+    public PostgresCollector(Database database) {
+        super(database);
     }
 
     @Override
@@ -63,7 +65,7 @@ public class PostgresCollector extends DBCollector {
         Connection conn = null;
         Map<String, List<Map<String, String>>> metrics = null;
         try {
-            conn = this.makeConnection();
+            conn = this.database.getConnection();
             metrics = new HashMap<String, List<Map<String, String>>>();
             for (String viewName : METRICS_VIEWS) {
                 try {

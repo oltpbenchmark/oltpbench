@@ -27,6 +27,8 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.oltpbenchmark.Database;
+
 public class MyRocksCollector extends DBCollector {
 
     private static final Logger LOG = Logger.getLogger(MyRocksCollector.class);
@@ -54,8 +56,8 @@ public class MyRocksCollector extends DBCollector {
             "rocksdb_perf_context"
     };
 
-    public MyRocksCollector(String dbUrl, String dbUsername, String dbPassword) {
-        super(dbUrl, dbUsername, dbPassword);
+    public MyRocksCollector(Database database) {
+        super(database);
     }
 
     @Override
@@ -67,7 +69,7 @@ public class MyRocksCollector extends DBCollector {
             parameters = getKeyValueResults(PARAMETERS_SQL);
 
             // Collect MyRocks Column Family parameters
-            conn = this.makeConnection();
+            conn = this.database.getConnection();
             Statement s = conn.createStatement();
             ResultSet out = s.executeQuery(CF_PARAMETERS_SQL);
             String name;
@@ -95,10 +97,10 @@ public class MyRocksCollector extends DBCollector {
             list.add(getKeyValueResults(METRICS_SQL));
             metrics.put("internal_metrics", list);
 
-            conn = this.makeConnection();
+            conn = this.database.getConnection();
 
             // Collect db-, table-, and index-level metrics (inherited from MySQL)
-            String dbName = getDatabaseName(conn);
+            String dbName = this.database.getName();
             metrics.put("db_statistics", getColumnResults(conn, String.format(DB_METRICS_SQL, dbName)));
             metrics.put("table_statistics", getColumnResults(conn, String.format(TABLE_METRICS_SQL, dbName)));
             metrics.put("index_statistics", getColumnResults(conn, String.format(INDEX_METRICS_SQL, dbName)));
@@ -118,24 +120,6 @@ public class MyRocksCollector extends DBCollector {
             closeConnection(conn);
         }
         return toJSONString(metrics);
-    }
-
-    private String getDatabaseName(Connection conn) {
-        String dbName = null;
-        try {
-            Statement s = conn.createStatement();
-            ResultSet out = s.executeQuery("SELECT database()");
-            if (out.next()) {
-                dbName = out.getString(1);
-            }
-        } catch (SQLException ex) {
-        }
-        if (dbName == null) {
-            String[] parts = this.dbUrl.split("/");
-            parts = parts[parts.length - 1].split("\\?");
-            dbName = parts[0];
-        }
-        return dbName;
     }
 
 }
