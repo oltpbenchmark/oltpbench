@@ -16,13 +16,19 @@
 
 package com.oltpbenchmark.util;
 
-import com.oltpbenchmark.Results;
-import com.oltpbenchmark.WorkloadConfiguration;
-import com.oltpbenchmark.api.TransactionType;
-import com.oltpbenchmark.api.collectors.DBCollector;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.zip.GZIPOutputStream;
 
-import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.collections15.map.ListOrderedMap;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.io.IOUtils;
@@ -36,18 +42,15 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 
-import java.io.*;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.TreeMap;
-import java.util.zip.GZIPOutputStream;
+import com.oltpbenchmark.Results;
+import com.oltpbenchmark.WorkloadConfiguration;
+import com.oltpbenchmark.api.TransactionType;
+import com.oltpbenchmark.api.collectors.DBCollector;
 
 public class ResultUploader {
     private static final Logger LOG = Logger.getLogger(ResultUploader.class);
 
-    private static String[] IGNORE_CONF = {
+    private static final String[] IGNORE_CONF = {
             "dbtype",
             "driver",
             "DBUrl",
@@ -57,103 +60,109 @@ public class ResultUploader {
             "uploadUrl"
     };
 
-    private static String[] BENCHMARK_KEY_FIELD = {
-            "isolation",
-            "scalefactor",
-            "terminals"
+    private static final String[] FILE_EXTENSIONS = {
+            "csv.gz",
+            "expconfig",
+            "metrics",
+            "params",
+            "samples",
+            "summary"
     };
 
-    Results results;
-    WorkloadConfiguration workConf;
-    CommandLine argsLine;
-    DBCollector collector;
-    String uploadCode;
-    String uploadUrl;
-    String uploadHash;
+    private final String uploadUrl;
+    private final String uploadCode;
+    private final String uploadHash;
 
-    public ResultUploader(Results r, WorkloadConfiguration workConf, CommandLine argsLine) {
-        this.workConf = workConf;
-        this.results = r;
-        this.argsLine = argsLine;
-
-        XMLConfiguration xmlConf = workConf.getXmlConfig();
-        uploadCode = xmlConf.getString("uploadCode");
-        uploadUrl = xmlConf.getString("uploadUrl");
-        uploadHash = argsLine.getOptionValue("uploadHash");
-        uploadHash = uploadHash == null ? "" : uploadHash;
-
-        this.collector = DBCollector.createCollector(workConf.getDB());
-        assert(this.collector != null);
-    }
-    
-    public DBCollector getConfCollector() {
-        return (this.collector);
+    public ResultUploader(String uploadUrl, String uploadCode, String uploadHash) {
+        this.uploadUrl = uploadUrl;
+        this.uploadCode = uploadCode;
+        this.uploadHash = uploadHash;
     }
 
-    public void writeDBParameters(PrintStream os) {
-        this.collector.writeParameters(os);
-    }
-    
-    public void writeDBMetrics(PrintStream os) {
-        this.collector.writeMetrics(os);
-    }
-
-    public void writeBenchmarkConf(PrintStream os) throws ConfigurationException {
-        XMLConfiguration outputConf = (XMLConfiguration) this.workConf.getXmlConfig().clone();
+    public static void writeBenchmarkConf(XMLConfiguration xmlConf, PrintStream out) throws ConfigurationException {
+        xmlConf = new XMLConfiguration(xmlConf);
         for (String key: IGNORE_CONF) {
-            outputConf.clearProperty(key);
+            xmlConf.clearProperty(key);
         }
-        outputConf.save(os);
+        xmlConf.save(out);
     }
 
-    public void writeSummary(PrintStream os) {
-        Map<String, Object> summaryMap = new TreeMap<String, Object>();
+    public static void writeSummary(WorkloadConfiguration workConf, Results results, PrintStream out) {
+        Map<String, Object> summary = new ListOrderedMap<String, Object>();
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         Date now = new Date();
-        summaryMap.put("Current Timestamp (milliseconds)", now.getTime());
-        summaryMap.put("DBMS Type", workConf.getDBType().name().toLowerCase());
-        summaryMap.put("DBMS Version", this.collector.getVersion());
-        summaryMap.put("Benchmark Type", workConf.getBenchmarkName());
-        summaryMap.put("Latency Distribution", results.latencyDistribution.toMap());
-        summaryMap.put("Throughput (requests/second)", results.getRequestsPerSecond());
-        for (String field: BENCHMARK_KEY_FIELD) {
-            summaryMap.put(field, workConf.getXmlConfig().getString(field));
-        }
-        os.println(JSONUtil.format(JSONUtil.toJSONString(summaryMap)));
+        summary.put("Current Timestamp (milliseconds)", now.getTime());
+        summary.put("DBMS Type", workConf.getDBType().name().toLowerCase());
+        summary.put("DBMS Version", workConf.getDB().getVersion());
+        summary.put("Benchmark Type", workConf.getBenchmarkName());
+        summary.put("Latency Distribution", results.latencyDistribution.toMap());
+        summary.put("Requests", results.getRequests());
+        summary.put("Runtime (seconds)", results.getRuntimeSeconds());
+        summary.put("Throughput (requests/second)", results.getRequestsPerSecond());
+        summary.put("isolation", workConf.getIsolationString());
+        summary.put("scalefactor", workConf.getScaleFactor());
+        summary.put("terminals", workConf.getTerminals());
+        out.println(JSONUtil.format(JSONUtil.toJSONString(summary)));
     }
 
-    public void uploadResult(List<TransactionType> activeTXTypes) throws ParseException {
+    public void uploadResult(List<TransactionType> activeTXTypes, Results results, WorkloadConfiguration workConf,
+            Map<String, String> resultFilenames) throws ParseException {
         try {
-            File expConfigFile = File.createTempFile("expconfig", ".tmp");
-            File samplesFile = File.createTempFile("samples", ".tmp");
-            File summaryFile = File.createTempFile("summary", ".tmp");
-            File paramsFile = File.createTempFile("params", ".tmp");
-            File metricsFile = File.createTempFile("metrics", ".tmp");
-            File csvDataFile = File.createTempFile("csv", ".gz");
+            Map<String, File> uploaderFiles = new HashMap<String, File>();
+            File file;
+            PrintStream out;
+            DBCollector collector = null;
 
-            PrintStream confOut = new PrintStream(new FileOutputStream(expConfigFile));
-            writeBenchmarkConf(confOut);
-            confOut.close();
+            for (String ext : FILE_EXTENSIONS) {
+                if (resultFilenames.containsKey(ext)) {
+                    // Result file already exists
+                    file = new File(resultFilenames.get(ext));
+                    LOG.debug(String.format("%s: found existing result file", ext.toUpperCase()));
+                } else {
+                    // No result file exists - write result out to temporary file
+                    LOG.debug(String.format("%s: writing result to temporary file", ext.toUpperCase()));
+                    if (ext.equals("csv.gz")) {
+                        file = File.createTempFile("csv", ".gz");
+                        out = new PrintStream(new GZIPOutputStream(new FileOutputStream(file)));
+                    } else {
+                        file = File.createTempFile(ext, ".tmp");
+                        out = new PrintStream(new FileOutputStream(file));
+                    }
 
-            confOut = new PrintStream(new FileOutputStream(paramsFile));
-            writeDBParameters(confOut);
-            confOut.close();
-
-            confOut = new PrintStream(new FileOutputStream(metricsFile));
-            writeDBMetrics(confOut);
-            confOut.close();
-
-            confOut = new PrintStream(new FileOutputStream(samplesFile));
-            results.writeCSV2(confOut);
-            confOut.close();
-
-            confOut = new PrintStream(new FileOutputStream(summaryFile));
-            writeSummary(confOut);
-            confOut.close();
-
-            confOut = new PrintStream(new GZIPOutputStream(new FileOutputStream(csvDataFile)));
-            results.writeAllCSVAbsoluteTiming(activeTXTypes, confOut);
-            confOut.close();
+                    switch (ext) {
+                    case "csv.gz": {
+                        results.writeAllCSVAbsoluteTiming(activeTXTypes, out);
+                        break;
+                    }
+                    case "expconfig": {
+                        writeBenchmarkConf(workConf.getXmlConfig(), out);
+                        break;
+                    }
+                    case "metrics": {
+                        if (collector == null)
+                            collector = DBCollector.createCollector(workConf.getDB());
+                        collector.writeMetrics(out);
+                        break;
+                    }
+                    case "params": {
+                        if (collector == null)
+                            collector = DBCollector.createCollector(workConf.getDB());
+                        collector.writeParameters(out);
+                        break;
+                    }
+                    case "samples": {
+                        results.writeCSV2(out);
+                        break;
+                    }
+                    case "summary": {
+                        writeSummary(workConf, results, out);
+                        break;
+                    }
+                    }
+                    out.close();
+                }
+                uploaderFiles.put(ext, file);
+            }
 
             CloseableHttpClient httpclient = HttpClients.createDefault();
             HttpPost httppost = new HttpPost(uploadUrl);
@@ -161,12 +170,12 @@ public class ResultUploader {
             HttpEntity reqEntity = MultipartEntityBuilder.create()
                     .addTextBody("upload_code", uploadCode)
                     .addTextBody("upload_hash", uploadHash)
-                    .addPart("sample_data", new FileBody(samplesFile))
-                    .addPart("raw_data", new FileBody(csvDataFile))
-                    .addPart("db_parameters_data", new FileBody(paramsFile))
-                    .addPart("db_metrics_data", new FileBody(metricsFile))
-                    .addPart("benchmark_conf_data", new FileBody(expConfigFile))
-                    .addPart("summary_data", new FileBody(summaryFile))
+                    .addPart("sample_data", new FileBody(uploaderFiles.get("samples")))
+                    .addPart("raw_data", new FileBody(uploaderFiles.get("csv.gz")))
+                    .addPart("db_parameters_data", new FileBody(uploaderFiles.get("params")))
+                    .addPart("db_metrics_data", new FileBody(uploaderFiles.get("metrics")))
+                    .addPart("benchmark_conf_data", new FileBody(uploaderFiles.get("expconfig")))
+                    .addPart("summary_data", new FileBody(uploaderFiles.get("summary")))
                     .build();
 
             httppost.setEntity(reqEntity);

@@ -77,7 +77,15 @@ public final class Results {
     }
 
     public double getRequestsPerSecond() {
-        return (double) measuredRequests / (double) nanoSeconds * 1e9;
+        return (double) getRequests() / getRuntimeSeconds();
+    }
+
+    public int getRequests() {
+        return measuredRequests;
+    }
+
+    public double getRuntimeSeconds() {
+        return (double) nanoSeconds * 1e9;
     }
 
     @Override
