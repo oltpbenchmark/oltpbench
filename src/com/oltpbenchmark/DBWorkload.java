@@ -23,10 +23,12 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.cli.CommandLine;
@@ -66,6 +68,7 @@ public class DBWorkload {
     
     private static final String DEFAULT_RESULT_DIRECTORY = "results";
     private static final String DEFAULT_RESULT_FILENAME = "oltpbench";
+    private static final int DEFAULT_SAMPLING_WINDOW = 1;
 
     /**
      * @param args
@@ -94,7 +97,10 @@ public class DBWorkload {
             e1.printStackTrace();
         }
         pluginConfig.setExpressionEngine(new XPathExpressionEngine());
+
         Options options = new Options();
+        options.addOption("v", "verbose", false, "Display Messages");
+        options.addOption("h", "help", false, "Print this help");
         options.addOption(
                 "b",
                 "bench",
@@ -132,29 +138,104 @@ public class DBWorkload {
                 "Run an SQL script");
         options.addOption(
                 null,
-                "upload",
+                "interval-monitor",
                 true,
+                "Throughput Monitoring Interval in milliseconds");
+        options.addOption(
+                null,
+                "tracescript",
+                true,
+                "Script of transactions to execute");
+        options.addOption(
+                null,
+                "dialects-export",
+                true,
+                "Export benchmark SQL to a dialects file");
+        options.addOption(
+                null,
+                "histograms",
+                false,
+                "Print transaction histograms");
+        options.addOption(
+                null,
+                "upload",
+                false,
                 "Upload the result");
         options.addOption(
                 null,
                 "uploadHash",
                 true,
-                "git hash to be associated with the upload");
-
-        options.addOption("v", "verbose", false, "Display Messages");
-        options.addOption("h", "help", false, "Print this help");
-        options.addOption("s", "sample", true, "Sampling window");
-        options.addOption("im", "interval-monitor", true, "Throughput Monitoring Interval in milliseconds");
-        options.addOption("ss", false, "Verbose Sampling per Transaction");
-        options.addOption("o", "output", true, "Output file (default System.out)");
-        options.addOption("d", "directory", true, "Base directory for the result files, default is current directory");
-        options.addOption("t", "timestamp", false, "Each result file is prepended with a timestamp for the beginning of the experiment");
-        options.addOption("ts", "tracescript", true, "Script of transactions to execute");
-        options.addOption(null, "histograms", false, "Print txn histograms");
-        options.addOption(null, "dialects-export", true, "Export benchmark SQL to a dialects file");
-        options.addOption(null, "output-raw", true, "Output raw data");
-        options.addOption(null, "output-samples", true, "Output sample data");
-
+                "Git hash to be associated with the upload");
+        options.addOption(
+                "d",
+                "directory",
+                true,
+                "Base directory for the result files [default: '" + DEFAULT_RESULT_DIRECTORY + "']");
+        options.addOption(
+                "f",
+                "file",
+                true,
+                "Output filename [default: '" + DEFAULT_RESULT_FILENAME + "']");
+        options.addOption(
+                "t",
+                "timestamp",
+                false,
+                "Prepend each result files with a timestamp");
+        options.addOption(
+                "w",
+                "window",
+                true,
+                "Transaction sampling window [default: " + DEFAULT_SAMPLING_WINDOW + " sec]");
+        options.addOption(
+                "s",
+                null,
+                false,
+                "Output sample data");
+        options.addOption(
+                "x",
+                null,
+                false,
+                "Output verbose sampling per txn");
+        options.addOption(
+                "r",
+                null,
+                false,
+                "Output raw transaction data");
+        options.addOption(
+                "g",
+                null,
+                false,
+                "Output the benchmark configuration");
+        options.addOption(
+                "o",
+                null,
+                false,
+                "Output the performance summary");
+        options.addOption(
+                "k",
+                null,
+                false,
+                "Output the DBMS's configuration settings");
+        options.addOption(
+                "m",
+                null,
+                false,
+                "Output the DBMS's runtime metrics");
+        options.addOption(
+                null,
+                "output-minimal",
+                false,
+                "Alias for output options '-so'");
+        options.addOption(
+                null,
+                "output-uploader",
+                false,
+                "Alias for output options '-srgokm' (same as results uploaded by the ResultUploader)");
+        options.addOption(
+                null,
+                "output-all",
+                false,
+                "Alias for all output options");
 
         // parse the command line arguments
         CommandLine argsLine = parser.parse(options, args);
@@ -170,13 +251,62 @@ public class DBWorkload {
             printUsage(options);
             return;
         }
-        
-        
-        
+
+        // Output options
+        String allOpts = "sxrgokm";
+        Set<Character> outputOpts = new HashSet<Character>();
+        if (argsLine.hasOption("output-minimal")) {
+            outputOpts.add('s');
+            outputOpts.add('o');
+        } else if (argsLine.hasOption("output-uploader")) {
+            String uploaderOpts = "srgokm";
+            for (int i = 0; i < uploaderOpts.length(); ++i)
+                outputOpts.add(uploaderOpts.charAt(i));
+        } else if (argsLine.hasOption("output-all")) {
+            for (int i = 0; i < allOpts.length(); ++i)
+                outputOpts.add(allOpts.charAt(i));
+        }
+        for (int i = 0; i < allOpts.length(); ++i) {
+            char opt = allOpts.charAt(i);
+            if (argsLine.hasOption(opt))
+                outputOpts.add(opt);
+        }
+
+        Map<String, Object> outputSettings = null;
+        if (!outputOpts.isEmpty()) {
+            outputSettings = new HashMap<String, Object>();
+            outputSettings.put("options", outputOpts);
+
+            // Output directory
+            outputSettings.put("directory", argsLine.getOptionValue("d", DEFAULT_RESULT_DIRECTORY));
+
+            // Output filename
+            String filename = argsLine.getOptionValue("f", DEFAULT_RESULT_FILENAME);
+
+            // Timestamp file prefix
+            String prefix = "";
+            if (argsLine.hasOption("t")) {
+                prefix = String.valueOf(TimeUtil.getCurrentTime().getTime()) + "_";
+            }
+            outputSettings.put("filename", prefix + filename);
+
+            // Sampling window
+            int window = DEFAULT_SAMPLING_WINDOW;
+            if (argsLine.hasOption("w")) {
+                try {
+                    window = Integer.parseInt(argsLine.getOptionValue("w"));
+                } catch (NumberFormatException ex) {
+                    LOG.warn(String.format("Invalid sampling window: %s, using default: %s",
+                            argsLine.getOptionValue("w"), DEFAULT_SAMPLING_WINDOW));
+                }
+            }
+            outputSettings.put("window", window);
+        }
+
         // Seconds
         int intervalMonitor = 0;
-        if (argsLine.hasOption("im")) {
-            intervalMonitor = Integer.parseInt(argsLine.getOptionValue("im"));
+        if (argsLine.hasOption("interval-monitor")) {
+            intervalMonitor = Integer.parseInt(argsLine.getOptionValue("interval-monitor"));
         }
         
         // -------------------------------------------------------------------
@@ -194,7 +324,25 @@ public class DBWorkload {
         String configFile = argsLine.getOptionValue("c");
         XMLConfiguration xmlConfig = new XMLConfiguration(configFile);
         xmlConfig.setExpressionEngine(new XPathExpressionEngine());
-        
+
+        // Uploader options
+        Map<String, String> uploaderSettings = null;
+        if (argsLine.hasOption("upload")) {
+            uploaderSettings = new HashMap<String, String>();
+            String uploadUrl = xmlConfig.getString("uploadUrl");
+            String uploadCode = xmlConfig.getString("uploadCode");
+
+            if (uploadUrl == null || uploadCode == null) {
+                LOG.fatal(String.format("The upload URL/CODE cannot be null. URL: %s, CODE: %s", uploadUrl, uploadCode));
+                System.exit(-1);
+            }
+            String uploadHash = argsLine.getOptionValue("uploadHash", "");
+
+            uploaderSettings.put("uploadUrl", uploadUrl);
+            uploaderSettings.put("uploadCode", uploadCode);
+            uploaderSettings.put("uploadHash", uploadHash);
+        }
+
         DatabaseType dbType = DatabaseType.get(xmlConfig.getString("dbtype"));
         Database database = new Database(dbType, xmlConfig.getString("DBName"), xmlConfig.getString("driver"),
                 xmlConfig.getString("DBUrl"), xmlConfig.getString("username"), xmlConfig.getString("password"));
@@ -212,9 +360,9 @@ public class DBWorkload {
             wrkld.setBenchmarkName(plugin);
             wrkld.setXmlConfig(xmlConfig);
             boolean scriptRun = false;
-            if (argsLine.hasOption("t")) {
+            if (argsLine.hasOption("tracescript")) {
                 scriptRun = true;
-                String traceFile = argsLine.getOptionValue("t");
+                String traceFile = argsLine.getOptionValue("tracescript");
                 wrkld.setTraceReader(new TraceReader(traceFile));
                 if (LOG.isDebugEnabled()) LOG.debug(wrkld.getTraceReader().toString());
             }
@@ -591,19 +739,68 @@ public class DBWorkload {
             }
             assert(r != null);
 
+            WorkloadConfiguration workConf = benchList.get(0).getWorkloadConfiguration();
+
             // WRITE OUTPUT
-            writeOutputs(r, activeTXTypes, argsLine, benchList.get(0).getWorkloadConfiguration());
+            Map<String, String> outputFiles = null;
+            if (outputSettings != null) {
+                outputFiles = writeOutputs(outputSettings, r, activeTXTypes, workConf);
+            } else {
+                outputFiles = new HashMap<String, String>();
+            }
+
+            // UPLOAD RESULTS
+            if (uploaderSettings != null) {
+                ResultUploader ru = new ResultUploader(uploaderSettings.get("uploadUrl"),
+                        uploaderSettings.get("uploadCode"), uploaderSettings.get("uploadHash"));
+                ru.uploadResult(activeTXTypes, r, workConf, outputFiles);
+            }
 
             // WRITE HISTOGRAMS
             if (argsLine.hasOption("histograms")) {
                 writeHistograms(r);
             }
 
+            // PRINT EXECUTION SUMMARY
+            printSummary(workConf, r);
+
         } else {
             LOG.info("Skipping benchmark workload execution");
         }
     }
-    
+
+    private static void printSummary(WorkloadConfiguration wrkld, Results results) {
+        Map<String, Object> summary = new ListOrderedMap<String, Object>();
+        DistributionStatistics latencyDist = results.getLatencyDistribution();
+
+        summary.put("Benchmark", wrkld.getBenchmarkName().toUpperCase());
+        summary.put("DBMS", String.format("%s %s", wrkld.getDBType(), wrkld.getDB().getVersion()));
+        summary.put("Isolation", wrkld.getIsolationString());
+        summary.put("Scalefactor", wrkld.getScaleFactor() + "\n");
+
+        summary.put("Time", String.format("%.0f sec", results.getRuntimeSeconds()));
+        summary.put("Requests", results.getRequests());
+        summary.put("Throughput", String.format("%.2f requests/sec\n", results.getRequestsPerSecond()));
+
+        String f = "%10.2f ms";
+        double scale = 1e3;
+        summary.put("Latency Distribution", "");
+        summary.put(" - Average", String.format(f, latencyDist.getAverage() / scale));
+        summary.put(" - Minimum", String.format(f, latencyDist.getMinimum() / scale));
+        summary.put(" - 25th %-tile", String.format(f, latencyDist.get25thPercentile() / scale));
+        summary.put(" - 50th %-tile", String.format(f, latencyDist.getMedian() / scale));
+        summary.put(" - 75th %-tile", String.format(f, latencyDist.get75thPercentile() / scale));
+        summary.put(" - 90th %-tile", String.format(f, latencyDist.get90thPercentile() / scale));
+        summary.put(" - 95th %-tile", String.format(f, latencyDist.get95thPercentile() / scale));
+        summary.put(" - 99th %-tile", String.format(f, latencyDist.get99thPercentile() / scale));
+        summary.put(" - Maximum", String.format(f, latencyDist.getMaximum() / scale));
+
+        String summaryStr = StringUtil.prefix(StringUtil.formatMaps(summary), "  ");
+        String title = "*** EXECUTION SUMMARY ***";
+        LOG.info(String.format("%s\n\n%s\n\n%s", SINGLE_LINE, title, summaryStr));
+        LOG.info(SINGLE_LINE);
+    }
+
     private static void writeHistograms(Results r) {
         StringBuilder sb = new StringBuilder();
         
@@ -639,172 +836,111 @@ public class DBWorkload {
 
     /**
      * Write out the results for a benchmark run to a bunch of files
-     * @param r
+     *
+     * @param outputSettings
+     * @param results
      * @param activeTXTypes
-     * @param argsLine
-     * @param xmlConfig
+     * @param workConf
      * @throws Exception
      */
-    private static void writeOutputs(Results r, List<TransactionType> activeTXTypes, CommandLine argsLine,
+    private static Map<String, String> writeOutputs(Map<String, Object> outputSettings, Results results,
+            List<TransactionType> activeTXTypes,
             WorkloadConfiguration workConf) throws Exception {
 
-        boolean outputToFile; // Whether to output results to file or stdout
-        PrintStream ps = null;
+        String directory = (String) outputSettings.get("directory");
+        FileUtil.makeDirIfNotExists(directory.split("/"));
+        String filename = (String) outputSettings.get("filename");
+        String basePath = FileUtil.joinPath(directory, filename);
+        LOG.debug("Output path: " + basePath);
 
-        String baseFileName = argsLine.getOptionValue("o", DEFAULT_RESULT_FILENAME);
-        if (baseFileName.equals("-")) {
-            outputToFile = false;
-            ps = System.out;
-            baseFileName = null;
-            LOG.debug("Printing all requested results to stdout");
+        // Keep track of the results we output so that the result uploader
+        // class can reuse them
+        Map<String, String> uploaderFiles = new HashMap<String, String>();
 
-        } else {
-            assert (baseFileName != null);
-            outputToFile = true;
-
-            String outputDirectory = argsLine.getOptionValue("d", DEFAULT_RESULT_DIRECTORY);
-            FileUtil.makeDirIfNotExists(outputDirectory.split("/"));
-
-            // Prepend all output files with a timestamp
-            String filePrefix = "";
-            if (argsLine.hasOption("t")) {
-                filePrefix = String.valueOf(TimeUtil.getCurrentTime().getTime()) + "_";
-            }
-            baseFileName = FileUtil.joinPath(outputDirectory, filePrefix + baseFileName);
-            LOG.debug("Saving all requested results to directory: " + outputDirectory);
-        }
-
+        PrintStream ps;
         String nextName = null;
-        Map<String, String> resultFiles = new HashMap<String, String>();
+        int window = (int) outputSettings.get("window");
 
-        if (isBooleanOptionSet(argsLine, "output-raw")) {
-            // Raw performance results from all transactions
-            if (outputToFile) {
-                nextName = FileUtil.getNextFilename(baseFileName + ".csv.gz");
-                ps = new PrintStream(new GZIPOutputStream(new FileOutputStream(nextName)));
-                resultFiles.put("csv", nextName);
-                LOG.info("Saving raw performance data to: " + nextName);
-            }
-            r.writeAllCSVAbsoluteTiming(activeTXTypes, ps);
-            if (outputToFile)
-                ps.close();
+        @SuppressWarnings("unchecked")
+        Set<Character> outputOptions = (Set<Character>) outputSettings.get("options");
+
+        if (outputOptions.contains('s')) {
+            nextName = FileUtil.getNextFilename(basePath + ".samples");
+            LOG.info(String.format("Saving timeseries results to: %s [window=%ds]", nextName, window));
+            ps = new PrintStream(new File(nextName));
+            results.writeCSV2(window, ps);
+            ps.close();
+
+            if (window == 1)
+                uploaderFiles.put("samples", nextName);
         }
 
-        if (isBooleanOptionSet(argsLine, "output-samples")) {
-            // Write samples using 1 second window -- TODO
-            if (outputToFile) {
-                nextName = FileUtil.getNextFilename(baseFileName + ".samples");
+        if (outputOptions.contains('x')) {
+            String txnName = null;
+            for (TransactionType t : activeTXTypes) {
+                txnName = t.getName();
+                nextName = FileUtil.getNextFilename(basePath + "_" + txnName + ".samples");
                 ps = new PrintStream(new File(nextName));
-                resultFiles.put("samples", nextName);
-                LOG.info("Saving txn samples to: " + nextName);
-            }
-            r.writeCSV2(ps);
-            if (outputToFile)
+                results.writeCSV2(window, ps, t);
                 ps.close();
-        }
-        if (isBooleanOptionSet(argsLine, "output-bench-config")) {
-            // Benchmark Configuration
-            if (outputToFile) {
-                nextName = FileUtil.getNextFilename(baseFileName + ".expconfig");
-                ps = new PrintStream(new File(nextName));
-                resultFiles.put("expconfig", nextName);
-                LOG.info("Saving benchmark configuration to: " + nextName);
             }
+            if (txnName != null) {
+                LOG.info(String.format("Saving transaction results to: %s [window=%ds]",
+                        nextName.replace(txnName, "*"), window));
+            }
+        }
+
+        if (outputOptions.contains('r')) {
+            nextName = FileUtil.getNextFilename(basePath + ".csv.gz");
+            LOG.info(String.format("Saving raw performance data to: %s", nextName));
+            ps = new PrintStream(new GZIPOutputStream(new FileOutputStream(nextName)));
+            results.writeAllCSVAbsoluteTiming(activeTXTypes, ps);
+            ps.close();
+            uploaderFiles.put("csv.gz", nextName);
+        }
+
+        if (outputOptions.contains('g')) {
+            nextName = FileUtil.getNextFilename(basePath + ".expconfig");
+            ps = new PrintStream(new File(nextName));
+            LOG.info("Saving benchmark configuration to: " + nextName);
             ResultUploader.writeBenchmarkConf(workConf.getXmlConfig(), ps);
-            if (outputToFile)
-                ps.close();
+            ps.close();
+            uploaderFiles.put("expconfig", nextName);
+        }
+
+        if (outputOptions.contains('o')) {
+            nextName = FileUtil.getNextFilename(basePath + ".summary");
+            ps = new PrintStream(new File(nextName));
+            LOG.info("Saving benchmark summary to: " + nextName);
+            ResultUploader.writeSummary(workConf, results, ps);
+            ps.close();
+            uploaderFiles.put("summary", nextName);
         }
 
         DBCollector dbCollector = null;
-        if (isBooleanOptionSet(argsLine, "output-summary")) {
-            // Summary of workload and performance data
-            if (outputToFile) {
-                nextName = FileUtil.getNextFilename(baseFileName + ".summary");
-                ps = new PrintStream(new File(nextName));
-                resultFiles.put("summary", nextName);
-                LOG.info("Saving benchmark summary to: " + nextName);
-            }
-            ResultUploader.writeSummary(workConf, r, ps);
-            if (outputToFile) ps.close();
-        }
-        
-        if (isBooleanOptionSet(argsLine, "output-dbms-knobs")) {
-            // DBMS configuration settings
-            if (outputToFile) {
-                nextName = FileUtil.getNextFilename(baseFileName + ".params");
-                ps = new PrintStream(new File(nextName));
-                resultFiles.put("params", nextName);
-                LOG.info("Saving DBMS configuration knobs to: " + nextName);
-            }
+        if (outputOptions.contains('k')) {
+            nextName = FileUtil.getNextFilename(basePath + ".params");
+            ps = new PrintStream(new File(nextName));
+            LOG.info("Saving DBMS configuration knobs to: " + nextName);
             if (dbCollector == null)
                 dbCollector = DBCollector.createCollector(workConf.getDB());
             ps.println(dbCollector.collectParameters());
-            if (outputToFile) ps.close();
+            ps.close();
+            uploaderFiles.put("params", nextName);
         }
 
-        if (isBooleanOptionSet(argsLine, "output-dbms-metrics")) {
-            // DBMS runtime metrics
-            if (outputToFile) {
-                nextName = FileUtil.getNextFilename(baseFileName + ".metrics");
-                ps = new PrintStream(new File(nextName));
-                resultFiles.put("metrics", nextName);
-                LOG.info("Saving DBMS metrics to: " + nextName);
-            }
+        if (outputOptions.contains('m')) {
+            nextName = FileUtil.getNextFilename(basePath + ".metrics");
+            ps = new PrintStream(new File(nextName));
+            LOG.info("Saving DBMS metrics to: " + nextName);
             if (dbCollector == null)
                 dbCollector = DBCollector.createCollector(workConf.getDB());
             ps.println(dbCollector.collectMetrics());
-            if (outputToFile)
-                ps.close();
+            ps.close();
+            uploaderFiles.put("metrics", nextName);
         }
 
-        if (argsLine.hasOption("s")) {
-            if (outputToFile) {
-                // Sampled transactions
-                nextName = FileUtil.getNextFilename(baseFileName + ".res");
-                ps = new PrintStream(new File(nextName));
-                resultFiles.put("res", nextName);
-                LOG.info("Saving txn samples to: " + nextName);
-            }
-            int windowSize = Integer.parseInt(argsLine.getOptionValue("s"));
-            LOG.info("Grouped into Buckets of " + windowSize + " seconds");
-            r.writeCSV(windowSize, ps);
-            if (outputToFile)
-                ps.close();
-
-            // More detailed reporting by transaction type to make
-            if (argsLine.hasOption("ss")) {
-                String txnFileName;
-                for (TransactionType t : activeTXTypes) {
-                    if (outputToFile) {
-                        txnFileName = baseFileName + "_" + t.getName() + ".res";
-                        nextName = FileUtil.getNextFilename(txnFileName);
-                        ps = new PrintStream(new File(nextName));
-                    }
-                    r.writeCSV(windowSize, ps, t);
-                    if (outputToFile)
-                        ps.close();
-                }
-            }
-        }
-
-        XMLConfiguration xmlConfig = workConf.getXmlConfig();
-        if (isBooleanOptionSet(argsLine, "upload")) {
-
-            // Upload results
-            String uploadUrl = xmlConfig.getString("uploadUrl");
-            String uploadCode = xmlConfig.getString("uploadCode");
-            LOG.debug("uploadCode: " + uploadCode + ", uploadUrl: " + uploadUrl);
-
-            if (uploadUrl == null || uploadCode == null) {
-                LOG.warn(String.format("The upload URL/CODE cannot be null. URL: %s, CODE: %s", uploadUrl, uploadCode));
-            } else {
-                String uploadHash = argsLine.getOptionValue("uploadHash", "");
-                ResultUploader ru = new ResultUploader(uploadUrl, uploadCode, uploadHash);
-                ru.uploadResult(activeTXTypes, r, workConf, resultFiles);
-            }
-        }
-
-        if (ps != null) ps.close();
+        return uploaderFiles;
     }
 
     /* buggy piece of shit of Java XPath implementation made me do it 

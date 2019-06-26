@@ -85,7 +85,11 @@ public final class Results {
     }
 
     public double getRuntimeSeconds() {
-        return (double) nanoSeconds * 1e9;
+        return (double) nanoSeconds / 1e9;
+    }
+
+    public DistributionStatistics getLatencyDistribution() {
+        return this.latencyDistribution;
     }
 
     @Override
@@ -112,6 +116,10 @@ public final class Results {
     
     public void writeCSV2(PrintStream out) {
         writeCSV2(1, out, TransactionType.INVALID);
+    }
+
+    public void writeCSV2(int windowSizeSeconds, PrintStream out) {
+        writeCSV2(windowSizeSeconds, out, TransactionType.INVALID);
     }
 
     public void writeCSV2(int windowSizeSeconds, PrintStream out, TransactionType txType) {
