@@ -78,6 +78,7 @@ env:
   - TEST=smallbank
   - TEST=twitter
   - TEST=resourcestresser
+  - TEST=chbenchmark
 
 # Missing loader com.oltpbenchmark.benchmarks.resourcestresser.ResourceStresserBenchmark.makeLoaderImpl(ResourceStresserBenchmark.java:58)
 # -> org.apache.commons.lang.NotImplementedException: Code is not implemented
@@ -139,6 +140,13 @@ before_script:
 
 script:
   - SCALEFACTOR=0.5
+  - if [ $TEST == chbenchmark ]; then
+      BENCH=${TEST},tpcc
+      TERMINALS=1  # One terminal per workload
+    else
+      BENCH=${TEST}
+      TERMINALS=3
+    fi
   - ant bootstrap
   - ant resolve
   - if [ $TEST == junit ]; then
@@ -153,11 +161,11 @@ script:
            -e '/<username>/c\<username>travis</username>'
            -e '/<password>/c\<password>travis</password>'
            -e "/<scalefactor>/c\\<scalefactor>${SCALEFACTOR}</scalefactor>"
-           -e '/<terminals>/c\<terminals>3</terminals>'
+           -e '/<terminals>/c\<terminals>${TERMINALS}</terminals>'
            -e '/<time>/c\<time>60</time>'
            -e '/<isolation>/c\<isolation>TRANSACTION_READ_COMMITTED</isolation>'
            "${config}";
-      ./oltpbenchmark --bench "${TEST}" --config "${config}" --create true --load true --execute true ;
+      ./oltpbenchmark --bench "${BENCH}" --config "${config}" --create true --load true --execute true ;
     fi
 
 
