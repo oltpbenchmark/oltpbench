@@ -126,8 +126,10 @@ public class Phase {
     }
 
     public void resetSerial() {
-        this.nextSerials.clear();
-        this.nextSerials.addAll(this.startSerials);
+        if (this.serial) {
+            this.nextSerials.clear();
+            this.nextSerials.addAll(this.startSerials);
+        }
     }
 
     public int getActiveTerminals() {
