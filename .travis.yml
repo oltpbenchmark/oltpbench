@@ -78,6 +78,7 @@ env:
   - TEST=smallbank
   - TEST=twitter
   - TEST=resourcestresser
+  - TEST=chbenchmark
 
 # Missing loader com.oltpbenchmark.benchmarks.resourcestresser.ResourceStresserBenchmark.makeLoaderImpl(ResourceStresserBenchmark.java:58)
 # -> org.apache.commons.lang.NotImplementedException: Code is not implemented
