@@ -13,6 +13,19 @@
         <maven.compiler.source>1.10</maven.compiler.source>
         <maven.compiler.target>1.10</maven.compiler.target>
     </properties>
+	<repositories>
+		<repository>
+		  <id>icm-repo</id>
+		  <name>ICM Repo</name>
+		  <url>http://maven.icm.edu.pl/artifactory/repo/</url>
+		</repository>
+		<repository>
+		  <id>default-repo</id>
+		  <name>Default repo</name>
+		  <url>http://repo1.maven.org/maven2/</url>
+		</repository>
+	</repositories>
+  
     
     <!-- *************************************** BUILDING *************************************** -->
     

@@ -24,6 +24,8 @@
 		<dependency org="org.postgresql" name="postgresql" rev="9.4.1209" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="mysql" name="mysql-connector-java" rev="5.1.47"/>
 		<dependency org="org.hsqldb" name="hsqldb" rev="2.4.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="com.vertica" name="vertica-jdbc" rev="9.1.1"/>
+
 
       <!-- Core Libraries -->
 		<dependency org="junit" name="junit" rev="4.11" force="true" conf="test->compile(*),runtime(*),master(*)"/>
