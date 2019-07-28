@@ -309,18 +309,25 @@ public class TPCHLoader extends Loader<TPCHBenchmark> {
 
     protected long loadHelper(Connection conn) {
         Thread loaders[] = new Thread[8];
-        loaders[0] = loadCustomers(conn);
-        loaders[1] = loadLineItems(conn);
-        loaders[2] = loadNations(conn);
-        loaders[3] = loadOrders(conn);
+        loaders[0] = loadRegions(conn);
+        loaders[1] = loadNations(conn);
+        loaders[2] = loadSuppliers(conn);
+        loaders[3] = loadCustomers(conn);
         loaders[4] = loadParts(conn);
         loaders[5] = loadPartSupps(conn);
-        loaders[6] = loadRegions(conn);
-        loaders[7] = loadSuppliers(conn);
+        loaders[6] = loadOrders(conn);
+        loaders[7] = loadLineItems(conn);
+
 
         for (int i = 0; i < 8; ++i)
-            if (loaders[i] != null)
+            if (loaders[i] != null) {
                 loaders[i].start();
+                try {
+                loaders[i].join();
+                } catch(InterruptedException e) {
+                    LOG.error(e.getMessage());
+                }
+            }
 
         for (int i = 0; i < 8; ++i) {
             try {
@@ -396,6 +403,7 @@ public class TPCHLoader extends Loader<TPCHBenchmark> {
             try {
                 LOG.debug("Truncating '" + this.tableName.toLowerCase() + "' ...");
                 try {
+                    LOG.debug("DELETE FROM " + this.tableName.toLowerCase());
                     conn.createStatement().execute("DELETE FROM " + this.tableName.toLowerCase());
                     conn.commit();
                 } catch (SQLException se) {
