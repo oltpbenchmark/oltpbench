@@ -9,4 +9,4 @@ WHERE exists
        AND o_d_id = ol_d_id
        AND ol_delivery_d >= o_entry_d)
 GROUP BY o_ol_cnt
-ORDER BY o_ol_cnt
+ORDER BY o_ol_cnt;

@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.Properties;
 
 import org.apache.log4j.Logger;
 
@@ -110,11 +111,21 @@ public abstract class BenchmarkModule {
      * @return
      * @throws SQLException
      */
-    public final Connection makeConnection() throws SQLException {
+    /*public final Connection makeConnection() throws SQLException {
         Connection conn = DriverManager.getConnection(
                 workConf.getDBConnection(),
                 workConf.getDBUsername(),
                 workConf.getDBPassword());
+        Catalog.setSeparator(conn);
+        return (conn);
+    }*/
+    public final Connection makeConnection() throws SQLException {
+        Properties properties = new Properties();
+        properties.put("user", workConf.getDBUsername());
+        properties.put("password", workConf.getDBPassword());
+        if(workConf.getDBName() != null) properties.put("schema", workConf.getDBName());
+    
+        Connection conn = DriverManager.getConnection(workConf.getDBConnection(),properties);
         Catalog.setSeparator(conn);
         return (conn);
     }
