@@ -60,6 +60,7 @@ public class DBWorkload {
     
     private static final String RATE_DISABLED = "disabled";
     private static final String RATE_UNLIMITED = "unlimited";
+    public static String DB_PORT_NUMBER = "5432";
     
     /**
      * @param args
@@ -135,6 +136,12 @@ public class DBWorkload {
                 true,
                 "git hash to be associated with the upload");
 
+        options.addOption(
+                null,
+                "port",
+                true,
+                "The port number of postgres");
+
         options.addOption("v", "verbose", false, "Display Messages");
         options.addOption("h", "help", false, "Print this help");
         options.addOption("s", "sample", true, "Sampling window");
@@ -163,6 +170,10 @@ public class DBWorkload {
             LOG.fatal("Missing Benchmark Class to load");
             printUsage(options);
             return;
+        } else if (argsLine.hasOption("port") == false) {
+            LOG.fatal("Missing the backend database's port number");
+            printUsage(options);
+            return;
         }
         
         
@@ -176,7 +187,8 @@ public class DBWorkload {
         // -------------------------------------------------------------------
         // GET PLUGIN LIST
         // -------------------------------------------------------------------
-        
+        DB_PORT_NUMBER = argsLine.getOptionValue("port");
+
         String targetBenchmarks = argsLine.getOptionValue("b");
         
         String[] targetList = targetBenchmarks.split(",");

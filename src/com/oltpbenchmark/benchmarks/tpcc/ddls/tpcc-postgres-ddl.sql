@@ -1,6 +1,6 @@
 -- TODO: c_since ON UPDATE CURRENT_TIMESTAMP,
 
-DROP TABLE IF EXISTS order_line;
+DROP TABLE IF EXISTS order_line CASCADE;
 CREATE TABLE order_line (
   ol_w_id int NOT NULL,
   ol_d_id int NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE order_line (
   PRIMARY KEY (ol_w_id,ol_d_id,ol_o_id,ol_number)
 );
 
-DROP TABLE IF EXISTS new_order;
+DROP TABLE IF EXISTS new_order CASCADE;
 CREATE TABLE new_order (
   no_w_id int NOT NULL,
   no_d_id int NOT NULL,
@@ -23,7 +23,7 @@ CREATE TABLE new_order (
   PRIMARY KEY (no_w_id,no_d_id,no_o_id)
 );
 
-DROP TABLE IF EXISTS stock;
+DROP TABLE IF EXISTS stock CASCADE;
 CREATE TABLE stock (
   s_w_id int NOT NULL,
   s_i_id int NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE stock (
 );
 
 -- TODO: o_entry_d  ON UPDATE CURRENT_TIMESTAMP
-DROP TABLE IF EXISTS oorder;
+DROP TABLE IF EXISTS oorder CASCADE;
 CREATE TABLE oorder (
   o_w_id int NOT NULL,
   o_d_id int NOT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE oorder (
 );
 
 -- TODO: h_date ON UPDATE CURRENT_TIMESTAMP
-DROP TABLE IF EXISTS history;
+DROP TABLE IF EXISTS history CASCADE;
 CREATE TABLE history (
   h_c_id int NOT NULL,
   h_c_d_id int NOT NULL,
@@ -73,7 +73,7 @@ CREATE TABLE history (
   h_data varchar(24) NOT NULL
 );
 
-DROP TABLE IF EXISTS customer;
+DROP TABLE IF EXISTS customer CASCADE;
 CREATE TABLE customer (
   c_w_id int NOT NULL,
   c_d_id int NOT NULL,
@@ -99,7 +99,7 @@ CREATE TABLE customer (
   PRIMARY KEY (c_w_id,c_d_id,c_id)
 );
 
-DROP TABLE IF EXISTS district;
+DROP TABLE IF EXISTS district CASCADE;
 CREATE TABLE district (
   d_w_id int NOT NULL,
   d_id int NOT NULL,
@@ -116,7 +116,7 @@ CREATE TABLE district (
 );
 
 
-DROP TABLE IF EXISTS item;
+DROP TABLE IF EXISTS item CASCADE;
 CREATE TABLE item (
   i_id int NOT NULL,
   i_name varchar(24) NOT NULL,
@@ -126,7 +126,7 @@ CREATE TABLE item (
   PRIMARY KEY (i_id)
 );
 
-DROP TABLE IF EXISTS warehouse;
+DROP TABLE IF EXISTS warehouse CASCADE;
 CREATE TABLE warehouse (
   w_id int NOT NULL,
   w_ytd decimal(12,2) NOT NULL,
@@ -160,4 +160,44 @@ ALTER TABLE order_line ADD CONSTRAINT fkey_order_line_1 FOREIGN KEY(ol_w_id,ol_d
 ALTER TABLE order_line ADD CONSTRAINT fkey_order_line_2 FOREIGN KEY(ol_supply_w_id,ol_i_id) REFERENCES stock(s_w_id,s_i_id) ON DELETE CASCADE;
 ALTER TABLE stock ADD CONSTRAINT fkey_stock_1 FOREIGN KEY(s_w_id) REFERENCES warehouse(w_id) ON DELETE CASCADE;
 ALTER TABLE stock ADD CONSTRAINT fkey_stock_2 FOREIGN KEY(s_i_id) REFERENCES item(i_id) ON DELETE CASCADE;
+
+-- add migration
+DROP TABLE IF EXISTS orderline_stock CASCADE;
+CREATE TABLE orderline_stock (
+  ol_w_id int NOT NULL,
+  ol_d_id int NOT NULL,
+  ol_o_id int NOT NULL,
+  ol_number int NOT NULL,
+  ol_i_id int NOT NULL,
+  ol_delivery_d timestamp NULL DEFAULT NULL,
+  ol_amount decimal(6,2) NOT NULL,
+  ol_supply_w_id int NOT NULL,
+  ol_quantity decimal(2,0) NOT NULL,
+  ol_dist_info char(24) NOT NULL,
+
+  s_w_id int NOT NULL,
+  s_i_id int NOT NULL,
+  s_quantity decimal(4,0) NOT NULL,
+  s_ytd decimal(8,2) NOT NULL,
+  s_order_cnt int NOT NULL,
+  s_remote_cnt int NOT NULL,
+  s_data varchar(50) NOT NULL,
+  s_dist_01 char(24) NOT NULL,
+  s_dist_02 char(24) NOT NULL,
+  s_dist_03 char(24) NOT NULL,
+  s_dist_04 char(24) NOT NULL,
+  s_dist_05 char(24) NOT NULL,
+  s_dist_06 char(24) NOT NULL,
+  s_dist_07 char(24) NOT NULL,
+  s_dist_08 char(24) NOT NULL,
+  s_dist_09 char(24) NOT NULL,
+  s_dist_10 char(24) NOT NULL
+);
+
+CREATE OR REPLACE VIEW orderline_stock_v AS
+(
+  SELECT *
+  FROM order_line, stock
+  WHERE ol_i_id = s_i_id
+);
 

@@ -26,4 +26,6 @@ public abstract class TPCCConstants {
     public static final String TABLENAME_OPENORDER = "OORDER";
     public static final String TABLENAME_ORDERLINE = "ORDER_LINE";
     public static final String TABLENAME_NEWORDER = "NEW_ORDER";
+    // migration
+    public static final String TABLENAME_ORDERLINE_STOCK = "ORDERLINE_STOCK";
 }
