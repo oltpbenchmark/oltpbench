@@ -18,13 +18,21 @@
         <name>StockLevelLazyMigrationJoin</name>
         <id>1</id>
     </transactiontype>
+    <transactiontype>
+        <name>NewOrder</name>
+        <id>2</id>
+    </transactiontype>
+    <transactiontype>
+        <name>OrderStatus</name>
+        <id>3</id>
+    </transactiontype>
     </transactiontypes>
    
     <works>
         <work>
-          <rate>1</rate>
-          <time>1</time>
-          <weights>100</weights>
+          <rate>3</rate>
+          <time>10</time>
+          <weights>20, 40, 40</weights>
         </work>
         </works>
 
