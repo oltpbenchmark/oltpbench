@@ -47,7 +47,7 @@ public class StockLevelLazyMigrationJoin extends TPCCProcedure {
             // SET enable_hashjoin TO off;
             // SET enable_mergejoin TO off;
             "begin; " +
-            "migrate 2 " + TPCCConstants.TABLENAME_ORDERLINE + " " + TPCCConstants.TABLENAME_STOCK +
+            "migrate 2 order_line stock " +
             " explain select count(*) from orderline_stock_v " +
             " where ol_w_id = {0,number,#} " +
             " and ol_d_id = {1,number,#} " +
@@ -56,7 +56,7 @@ public class StockLevelLazyMigrationJoin extends TPCCProcedure {
             " and s_w_id = {4,number,#} " +
             " and s_quantity < {5,number,#};"
             +
-            "migrate insert into " + TPCCConstants.TABLENAME_ORDERLINE_STOCK + "(" +
+            "migrate insert into orderline_stock(" +
             " ol_w_id, ol_d_id, ol_o_id, ol_number, ol_i_id, ol_delivery_d, " +
             " ol_amount, ol_supply_w_id, ol_quantity, ol_dist_info, s_w_id, " +
             " s_i_id, s_quantity, s_ytd, s_order_cnt, s_remote_cnt, s_data, " +
@@ -68,11 +68,11 @@ public class StockLevelLazyMigrationJoin extends TPCCProcedure {
             "  s_i_id, s_quantity, s_ytd, s_order_cnt, s_remote_cnt, s_data, " +
             "  s_dist_01, s_dist_02, s_dist_03, s_dist_04, s_dist_05, s_dist_06, " +
             "  s_dist_07, s_dist_08, s_dist_09, s_dist_10 " +
-            "  from " + TPCCConstants.TABLENAME_ORDERLINE + ", " + TPCCConstants.TABLENAME_STOCK +
+            "  from order_line, stock " +
             "  where ol_i_id = s_i_id); "
             +
             "select count(distinct (s_i_id)) as stock_count " +
-            " from " + TPCCConstants.TABLENAME_ORDERLINE_STOCK +
+            " from orderline_stock " +
             " where ol_w_id = {6,number,#} " +
             " and ol_d_id = {7,number,#} " +
             " and ol_o_id < {8,number,#} " +
@@ -116,7 +116,9 @@ public class StockLevelLazyMigrationJoin extends TPCCProcedure {
             w_id, d_id, o_id, o_id - 20, w_id, threshold);
         LOG.info(migration);
         String[] command = {"/bin/sh", "-c",
-            "echo '" + migration + "' | psql -qS -1 -p 5433 tpcc"};
+            "echo '" + migration + "' | " +
+            DBWorkload.DB_BINARY_PATH + "/psql -qS -1 -p " +
+            DBWorkload.DB_PORT_NUMBER + " tpcc"};
         execCommands(command);
 
         if (trace) LOG.trace(String.format("stockGetCountStock BEGIN [W_ID=%d, D_ID=%d, O_ID=%d]", w_id, d_id, o_id));

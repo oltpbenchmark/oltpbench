@@ -61,6 +61,7 @@ public class DBWorkload {
     private static final String RATE_DISABLED = "disabled";
     private static final String RATE_UNLIMITED = "unlimited";
     public static String DB_PORT_NUMBER = "5432";
+    public static String DB_BINARY_PATH = "/home/gangliao/so-postgres/postgresql-11.0/dev/bin";
     
     /**
      * @param args
@@ -135,7 +136,11 @@ public class DBWorkload {
                 "uploadHash",
                 true,
                 "git hash to be associated with the upload");
-
+        options.addOption(
+                null,
+                "path",
+                true,
+                "The binary path of postgres");
         options.addOption(
                 null,
                 "port",
@@ -174,6 +179,10 @@ public class DBWorkload {
             LOG.fatal("Missing the backend database's port number");
             printUsage(options);
             return;
+        } else if (argsLine.hasOption("path") == false) {
+            LOG.fatal("Missing the backend database's binary path");
+            printUsage(options);
+            return;
         }
         
         
@@ -188,6 +197,7 @@ public class DBWorkload {
         // GET PLUGIN LIST
         // -------------------------------------------------------------------
         DB_PORT_NUMBER = argsLine.getOptionValue("port");
+        DB_BINARY_PATH = argsLine.getOptionValue("path");
 
         String targetBenchmarks = argsLine.getOptionValue("b");
         
