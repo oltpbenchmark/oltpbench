@@ -147,7 +147,7 @@ public class DBWorkload {
         options.addOption("t", "timestamp", false, "Each result file is prepended with a timestamp for the beginning of the experiment");
         options.addOption("ts", "tracescript", true, "Script of transactions to execute");
         options.addOption(null, "histograms", false, "Print txn histograms");
-        options.addOption(null, "json-histograms", false, "Export histograms to JSON file");
+        options.addOption("jh", "json-histograms", true, "Export histograms to JSON file");
         options.addOption(null, "dialects-export", true, "Export benchmark SQL to a dialects file");
         options.addOption(null, "output-raw", true, "Output raw data");
         options.addOption(null, "output-samples", true, "Output sample data");
@@ -593,19 +593,6 @@ public class DBWorkload {
 
             // WRITE OUTPUT
             writeOutputs(r, activeTXTypes, argsLine, xmlConfig);
-            
-            // WRITE HISTOGRAMS
-            if (argsLine.hasOption("histograms")) {
-                String histogram_result = writeHistograms(r);
-                LOG.info(SINGLE_LINE);
-                LOG.info("Workload Histograms:\n" + histogram_result);
-                LOG.info(SINGLE_LINE);
-            } else if (argsLine.hasOption("json-histograms")) {
-                String histogram_json = writeJSONHistograms(r);
-                LOG.info(histogram_json);
-                // , argsLine.getOptionValue("json-histograms"));
-            }
-
 
         } else {
             LOG.info("Skipping benchmark workload execution");
@@ -791,6 +778,21 @@ public class DBWorkload {
         } else if (LOG.isDebugEnabled()) {
             LOG.warn("No bucket size specified");
         }
+        
+        // WRITE HISTOGRAMS
+        if (argsLine.hasOption("histograms")) {
+            String histogram_result = writeHistograms(r);
+            LOG.info(SINGLE_LINE);
+            LOG.info("Workload Histograms:\n" + histogram_result);
+            LOG.info(SINGLE_LINE);
+        }
+        if (argsLine.hasOption("json-histograms")) {
+            String histogram_json = writeJSONHistograms(r);
+            String fileName = argsLine.getOptionValue("json-histograms");
+            FileUtil.writeStringToFile(new File(fileName), histogram_json);
+            LOG.info("Histograms JSON Data: " + fileName);
+        }
+        
         
         if (ps != null) ps.close();
         if (rs != null) rs.close();
