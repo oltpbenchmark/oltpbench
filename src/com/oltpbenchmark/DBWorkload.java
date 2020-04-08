@@ -84,7 +84,8 @@ public class DBWorkload {
         CommandLineParser parser = new PosixParser();
         XMLConfiguration pluginConfig=null;
         try {
-            pluginConfig = new XMLConfiguration("config/plugin.xml");
+            // OLTPBENCH_HOME should be empty or end with "/"
+            pluginConfig = new XMLConfiguration(System.getenv("OLTPBENCH_HOME")+"config/plugin.xml");
         } catch (ConfigurationException e1) {
             LOG.info("Plugin configuration file config/plugin.xml is missing");
             e1.printStackTrace();
