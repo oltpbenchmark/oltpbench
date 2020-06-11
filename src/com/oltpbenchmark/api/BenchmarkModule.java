@@ -311,6 +311,10 @@ public abstract class BenchmarkModule {
                         LOG.info("Table Counts:\n" + loader.getTableCounts());
                     }
                 }
+
+                for (LoaderThread t : loaderThreads) {
+                    t.getConn().close();
+                }
             }
         } catch (SQLException ex) {
             String msg = String.format("Unexpected error when trying to load the %s database",
