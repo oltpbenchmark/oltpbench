@@ -119,12 +119,10 @@ install:
   - if [ $DB == mysql ]; then mysql -e "SELECT VERSION()";
     echo -e "[mysqld]\nlower_case_table_names=1" | sudo tee -a /etc/mysql/my.cnf ;
     sudo service mysql restart ;
-    #    mysql -e "CREATE DATABASE IF NOT EXISTS ${TEST}" ;
-    mysql -e "CREATE DATABASE IF NOT EXISTS oltpbench" ;
+    mysql -e "CREATE DATABASE IF NOT EXISTS ${TEST}" ;
     mysql -e "CREATE USER 'travis'@'localhost' IDENTIFIED BY 'travis'; GRANT ALL ON *.* TO 'travis'@'localhost'";
     elif [ $DB == postgres ]; then psql -c "SELECT VERSION()" -U travis;
-    #    psql -c "create database $TEST" -U postgres ;
-    psql -c "create database oltpbench" -U postgres ;
+    psql -c "create database $TEST" -U postgres ;
     psql -c "ALTER USER CURRENT_USER WITH PASSWORD 'travis'" -U travis;
     fi
 
@@ -165,7 +163,7 @@ script:
     sed -i
     -e "/<type>/c\<type>${TYPE}</type>"
     -e "/<driver>/c\<driver>${DRIVER}</driver>"
-    -e "/<url>/c\<url>${URLBASE}/oltpbench</url>"
+    -e "/<url>/c\<url>${URLBASE}/${TEST}</url>"
     -e "/<username>/c\<username>travis</username>"
     -e "/<password>/c\<password>travis</password>"
     -e "/<scalefactor>/c\\<scalefactor>${SCALEFACTOR}</scalefactor>"
@@ -174,8 +172,8 @@ script:
     -e "/<isolation>/c\<isolation>TRANSACTION_READ_COMMITTED</isolation>"
     "${config}";
     cd target
-    unzip oltpbench2-20.1.2-SNAPSHOT.zip
-    cd oltpbench2-20.1.2-SNAPSHOT
+    unzip oltpbench2-20.1.3-SNAPSHOT.zip
+    cd oltpbench2-20.1.3-SNAPSHOT
     java -jar oltpbench2.jar -b "${BENCH}" -c "${config}" --create=true --load=true --execute=true -s 5
     #    ./oltpbenchmark --bench "${BENCH}" --config "${config}" --create true --load true --execute true ;
     fi
@@ -186,9 +184,7 @@ script:
 
 after_script:
   - if [ $DB == mysql ]; then
-    #    mysql -e "DROP DATABASE IF EXISTS ${TEST}" ;
-    mysql -e "DROP DATABASE IF EXISTS oltpbench" ;
+    mysql -e "DROP DATABASE IF EXISTS ${TEST}" ;
     elif [ $DB == postgres ]; then
-    #    psql -c "DROP DATABASE IF EXISTS ${TEST}" -U postgres ;
-    psql -c "DROP DATABASE IF EXISTS oltpbench" -U postgres ;
+    psql -c "DROP DATABASE IF EXISTS ${TEST}" -U postgres ;
     fi
