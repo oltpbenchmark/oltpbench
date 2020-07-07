@@ -13,7 +13,6 @@ cache:
 # Mainly for jdk11
 language: java
 jdk:
-  - openjdk11
   - openjdk10
   - openjdk8
   - oraclejdk8
@@ -184,7 +183,7 @@ script:
 
 after_script:
   - if [ $DB == mysql ]; then
-      mysql -e "DROP DATABASE IF EXISTS ${TEST}" ;
+    mysql -e "DROP DATABASE IF EXISTS ${TEST}" ;
     elif [ $DB == postgres ]; then
-      psql -c "DROP DATABASE IF EXISTS ${TEST}" -U postgres ;
+    psql -c "DROP DATABASE IF EXISTS ${TEST}" -U postgres ;
     fi
