@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
@@ -202,7 +203,7 @@ public abstract class BenchmarkModule {
     /**
      * Invoke this benchmark's database loader
      */
-    public final void loadDatabase() {
+    public final Loader<? extends BenchmarkModule> loadDatabase() {
 
         try {
             Loader<? extends BenchmarkModule> loader = this.makeLoaderImpl();
@@ -228,6 +229,8 @@ public abstract class BenchmarkModule {
                     LOG.info("Table Counts:\n{}", loader.getTableCounts());
                 }
 
+                return loader;
+
             }
         } catch (SQLException ex) {
             String msg = String.format("Unexpected error when trying to load the %s database", getBenchmarkName());
@@ -236,6 +239,7 @@ public abstract class BenchmarkModule {
         if (LOG.isDebugEnabled()) {
             LOG.debug(String.format("Finished loading the %s database", this.getBenchmarkName().toUpperCase()));
         }
+        return null;
     }
 
     public final void clearDatabase() {
@@ -356,4 +360,7 @@ public abstract class BenchmarkModule {
         this.supplementalProcedures.add(procClass);
     }
 
+    public String getDatabaseDDL() {
+        return (this.getDatabaseDDLPath(this.workConf.getDatabaseType()));
+    }
 }

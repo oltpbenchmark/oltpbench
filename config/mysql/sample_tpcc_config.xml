@@ -4,9 +4,9 @@
     <!-- Connection details -->
     <type>MYSQL</type>
     <driver>com.mysql.cj.jdbc.Driver</driver>
-    <url>jdbc:mysql://mysql.cjuprqcygfbw.us-east-1.rds.amazonaws.com:3306/tpcc?rewriteBatchedStatements=true</url>
-    <username>dzq</username>
-    <password>dzq766826</password>
+    <url>jdbc:mysql://localhost:3306/tpcc?rewriteBatchedStatements=true</url>
+    <username>root</username>
+    <password>password</password>
     <isolation>TRANSACTION_SERIALIZABLE</isolation>
     <batchsize>128</batchsize>
 

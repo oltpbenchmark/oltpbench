@@ -18,10 +18,7 @@
 
 package com.oltpbenchmark.catalog;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 
 /**
@@ -117,5 +114,10 @@ public class Table extends AbstractCatalogObject {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), columns, indexes);
+    }
+
+
+    public Collection<Index> getIndexes() {
+        return (this.indexes);
     }
 }

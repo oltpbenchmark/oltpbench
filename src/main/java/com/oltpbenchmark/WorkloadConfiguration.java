@@ -36,7 +36,7 @@ public class WorkloadConfiguration {
     private String username;
     private String password;
     private String driverClass;
-    private int poolSize;
+    private int poolSize = 1;
     private int batchSize;
     private int maxRetries;
     private double scaleFactor = 1.0;
@@ -48,6 +48,8 @@ public class WorkloadConfiguration {
     private TransactionTypes transTypes = null;
     private int isolationMode = Connection.TRANSACTION_SERIALIZABLE;
     private String dataDir = null;
+
+    private String db_connection;
 
     public String getBenchmarkName() {
         return benchmarkName;
@@ -127,6 +129,15 @@ public class WorkloadConfiguration {
         this.maxRetries = maxRetries;
     }
 
+
+    public void setDBConnection(String database) {
+        this.db_connection = database;
+    }
+
+    public String getDBConnection() {
+        return db_connection;
+    }
+    
     /**
      * Initiate a new benchmark and workload state
      */

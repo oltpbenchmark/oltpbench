@@ -471,6 +471,7 @@ public class DBWorkload {
 
     private static void writeHistograms(Results r) {
         StringBuilder sb = new StringBuilder();
+        sb.append("\n");
 
         sb.append(StringUtil.bold("Completed Transactions:")).append("\n").append(r.getSuccess()).append("\n\n");
 
@@ -480,7 +481,9 @@ public class DBWorkload {
 
         sb.append(StringUtil.bold("Rejected Transactions (Retry Different):")).append("\n").append(r.getRetryDifferent()).append("\n\n");
 
-        sb.append(StringUtil.bold("Unexpected Errors:")).append("\n").append(r.getError());
+        sb.append(StringUtil.bold("Unexpected SQL Errors:")).append("\n").append(r.getError()).append("\n\n");
+
+        sb.append(StringUtil.bold("Unknown Status Transactions:")).append("\n").append(r.getUnknown()).append("\n\n");
 
         if (!r.getAbortMessages().isEmpty()) {
             sb.append("\n\n").append(StringUtil.bold("User Aborts:")).append("\n").append(r.getAbortMessages());

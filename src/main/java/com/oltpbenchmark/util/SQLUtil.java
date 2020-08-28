@@ -495,4 +495,23 @@ public abstract class SQLUtil {
 
 
     }
+
+    /**
+     * Returns true if the given sqlType identifier is an Integer data type
+     * @param sqlType
+     * @return
+     * @see java.sql.Types
+     */
+    public static boolean isIntegerType(int sqlType) {
+        switch (sqlType) {
+            case Types.TINYINT:
+            case Types.SMALLINT:
+            case Types.INTEGER:
+            case Types.BIGINT: {
+                return (true);
+            }
+            default:
+                return (false);
+        }
+    }
 }

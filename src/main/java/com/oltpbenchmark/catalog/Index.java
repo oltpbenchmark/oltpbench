@@ -18,7 +18,10 @@
 package com.oltpbenchmark.catalog;
 
 import com.oltpbenchmark.types.SortDirectionType;
+import com.oltpbenchmark.util.StringUtil;
+import org.apache.commons.collections4.map.ListOrderedMap;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -97,5 +100,39 @@ public class Index extends AbstractCatalogObject {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), table, columns, type, unique);
+    }
+
+    /**
+     * Get the number of columns that are part of this index
+     * @return
+     */
+    public int getColumnCount() {
+        return (this.columns.size());
+    }
+
+    public String getColumnName(int position) {
+        IndexColumn idx_col = this.columns.get(position);
+        return (idx_col != null ? idx_col.name : null);
+    }
+
+    public SortDirectionType getColumnDirection(int position) {
+        IndexColumn idx_col = this.columns.get(position);
+        return (idx_col != null ? idx_col.dir : null);
+    }
+
+    public String debug() {
+        Map<String, Object> m = new ListOrderedMap<String, Object>();
+        m.put("Name", this.name);
+        m.put("Type", this.type);
+        m.put("Is Unique", this.unique);
+
+        Map<String, Object> inner = new ListOrderedMap<String, Object>();
+        for (int i = 0, cnt = this.columns.size(); i < cnt; i++) {
+            IndexColumn idx_col = this.columns.get(i);
+            inner.put(String.format("[%02d]", i), idx_col);
+        } // FOR
+        m.put("Columns", inner);
+
+        return (StringUtil.formatMaps(m));
     }
 }

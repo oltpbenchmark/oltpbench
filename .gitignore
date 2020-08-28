@@ -1,23 +1,61 @@
-bin/
-/build/
-output.raw
-output.res
-.classpath
-.settings
-.idea
+.project
+*.DS_Store
+
+docker/**/*.zip
+docker/**/output
 results
 
-## -------------------------------
-## Kate Swap Files
-## -------------------------------
-*.kate-swp
-.#kate-*
+HELP.md
+PRIVATE.md
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**
+!**/src/test/**
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
 
-## -------------------------------
-## Backup artifacts
-## -------------------------------
-~*
-*~
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
 
-# maven output
-target
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+
+### VS Code ###
+.vscode/
+config/mysql/sample_chbenchmark_config.xml
+config/mysql/sample_epinions_config.xml
+config/mysql/sample_hyadapt_config.xml
+config/mysql/sample_noop_config.xml
+config/mysql/sample_resourcestresser_config.xml
+config/mysql/sample_seats_config.xml
+config/mysql/sample_sibench_config.xml
+config/mysql/sample_smallbank_config.xml
+config/mysql/sample_tatp_config.xml
+config/mysql/sample_tpcc_config.xml
+config/mysql/sample_tpch_config.xml
+config/mysql/sample_twitter_config.xml
+config/mysql/sample_voter_config.xml
+config/mysql/sample_wikipedia_config.xml
+config/mysql/sample_ycsb_config.xml

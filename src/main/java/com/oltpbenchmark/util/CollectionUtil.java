@@ -19,6 +19,7 @@
 package com.oltpbenchmark.util;
 
 import org.apache.commons.collections4.set.ListOrderedSet;
+import org.apache.commons.lang3.NotImplementedException;
 
 import java.util.*;
 
@@ -158,5 +159,54 @@ public abstract class CollectionUtil {
 
         }
         return (t);
+    }
+
+    /**
+     *
+     * @param <T>
+     * @param <U>
+     * @param map
+     * @return
+     */
+    public static <T, U extends Comparable<U>> T getGreatest(Map<T, U> map) {
+        T max_key = null;
+        U max_value = null;
+        for (Map.Entry<T, U> e:map.entrySet()) {
+            T key = e.getKey();
+            U value = e.getValue();
+            if (max_value == null || value.compareTo(max_value) > 0) {
+                max_value = value;
+                max_key = key;
+            }
+        } // FOR
+        return (max_key);
+    }
+
+    /**
+     * Wrap an Iterable around an Enumeration
+     * @param <T>
+     * @param e
+     * @return
+     */
+    public static <T> Iterable<T> iterable(final Enumeration<T> e) {
+        return (new Iterable<T>() {
+            @Override
+            public Iterator<T> iterator() {
+                return new Iterator<T>() {
+                    @Override
+                    public boolean hasNext() {
+                        return (e.hasMoreElements());
+                    }
+                    @Override
+                    public T next() {
+                        return (e.nextElement());
+                    }
+                    @Override
+                    public void remove() {
+                        throw new NotImplementedException();
+                    }
+                };
+            }
+        });
     }
 }

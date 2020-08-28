@@ -90,6 +90,10 @@ public class Column extends AbstractCatalogObject {
                 Objects.equals(foreignKey, column.foreignKey);
     }
 
+    public String fullName() {
+        return String.format("%s.%s", this.table.getName(), this.name);
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), table, type, size, nullable, foreignKey);

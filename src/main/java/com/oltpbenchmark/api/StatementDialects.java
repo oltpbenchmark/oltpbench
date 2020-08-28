@@ -73,7 +73,7 @@ public class StatementDialects {
      *
      * @return
      */
-    private String getSQLDialectPath(DatabaseType databaseType) {
+    public String getSQLDialectPath(DatabaseType databaseType) {
         String fileName = null;
 
         if (databaseType != null) {
@@ -246,6 +246,16 @@ public class StatementDialects {
     public DatabaseType getDatabaseType() {
         return workloadConfiguration.getDatabaseType();
     }
+
+
+    /**
+     * Return the list of Procedure names that we have dialect information for
+     * @return
+     */
+    protected Collection<String> getProcedureNames() {
+        return (this.dialectsMap.keySet());
+    }
+
 
     /**
      * Return the list of Statement names that we have dialect information

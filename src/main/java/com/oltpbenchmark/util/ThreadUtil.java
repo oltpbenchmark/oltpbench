@@ -48,10 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.*;
 
 public abstract class ThreadUtil {
     private static final Logger LOG = LoggerFactory.getLogger(ThreadUtil.class);
@@ -141,4 +138,33 @@ public abstract class ThreadUtil {
         }
     }
 
+
+    /**
+     * Have shutdown actually means shutdown. Tasks that need to complete should use
+     * futures.
+     */
+    public static ScheduledThreadPoolExecutor getScheduledThreadPoolExecutor(String name, Thread.UncaughtExceptionHandler handler, int poolSize, int stackSize) {
+        // HACK: ScheduledThreadPoolExecutor won't let use the handler so
+        // if we're using ExceptionHandlingRunnable then we'll be able to
+        // pick up the exceptions
+        Thread.setDefaultUncaughtExceptionHandler(handler);
+
+        ThreadFactory factory = getThreadFactory(name, handler);
+        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(poolSize, factory);
+        executor.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
+        executor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+        return executor;
+    }
+
+    public static ThreadFactory getThreadFactory(final String name, final Thread.UncaughtExceptionHandler handler) {
+        return new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(null, r, name, 1024*1024);
+                t.setDaemon(true);
+                t.setUncaughtExceptionHandler(handler);
+                return t;
+            }
+        };
+    }
 }

@@ -7,15 +7,13 @@ cache:
   directories:
     - lib
 
-# We only are going to test on jdk8 + jdk10.
-# openjdk9 + oraclejdk10 were both removed from Ubuntu
+  # We only are going to test on jdk8 + jdk10.
+  # openjdk9 + oraclejdk10 were both removed from Ubuntu
 
 # Mainly for jdk11
 language: java
 jdk:
-  - openjdk10
-  - openjdk8
-  - oraclejdk8
+  - openjdk11
 
 #matrix:
 #  allow_failures:
@@ -62,6 +60,7 @@ jdk:
 # MariaDB wasn't supported on trusty-containers at time of writing
 # This syntax may not be correct.
 
+
 addons:
   postgresql: 9.6
 
@@ -100,8 +99,10 @@ env:
 #
 
 # While mariadb addon isn't used. Remove if using a addon: mariadb
+
 services:
   - mysql
+  - postgresql
 
 # Increase the size of ramdisk on sudo enabled infrastructure
 # https://github.com/travis-ci/travis-ci/issues/9036#issuecomment-357189213
@@ -110,17 +111,20 @@ before_install:
 
 install:
   - echo $TRAVIS_JDK_VERSION
-  - if [ $TRAVIS_JDK_VERSION == oraclejdk8 ]; then
-    DB=mysql ;
+  - if [ $TRAVIS_JDK_VERSION == openjdk11 ]; then
+    DB=postgres;
     else
-    DB=postgres ;
+    DB=mysql;
     fi
   - if [ $DB == mysql ]; then mysql -e "SELECT VERSION()";
     echo -e "[mysqld]\nlower_case_table_names=1" | sudo tee -a /etc/mysql/my.cnf ;
     sudo service mysql restart ;
     mysql -e "CREATE DATABASE IF NOT EXISTS ${TEST}" ;
+    mysql -e "DROP USER 'travis'@'localhost'" ;
+    mysql -e "flush privileges" ;
     mysql -e "CREATE USER 'travis'@'localhost' IDENTIFIED BY 'travis'; GRANT ALL ON *.* TO 'travis'@'localhost'";
     elif [ $DB == postgres ]; then psql -c "SELECT VERSION()" -U travis;
+    sudo service postgresql restart ;
     psql -c "create database $TEST" -U postgres ;
     psql -c "ALTER USER CURRENT_USER WITH PASSWORD 'travis'" -U travis;
     fi
@@ -135,48 +139,44 @@ before_script:
   - if [ $DB == mysql ]; then
     URLBASE=jdbc:mysql://localhost:3306 ;
     DRIVER=com.mysql.jdbc.Driver ;
-    TYPE=mysql ;
+    TYPE=MYSQL ;
     elif [ $DB == postgres ]; then
     URLBASE=jdbc:postgresql://localhost:5432 ;
     DRIVER=org.postgresql.Driver ;
-    TYPE=postgres ;
+    TYPE=POSTGRES ;
     fi
 
 script:
-  - SCALEFACTOR=0.5
+  - SCALEFACTOR=1
   - TIME=60
-  - TERMINALS=3
+  - TERMINALS=1
   - if [ $TEST == chbenchmark ]; then
     BENCH=${TEST},tpcc ;
     else
     BENCH=${TEST} ;
     fi
-  #  - ant bootstrap
-  #  - ant resolve
-  - ./mvnw clean package
+  - ./mvnw clean package;
   - if [ $TEST == junit ]; then
-    #    ant junit;
+    mvn test;
     else
-    #    ant build;
+    cd target;
+    unzip oltpbench2-20.1.3-SNAPSHOT.zip;
+    cd oltpbench2-20.1.3-SNAPSHOT;
     config=config/${DB}/sample_${TEST}_config.xml ;
     sed -i
-    -e "/<type>/c\<type>${TYPE}</type>"
-    -e "/<driver>/c\<driver>${DRIVER}</driver>"
-    -e "/<url>/c\<url>${URLBASE}/${TEST}</url>"
-    -e "/<username>/c\<username>travis</username>"
-    -e "/<password>/c\<password>travis</password>"
-    -e "/<scalefactor>/c\\<scalefactor>${SCALEFACTOR}</scalefactor>"
-    -e "/<terminals>/c\<terminals>${TERMINALS}</terminals>"
-    -e "/<time>/c\<time>${TIME}</time>"
-    -e "/<isolation>/c\<isolation>TRANSACTION_READ_COMMITTED</isolation>"
-    "${config}";
-    cd target
-    unzip oltpbench2-20.1.3-SNAPSHOT.zip
-    cd oltpbench2-20.1.3-SNAPSHOT
-    java -jar oltpbench2.jar -b "${BENCH}" -c "${config}" --create=true --load=true --execute=true -s 5
-    #    ./oltpbenchmark --bench "${BENCH}" --config "${config}" --create true --load true --execute true ;
+      -e "/<type>/c\<type>${TYPE}</type>"
+      -e "/<driver>/c\<driver>${DRIVER}</driver>"
+      -e "/<url>/c\<url>${URLBASE}/${TEST}</url>"
+      -e "/<username>/c\<username>travis</username>"
+      -e "/<password>/c\<password>travis</password>"
+      -e "/<isolation>/c\<isolation>TRANSACTION_SERIALIZABLE</isolation>"
+      -e "/<batchsize>/c\<batchsize>128</batchsize>"
+      -e "/<scalefactor>/c\<scalefactor>${SCALEFACTOR}</scalefactor>"
+      -e "/<terminals>/c\<terminals>${TERMINALS}</terminals>"
+      -e "/<time>/c\<time>${TIME}</time>"
+      "${config}";
+    java -jar oltpbench2.jar -b "${BENCH}" -c "${config}" --create=true --load=true --execute=true;
     fi
-
 
 # With tests, scalefactor and terminals are just to reduce load on travis
 # isolation READ_COMMITTED as the TRANSACTIONAL default caused too many failures for now.

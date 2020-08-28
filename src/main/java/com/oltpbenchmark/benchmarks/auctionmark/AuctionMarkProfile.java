@@ -1023,5 +1023,10 @@ public class AuctionMarkProfile {
 
         return (StringUtil.formatMaps(m));
     }
+    
+    protected static void clearCachedProfile() {
+        cachedProfile = null;
+    }
+
 
 }

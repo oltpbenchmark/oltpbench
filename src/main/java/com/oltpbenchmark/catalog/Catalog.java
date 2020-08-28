@@ -18,6 +18,8 @@
 
 package com.oltpbenchmark.catalog;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
 
@@ -28,12 +30,20 @@ public final class Catalog {
 
     private final Map<String, Table> tables;
 
+    private static String separator;
+
     public Catalog(Map<String, Table> tables) {
         this.tables = tables;
     }
 
     public Collection<Table> getTables() {
         return (this.tables.values());
+    }
+    public int getTableCount() {
+        return (this.tables.size());
+    }
+    public Collection<String> getTableNames() {
+        return (this.tables.keySet());
     }
 
     public Table getTable(String tableName) {
@@ -45,6 +55,17 @@ public final class Catalog {
         throw new IllegalArgumentException(String.format("no table found with name [%s]", tableName));
     }
 
+    public static void setSeparator(Connection c) throws SQLException {
+        Catalog.separator = c.getMetaData().getIdentifierQuoteString();
+    }
+
+    public static void setSeparator(String separator) throws SQLException {
+        Catalog.separator = separator;
+    }
+
+    public static String getSeparator() {
+        return separator;
+    }
 
 
 }

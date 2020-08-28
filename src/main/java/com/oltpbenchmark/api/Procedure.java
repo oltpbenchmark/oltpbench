@@ -208,4 +208,46 @@ public abstract class Procedure {
             this(msg, null);
         }
     }
+
+    /**
+     * Hook for testing
+     * @return
+     */
+    protected final Map<String, SQLStmt> getStatments() {
+        assert(this.name_stmt_xref != null) :
+                "Trying to access Procedure " + this.procName + " before it is initialized!";
+        return (Collections.unmodifiableMap(this.name_stmt_xref));
+    }
+
+    /**
+     * Hook for testing to retrieve a SQLStmt based on its name
+     * @param stmtName
+     * @return
+     */
+    protected final SQLStmt getStatment(String stmtName) {
+        assert(this.name_stmt_xref != null) :
+                "Trying to access Procedure " + this.procName + " before it is initialized!";
+        return (this.name_stmt_xref.get(stmtName));
+    }
+
+    protected static Map<String, SQLStmt> getStatments(Procedure proc) {
+        Class<? extends Procedure> c = proc.getClass();
+        Map<String, SQLStmt> stmts = new HashMap<String, SQLStmt>();
+        for (Field f : c.getDeclaredFields()) {
+            int modifiers = f.getModifiers();
+            if (Modifier.isTransient(modifiers) == false &&
+                    Modifier.isPublic(modifiers) == true &&
+                    Modifier.isStatic(modifiers) == false) {
+                try {
+                    Object o = f.get(proc);
+                    if (o instanceof SQLStmt) {
+                        stmts.put(f.getName(), (SQLStmt)o);
+                    }
+                } catch (Exception ex) {
+                    throw new RuntimeException("Failed to retrieve " + f + " from " + c.getSimpleName(), ex);
+                }
+            }
+        } // FOR
+        return (stmts);
+    }
 }

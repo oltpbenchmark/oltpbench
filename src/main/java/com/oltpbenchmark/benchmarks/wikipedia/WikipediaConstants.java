@@ -76,5 +76,8 @@ public abstract class WikipediaConstants {
     public static final String TABLENAME_USER_GROUPS = "user_groups";
     public static final String TABLENAME_WATCHLIST = "watchlist";
 
+    public static final String TABLENAME_PAGE_BACKUP = "page_backup";
+    public static final String TABLENAME_VALUE_BACKUP = "value_backup";
+
 
 }
