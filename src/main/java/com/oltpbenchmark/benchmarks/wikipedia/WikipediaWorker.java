@@ -33,17 +33,22 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Random;
 
 public class WikipediaWorker extends Worker<WikipediaBenchmark> {
     private static final Logger LOG = LoggerFactory.getLogger(WikipediaWorker.class);
 
     private final int num_users;
     private final int num_pages;
+    private final Zipf z_users;
+    private final Flat z_pages;
 
     public WikipediaWorker(WikipediaBenchmark benchmarkModule, int id) {
         super(benchmarkModule, id);
         this.num_users = (int) Math.round(WikipediaConstants.USERS * this.getWorkloadConfiguration().getScaleFactor());
         this.num_pages = (int) Math.round(WikipediaConstants.PAGES * this.getWorkloadConfiguration().getScaleFactor());
+        this.z_users = new Zipf(new Random(), 1, this.num_users, WikipediaConstants.USER_ID_SIGMA);
+        this.z_pages = new Flat(new Random(), 1, this.num_pages);
     }
 
     private String generateUserIP() {
@@ -52,8 +57,8 @@ public class WikipediaWorker extends Worker<WikipediaBenchmark> {
 
     @Override
     protected TransactionStatus executeWork(Connection conn, TransactionType nextTransaction) throws UserAbortException, SQLException {
-        Flat z_users = new Flat(this.rng(), 1, this.num_users);
-        Zipf z_pages = new Zipf(this.rng(), 1, this.num_pages, WikipediaConstants.USER_ID_SIGMA);
+//        Flat z_users = new Flat(this.rng(), 1, this.num_users);
+//        Zipf z_pages = new Zipf(this.rng(), 1, this.num_pages, WikipediaConstants.USER_ID_SIGMA);
 
         Class<? extends Procedure> procClass = nextTransaction.getProcedureClass();
         boolean needUser = (procClass.equals(AddWatchList.class) || procClass.equals(RemoveWatchList.class) || procClass.equals(GetPageAuthenticated.class));
