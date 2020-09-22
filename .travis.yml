@@ -66,20 +66,20 @@ addons:
   postgresql: 9.6
 
 env:
- - TEST=junit
- - TEST=epinions
- - TEST=tatp
- - TEST=tpcc
- - TEST=voter
- - TEST=auctionmark
- - TEST=wikipedia
- - TEST=ycsb
- - TEST=seats
- - TEST=sibench
- - TEST=noop
- - TEST=smallbank
- - TEST=twitter
- - TEST=resourcestresser
+  - TEST=junit
+  - TEST=epinions
+  - TEST=tatp
+  - TEST=tpcc
+  - TEST=voter
+  - TEST=auctionmark
+  - TEST=wikipedia
+  - TEST=ycsb
+  - TEST=seats
+  - TEST=sibench
+  - TEST=noop
+  - TEST=smallbank
+  - TEST=twitter
+  - TEST=resourcestresser
   - TEST=chbenchmark
 
 # Missing loader com.oltpbenchmark.benchmarks.resourcestresser.ResourceStresserBenchmark.makeLoaderImpl(ResourceStresserBenchmark.java:58)
@@ -165,17 +165,17 @@ script:
     cd oltpbench2-20.1.3-SNAPSHOT;
     config=config/${DB}/sample_${TEST}_config.xml ;
     sed -i
-      -e "/<type>/c\<type>${TYPE}</type>"
-      -e "/<driver>/c\<driver>${DRIVER}</driver>"
-      -e "/<url>/c\<url>${URLBASE}/${TEST}</url>"
-      -e "/<username>/c\<username>travis</username>"
-      -e "/<password>/c\<password>travis</password>"
-      -e "/<isolation>/c\<isolation>TRANSACTION_SERIALIZABLE</isolation>"
-      -e "/<batchsize>/c\<batchsize>128</batchsize>"
-      -e "/<scalefactor>/c\<scalefactor>${SCALEFACTOR}</scalefactor>"
-      -e "/<terminals>/c\<terminals>${TERMINALS}</terminals>"
-      -e "/<time>/c\<time>${TIME}</time>"
-      "${config}";
+    -e "/<type>/c\<type>${TYPE}</type>"
+    -e "/<driver>/c\<driver>${DRIVER}</driver>"
+    -e "/<url>/c\<url>${URLBASE}/${TEST}</url>"
+    -e "/<username>/c\<username>travis</username>"
+    -e "/<password>/c\<password>travis</password>"
+    -e "/<isolation>/c\<isolation>TRANSACTION_SERIALIZABLE</isolation>"
+    -e "/<batchsize>/c\<batchsize>128</batchsize>"
+    -e "/<scalefactor>/c\<scalefactor>${SCALEFACTOR}</scalefactor>"
+    -e "/<terminals>/c\<terminals>${TERMINALS}</terminals>"
+    -e "/<time>/c\<time>${TIME}</time>"
+    "${config}";
     java -jar oltpbench2.jar -b "${BENCH}" -c "${config}" --create=true --load=true --execute=true;
     fi
 
