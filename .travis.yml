@@ -14,6 +14,9 @@ cache:
 language: java
 jdk:
   - openjdk11
+  - openjdk10
+  - openjdk8
+  - oraclejdk8
 
 #matrix:
 #  allow_failures:
@@ -111,10 +114,10 @@ before_install:
 
 install:
   - echo $TRAVIS_JDK_VERSION
-  - if [ $TRAVIS_JDK_VERSION == openjdk11 ]; then
-    DB=postgres;
-    else
+  - if [ $TRAVIS_JDK_VERSION == oraclejdk8 ]; then
     DB=mysql;
+    else
+    DB=postgres;
     fi
   - if [ $DB == mysql ]; then mysql -e "SELECT VERSION()";
     echo -e "[mysqld]\nlower_case_table_names=1" | sudo tee -a /etc/mysql/my.cnf ;
