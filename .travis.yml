@@ -112,7 +112,7 @@ before_install:
 
 install:
   - echo $TRAVIS_JDK_VERSION
-  - if [ $TRAVIS_JDK_VERSION == openjdk11 ]; then
+  - if [ $TRAVIS_JDK_VERSION == openjdk13 ]; then
     DB=postgres;
     else
     DB=mysql;
