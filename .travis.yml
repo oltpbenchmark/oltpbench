@@ -9,7 +9,7 @@ cache:
 
   # We only are going to test on jdk8 + jdk10.
   # openjdk9 + oraclejdk10 were both removed from Ubuntu
-
+ 
 # Mainly for jdk11
 language: java
 jdk:
