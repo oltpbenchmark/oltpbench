@@ -108,7 +108,7 @@ services:
 # Increase the size of ramdisk on sudo enabled infrastructure
 # https://github.com/travis-ci/travis-ci/issues/9036#issuecomment-357189213
 before_install:
-  - sudo mount -o remount,size=50% /var/ramfs
+  - sudo mount -o remount,size=100% /var/ramfs
 
 install:
   - echo $TRAVIS_JDK_VERSION
