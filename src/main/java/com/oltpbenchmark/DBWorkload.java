@@ -454,7 +454,6 @@ public class DBWorkload {
         options.addOption("d", "directory", true, "Base directory for the result files, default is current directory");
         options.addOption(null, "dialects-export", true, "Export benchmark SQL to a dialects file");
         options.addOption("jh", "json-histograms", true, "Export histograms to JSON file");
-        options.addOption("o", "output", true, "Output file");
         return options;
     }
 
@@ -521,65 +520,57 @@ public class DBWorkload {
         if (argsLine.hasOption("d")) {
             outputDirectory = argsLine.getOptionValue("d");
         }
-
-
         FileUtil.makeDirIfNotExists(outputDirectory.split("/"));
         ResultUploader ru = new ResultUploader(r, xmlConfig, argsLine);
 
         String name = StringUtils.join(StringUtils.split(argsLine.getOptionValue("b"), ','), '-');
-        String baseFileName;
-        if (argsLine.getOptionValue("o") != null) {
-            baseFileName = argsLine.getOptionValue("o");
-        } else {
-            baseFileName = name + "_" + TimeUtil.getCurrentTimeString();
-        }
 
         int windowSize = Integer.parseInt(argsLine.getOptionValue("s", "5"));
 
-        String rawFileName = baseFileName + ".raw.csv";
+        String rawFileName = "raw.csv";
         try (PrintStream ps = new PrintStream(new File(FileUtil.joinPath(outputDirectory, rawFileName)))) {
             LOG.info("Output Raw data into file: {}", rawFileName);
             r.writeAllCSVAbsoluteTiming(activeTXTypes, ps);
         }
 
-        String sampleFileName = baseFileName + ".samples.csv";
+        String sampleFileName = "samples.csv";
         try (PrintStream ps = new PrintStream(new File(FileUtil.joinPath(outputDirectory, sampleFileName)))) {
             LOG.info("Output samples into file: {}", sampleFileName);
             r.writeCSV2(ps);
         }
 
-        String summaryFileName = baseFileName + ".summary.json";
+        String summaryFileName = "summary.json";
         try (PrintStream ps = new PrintStream(new File(FileUtil.joinPath(outputDirectory, summaryFileName)))) {
             LOG.info("Output summary data into file: {}", summaryFileName);
             ru.writeSummary(ps);
         }
 
-        String paramsFileName = baseFileName + ".params.json";
+        String paramsFileName = "params.json";
         try (PrintStream ps = new PrintStream(new File(FileUtil.joinPath(outputDirectory, paramsFileName)))) {
             LOG.info("Output DBMS parameters into file: {}", paramsFileName);
             ru.writeDBParameters(ps);
         }
 
-        String metricsFileName = baseFileName + ".metrics.json";
+        String metricsFileName = "metrics.json";
         try (PrintStream ps = new PrintStream(new File(FileUtil.joinPath(outputDirectory, metricsFileName)))) {
             LOG.info("Output DBMS metrics into file: {}", metricsFileName);
             ru.writeDBMetrics(ps);
         }
 
-        String configFileName = baseFileName + ".config.xml";
+        String configFileName = "config.xml";
         try (PrintStream ps = new PrintStream(new File(FileUtil.joinPath(outputDirectory, configFileName)))) {
             LOG.info("Output benchmark config into file: {}", configFileName);
             ru.writeBenchmarkConf(ps);
         }
 
-        String resultsFileName = baseFileName + ".results.csv";
+        String resultsFileName = "results.csv";
         try (PrintStream ps = new PrintStream(new File(FileUtil.joinPath(outputDirectory, resultsFileName)))) {
             LOG.info("Output results into file: {} with window size {}", resultsFileName, windowSize);
             r.writeCSV(windowSize, ps);
         }
 
         for (TransactionType t : activeTXTypes) {
-            String fileName = baseFileName + ".results." + t.getName() + ".csv";
+            String fileName = "results." + t.getName() + ".csv";
             try (PrintStream ps = new PrintStream(new File(FileUtil.joinPath(outputDirectory, fileName)))) {
                 r.writeCSV(windowSize, ps, t);
             }
