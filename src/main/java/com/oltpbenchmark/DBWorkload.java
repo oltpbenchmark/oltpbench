@@ -357,7 +357,7 @@ public class DBWorkload {
             for (Phase p : wrkld.getPhases()) {
                 j++;
                 if (p.getWeightCount() != numTxnTypes) {
-                    LOG.error(String.format("Configuration files is inconsistent, phase %d contains %d weights but you defined %d transaction types", j, p.getWeightCount(),numTxnTypes));
+                    LOG.error(String.format("Configuration files is inconsistent, phase %d contains %d weights but you defined %d transaction types", j, p.getWeightCount(), numTxnTypes));
                     if (p.isSerial()) {
                         LOG.error("However, note that since this a serial phase, the weights are irrelevant (but still must be included---sorry).");
                     }
@@ -454,6 +454,7 @@ public class DBWorkload {
         options.addOption("d", "directory", true, "Base directory for the result files, default is current directory");
         options.addOption(null, "dialects-export", true, "Export benchmark SQL to a dialects file");
         options.addOption("jh", "json-histograms", true, "Export histograms to JSON file");
+        options.addOption("o", "output", true, "Output file");
         return options;
     }
 
@@ -526,8 +527,12 @@ public class DBWorkload {
         ResultUploader ru = new ResultUploader(r, xmlConfig, argsLine);
 
         String name = StringUtils.join(StringUtils.split(argsLine.getOptionValue("b"), ','), '-');
-
-        String baseFileName = name + "_" + TimeUtil.getCurrentTimeString();
+        String baseFileName;
+        if (argsLine.getOptionValue("o") != null) {
+            baseFileName = argsLine.getOptionValue("o");
+        } else {
+            baseFileName = name + "_" + TimeUtil.getCurrentTimeString();
+        }
 
         int windowSize = Integer.parseInt(argsLine.getOptionValue("s", "5"));
 
