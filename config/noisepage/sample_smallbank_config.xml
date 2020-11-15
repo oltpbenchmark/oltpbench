@@ -4,41 +4,43 @@
     <!-- Connection details -->
     <type>NOISEPAGE</type>
     <driver>org.postgresql.Driver</driver>
-    <url>jdbc:postgresql://localhost:15721/tpcc?preferQueryMode=extended</url>
-    <username>username</username>
+    <url>jdbc:postgresql://localhost:15721/smallbank?sslmode=disable&amp;ApplicationName=smallbank&amp;reWriteBatchedInserts=true</url>
+    <username>admin</username>
     <password>password</password>
     <isolation>TRANSACTION_SERIALIZABLE</isolation>
     <batchsize>128</batchsize>
 
-    <!-- Scale factor is the number of warehouses in TPCC -->
     <scalefactor>1</scalefactor>
 
     <!-- The workload -->
     <terminals>1</terminals>
     <works>
         <work>
-            <time>60</time>
-            <rate>10000</rate>
-            <weights>45,43,4,4,4</weights>
+            <time>20</time>
+            <rate>100</rate>
+            <weights>15,15,15,25,15,15</weights>
         </work>
     </works>
 
-    <!-- TPCC specific -->
+    <!-- SmallBank Procedures declaration -->
     <transactiontypes>
         <transactiontype>
-            <name>NewOrder</name>
+            <name>Amalgamate</name>
         </transactiontype>
         <transactiontype>
-            <name>Payment</name>
+            <name>Balance</name>
         </transactiontype>
         <transactiontype>
-            <name>OrderStatus</name>
+            <name>DepositChecking</name>
         </transactiontype>
         <transactiontype>
-            <name>Delivery</name>
+            <name>SendPayment</name>
         </transactiontype>
         <transactiontype>
-            <name>StockLevel</name>
+            <name>TransactSavings</name>
+        </transactiontype>
+        <transactiontype>
+            <name>WriteCheck</name>
         </transactiontype>
     </transactiontypes>
 </parameters>

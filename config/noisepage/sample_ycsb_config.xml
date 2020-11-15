@@ -4,41 +4,44 @@
     <!-- Connection details -->
     <type>NOISEPAGE</type>
     <driver>org.postgresql.Driver</driver>
-    <url>jdbc:postgresql://localhost:15721/tpcc?preferQueryMode=extended</url>
-    <username>username</username>
+    <url>jdbc:postgresql://localhost:15721/ycsb?sslmode=disable&amp;ApplicationName=ycsb&amp;reWriteBatchedInserts=true</url>
+    <username>admin</username>
     <password>password</password>
     <isolation>TRANSACTION_SERIALIZABLE</isolation>
     <batchsize>128</batchsize>
 
-    <!-- Scale factor is the number of warehouses in TPCC -->
+    <!-- Scalefactor in YCSB is *1000 the number of rows in the USERTABLE-->
     <scalefactor>1</scalefactor>
 
     <!-- The workload -->
     <terminals>1</terminals>
     <works>
         <work>
-            <time>60</time>
+            <time>300</time>
             <rate>10000</rate>
-            <weights>45,43,4,4,4</weights>
+            <weights>50,5,15,10,10,10</weights>
         </work>
     </works>
 
-    <!-- TPCC specific -->
+    <!-- YCSB Procedures declaration -->
     <transactiontypes>
         <transactiontype>
-            <name>NewOrder</name>
+            <name>ReadRecord</name>
         </transactiontype>
         <transactiontype>
-            <name>Payment</name>
+            <name>InsertRecord</name>
         </transactiontype>
         <transactiontype>
-            <name>OrderStatus</name>
+            <name>ScanRecord</name>
         </transactiontype>
         <transactiontype>
-            <name>Delivery</name>
+            <name>UpdateRecord</name>
         </transactiontype>
         <transactiontype>
-            <name>StockLevel</name>
+            <name>DeleteRecord</name>
+        </transactiontype>
+        <transactiontype>
+            <name>ReadModifyWriteRecord</name>
         </transactiontype>
     </transactiontypes>
 </parameters>
