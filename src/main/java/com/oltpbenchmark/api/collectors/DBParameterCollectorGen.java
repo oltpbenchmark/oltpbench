@@ -29,6 +29,8 @@ public class DBParameterCollectorGen {
                 return new PostgresCollector(dbUrl, username, password);
             case COCKROACHDB:
                 return new CockroachCollector(dbUrl, username, password);
+            case NOISEPAGE:
+                return new NoisePageCollector(dbUrl, username, password);
 //            case MYROCKS: {
 //                return new MyRocksCollector(dbUrl, username, password);
 //            }
