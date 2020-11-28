@@ -280,8 +280,8 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         int lastPercent = -1;
 
         for (int i = lo; i <= hi; i++) {
-            String title = WikipediaUtil.generatePageTitle(rand, i);
-            int namespace = WikipediaUtil.generatePageNamespace(rand, i);
+            String title = WikipediaUtil.generatePageTitle(i);
+            int namespace = WikipediaUtil.generatePageNamespace(i);
             String restrictions = h_restrictions.nextValue();
             assert (restrictions.isEmpty() == false); // Check for Oracle
             double pageRandom = rand.nextDouble();
@@ -378,8 +378,8 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
                 assert (pageId > 0);
                 userPages.add(pageId);
 
-                Integer namespace = WikipediaUtil.generatePageNamespace(rand, pageId);
-                String title = WikipediaUtil.generatePageTitle(rand, pageId);
+                Integer namespace = WikipediaUtil.generatePageNamespace(pageId);
+                String title = WikipediaUtil.generatePageTitle(pageId);
 
                 int param = 1;
                 watchInsert.setInt(param++, user_id); // wl_user

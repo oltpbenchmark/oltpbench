@@ -79,8 +79,8 @@ public class WikipediaWorker extends Worker<WikipediaBenchmark> {
         // Figure out what page they're going to update
         int page_id = z_pages.nextInt();
 
-        String pageTitle = WikipediaUtil.generatePageTitle(this.rng(), page_id);
-        int nameSpace = WikipediaUtil.generatePageNamespace(this.rng(), page_id);
+        String pageTitle = WikipediaUtil.generatePageTitle(page_id);
+        int nameSpace = WikipediaUtil.generatePageNamespace(page_id);
 
         // AddWatchList
         try {

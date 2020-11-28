@@ -24,7 +24,8 @@ import com.oltpbenchmark.util.TextGenerator;
 
 public abstract class WikipediaUtil {
 
-    public static String generatePageTitle(Random rand, int page_id) {
+    public static String generatePageTitle(, int page_id) {
+	Random rand = new Random();
         rand.setSeed(page_id);
 
         FlatHistogram<Integer> h_titleLength = new FlatHistogram<Integer>(rand, PageHistograms.TITLE_LENGTH);
@@ -35,7 +36,8 @@ public abstract class WikipediaUtil {
         return TextGenerator.randomStr(rand, titleLength) + " [" + page_id + "]";
     }
 
-    public static int generatePageNamespace(Random rand, int page_id) {
+    public static int generatePageNamespace(int page_id) {
+	Random rand = new Random();
         rand.setSeed(page_id);
 
         FlatHistogram<Integer> h_namespace = new FlatHistogram<Integer>(rand, PageHistograms.NAMESPACE);
