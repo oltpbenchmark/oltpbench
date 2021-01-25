@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="tpcc - sqlserver" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="com.oltpbenchmark.DBWorkload" />
+    <module name="oltpbench2" />
+    <option name="PROGRAM_PARAMETERS" value="-b tpcc -c config/sqlserver/sample_tpcc_config.xml --create=true --load=true --execute=true" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

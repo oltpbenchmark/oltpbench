@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -92,7 +93,9 @@ public abstract class BenchmarkModule {
      * @throws SQLException
      */
     public final Connection getConnection() throws SQLException {
-        return dataSource.getConnection();
+        Connection conn = dataSource.getConnection();
+        Catalog.setSeparator(conn);
+        return conn;
     }
 
     // --------------------------------------------------------------------------
@@ -192,13 +195,25 @@ public abstract class BenchmarkModule {
 
             runner.runScript(ddlPath);
 
-            this.catalog = SQLUtil.getCatalog(dbType, conn);
+//            this.catalog = SQLUtil.getCatalog(dbType, conn, this);
+            this.catalog = new Catalog(this);
 
         } catch (Exception ex) {
             throw new RuntimeException(String.format("Unexpected error when trying to create the %s database", getBenchmarkName()), ex);
         }
     }
 
+    public final void createDatabase(DatabaseType dbType, Connection conn) throws SQLException {
+        try {
+            String ddl = this.getDatabaseDDLPath(dbType);
+            assert (ddl != null) : "Failed to get DDL for " + this;
+            ScriptRunner runner = new ScriptRunner(conn, true, true);
+            if (LOG.isDebugEnabled()) LOG.debug("Executing script '" + ddl + "'");
+            runner.runScript(ddl);
+        } catch (Exception ex) {
+            throw new RuntimeException(String.format("Unexpected error when trying to create the %s database", getBenchmarkName()), ex);
+        }
+    }
 
     /**
      * Invoke this benchmark's database loader
@@ -245,7 +260,8 @@ public abstract class BenchmarkModule {
     public final void clearDatabase() {
 
         try (Connection conn = this.getConnection()) {
-            this.catalog = SQLUtil.getCatalog(this.getWorkloadConfiguration().getDatabaseType(), conn);
+//            this.catalog = SQLUtil.getCatalog(this.getWorkloadConfiguration().getDatabaseType(), conn, this);
+            this.catalog = new Catalog(this);
 
             Loader<? extends BenchmarkModule> loader = this.makeLoaderImpl();
             if (loader != null) {
@@ -253,7 +269,7 @@ public abstract class BenchmarkModule {
                 loader.unload(conn, this.catalog);
                 conn.commit();
             }
-        } catch (SQLException ex) {
+        } catch (SQLException | MalformedURLException ex) {
             throw new RuntimeException(String.format("Unexpected error when trying to delete the %s database", getBenchmarkName()), ex);
         }
     }

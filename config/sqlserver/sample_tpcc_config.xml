@@ -2,23 +2,24 @@
 <parameters>
 
     <!-- Connection details -->
-    <type>NOISEPAGE</type>
-    <driver>org.postgresql.Driver</driver>
-    <url>jdbc:postgresql://dev7.db.pdl.local.cmu.edu:15721/tpcc?preferQueryMode=simple&amp;sslmode=disable&amp;ApplicationName=tpcc&amp;reWriteBatchedInserts=true</url>
-    <username>postgres</username>
-    <password>postgres--</password>
-    <isolation>TRANSACTION_SERIALIZABLE</isolation>
+    <type>SQLSERVER</type>
+    <driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</driver>
+    <url>jdbc:sqlserver://ec2-3-227-211-127.compute-1.amazonaws.com:1433;databaseName=tpcc</url>
+    <username>sa</username>
+    <password>Ziyuanxiaoqu202--</password>
+    <isolation>TRANSACTION_READ_COMMITTED</isolation>
     <batchsize>128</batchsize>
 
     <!-- Scale factor is the number of warehouses in TPCC -->
-    <scalefactor>1</scalefactor>
+    <scalefactor>120</scalefactor>
+    <!-- <loaderThreads>1</loaderThreads> -->
 
     <!-- The workload -->
-    <terminals>1</terminals>
+    <terminals>12</terminals>
     <works>
         <work>
             <time>60</time>
-            <rate>10000</rate>
+            <rate>unlimited</rate>
             <weights>45,43,4,4,4</weights>
         </work>
     </works>
