@@ -43,7 +43,7 @@ public class TestCatalog extends TestCase {
         
         this.benchmark = new MockBenchmark();
         Map<String, Table> tables = new HashMap<>();
-        this.catalog = new Catalog(tables);
+        this.catalog = new Catalog(benchmark);
         assertNotNull(this.catalog);
         
         System.err.println("CATALOG:\n" + catalog);

@@ -40,7 +40,7 @@ public class TestTableDataIterable extends AbstractTestCase<SEATSBenchmark> {
     protected void setUp() throws Exception {
         super.setUp(SEATSBenchmark.class);
         Map<String, Table> tables = new HashMap<>();
-        Catalog catalog = new Catalog(tables);
+        Catalog catalog = new Catalog(benchmark);
         assertNotNull(catalog);
         this.catalog_tbl = catalog.getTable("AIRLINE");
         assertNotNull(catalog.toString(), this.catalog_tbl);

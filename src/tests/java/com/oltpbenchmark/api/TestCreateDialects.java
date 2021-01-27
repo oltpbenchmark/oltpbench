@@ -41,7 +41,7 @@ public class TestCreateDialects extends TestCase {
         // Get our catalog information
         this.benchmark = new MockBenchmark();
         Map<String, Table> tables = new HashMap<>();
-        this.catalog = new Catalog(tables);
+        this.catalog = new Catalog(benchmark);
         assertNotNull(this.catalog);
     }
     

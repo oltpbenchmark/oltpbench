@@ -294,10 +294,8 @@ public final class Catalog {
     protected Map<String, String> getOriginalTableNames() throws MalformedURLException {
         Map<String, String> origTableNames = new HashMap<String, String>();
         Pattern p = Pattern.compile("CREATE[\\s]+TABLE[\\s]+(.*?)[\\s]+", Pattern.CASE_INSENSITIVE);
-        String ddlStr = this.benchmark.getDatabaseDDLPath(DatabaseType.HSQLDB);
-//        File ddlFile = new File("/Users/apple/Documents/GitHub/oltpbench/src/main/resources/benchmarks/tpcc/ddl-hsqldb.sql");
-        File ddlFile = new File(resourceDir + ddlStr);
-        URL ddl = ddlFile.toURI().toURL();
+        String ddlPath = this.benchmark.getDatabaseDDLPath(DatabaseType.HSQLDB);
+        URL ddl = this.getClass().getClassLoader().getResource(ddlPath);
         String ddlContents;
         try {
             ddlContents = IOUtils.toString(ddl);
