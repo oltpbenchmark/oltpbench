@@ -43,16 +43,18 @@ public class WikipediaWorker extends Worker<WikipediaBenchmark> {
     private final Zipf z_users;
     private final Flat z_pages;
 
+    Random myRand = new Random();
+
     public WikipediaWorker(WikipediaBenchmark benchmarkModule, int id) {
         super(benchmarkModule, id);
         this.num_users = (int) Math.round(WikipediaConstants.USERS * this.getWorkloadConfiguration().getScaleFactor());
         this.num_pages = (int) Math.round(WikipediaConstants.PAGES * this.getWorkloadConfiguration().getScaleFactor());
-        this.z_users = new Zipf(new Random(), 1, this.num_users, WikipediaConstants.USER_ID_SIGMA);
-        this.z_pages = new Flat(new Random(), 1, this.num_pages);
+        this.z_users = new Zipf(myRand, 1, this.num_users, WikipediaConstants.USER_ID_SIGMA);
+        this.z_pages = new Flat(myRand, 1, this.num_pages);
     }
 
     private String generateUserIP() {
-        return String.format("%d.%d.%d.%d", this.rng().nextInt(255) + 1, this.rng().nextInt(256), this.rng().nextInt(256), this.rng().nextInt(256));
+        return String.format("%d.%d.%d.%d", myRand.nextInt(255) + 1, myRand.nextInt(256), myRand.nextInt(256), myRand.nextInt(256));
     }
 
     @Override
@@ -81,8 +83,8 @@ public class WikipediaWorker extends Worker<WikipediaBenchmark> {
         // Figure out what page they're going to update
         int page_id = z_pages.nextInt();
 
-        String pageTitle = WikipediaUtil.generatePageTitle(this.rng(), page_id);
-        int nameSpace = WikipediaUtil.generatePageNamespace(this.rng(), page_id);
+        String pageTitle = WikipediaUtil.generatePageTitle(myRand, page_id);
+        int nameSpace = WikipediaUtil.generatePageNamespace(myRand, page_id);
 
         // AddWatchList
         try {
@@ -154,7 +156,8 @@ public class WikipediaWorker extends Worker<WikipediaBenchmark> {
 
         WikipediaBenchmark b = this.getBenchmarkModule();
         int revCommentLen = b.commentLength.nextValue();
-        String revComment = TextGenerator.randomStr(this.rng(), revCommentLen + 1);
+        revCommentLen = Math.min(revCommentLen, 127);
+        String revComment = TextGenerator.randomStr(myRand, revCommentLen + 1);
         int revMinorEdit = b.minorEdit.nextValue();
 
         // Permute the original text of the article
