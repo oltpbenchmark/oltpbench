@@ -17,9 +17,7 @@
 
 package com.oltpbenchmark.catalog;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -60,8 +58,6 @@ public final class Catalog {
 
     private static final Random rand = new Random();
 
-    private static final String resourceDir = "src/main/resources/";
-
     /**
      * Create an in-memory instance of HSQLDB so that we can
      * extract all of the catalog information that we need
@@ -79,7 +75,7 @@ public final class Catalog {
     private final Map<String, String> origTableNames;
     private final Connection conn;
 
-    public Catalog(BenchmarkModule benchmark) throws MalformedURLException {
+    public Catalog(BenchmarkModule benchmark) {
         this.benchmark = benchmark;
 
         // Create an internal HSQLDB connection and pull out the
@@ -291,7 +287,7 @@ public final class Catalog {
         return;
     }
 
-    protected Map<String, String> getOriginalTableNames() throws MalformedURLException {
+    protected Map<String, String> getOriginalTableNames() {
         Map<String, String> origTableNames = new HashMap<String, String>();
         Pattern p = Pattern.compile("CREATE[\\s]+TABLE[\\s]+(.*?)[\\s]+", Pattern.CASE_INSENSITIVE);
         String ddlPath = this.benchmark.getDatabaseDDLPath(DatabaseType.HSQLDB);

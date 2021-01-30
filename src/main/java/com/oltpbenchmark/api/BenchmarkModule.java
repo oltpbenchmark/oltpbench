@@ -269,7 +269,7 @@ public abstract class BenchmarkModule {
                 loader.unload(conn, this.catalog);
                 conn.commit();
             }
-        } catch (SQLException | MalformedURLException ex) {
+        } catch (SQLException ex) {
             throw new RuntimeException(String.format("Unexpected error when trying to delete the %s database", getBenchmarkName()), ex);
         }
     }

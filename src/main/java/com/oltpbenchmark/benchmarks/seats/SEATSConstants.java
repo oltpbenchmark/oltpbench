@@ -273,12 +273,12 @@ public abstract class SEATSConstants {
      * to keep a table of how to map these codes to the ids when loading.
      */
 
-    public static final String AIRPORT_ID = "ap_id";
-    public static final String AIRLINE_ID = "al_id";
-    public static final String COUNTRY_ID = "co_id";
-    public static final String AIRLINE_IATA_CODE = "al_iata_code";
-    public static final String AIRPORT_CODE = "ap_code";
-    public static final String COUNTRY_CODE = "co_code_3";
+    public static final String AIRPORT_ID = "AP_ID";
+    public static final String AIRLINE_ID = "AL_ID";
+    public static final String COUNTRY_ID = "CO_ID";
+    public static final String AIRLINE_IATA_CODE = "AL_IATA_CODE";
+    public static final String AIRPORT_CODE = "AP_CODE";
+    public static final String COUNTRY_CODE = "CO_CODE_3";
 
     public static final String[][] CODE_TO_ID_COLUMNS = {
             {TABLENAME_COUNTRY, COUNTRY_CODE, COUNTRY_ID},
