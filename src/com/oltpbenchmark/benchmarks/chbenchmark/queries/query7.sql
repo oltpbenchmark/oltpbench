@@ -30,4 +30,4 @@ GROUP BY su_nationkey,
          l_year
 ORDER BY su_nationkey,
          cust_nation,
-         l_year
+         l_year;

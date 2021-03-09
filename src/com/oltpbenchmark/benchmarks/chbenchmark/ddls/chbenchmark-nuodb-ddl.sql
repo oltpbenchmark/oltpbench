@@ -1,6 +1,6 @@
-DROP TABLE IF EXISTS region CASCADE;
-DROP TABLE IF EXISTS nation CASCADE;
 DROP TABLE IF EXISTS supplier CASCADE;
+DROP TABLE IF EXISTS nation CASCADE;
+DROP TABLE IF EXISTS region CASCADE;
 
 create table region (
    r_regionkey int not null,
