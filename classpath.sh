@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 echo -ne "build"
 for i in `ls lib/*.jar`; do
