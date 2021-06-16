@@ -18,12 +18,31 @@
 package com.oltpbenchmark;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 /** Efficiently stores a record of (start time, latency) pairs. */
 public class LatencyRecord implements Iterable<LatencyRecord.Sample> {
 	/** Allocate space for 500k samples at a time */
 	static final int ALLOC_SIZE = 500000;
+
+	/** Labels for latency metrics */
+	public static Map<String, String> METRIC_LABELS;
+	static{
+		METRIC_LABELS = new HashMap<>();
+		METRIC_LABELS.put("MINIMUM","Minimum Latency (milliseconds)");
+		METRIC_LABELS.put("25TH_PERCENTILE","25th Percentile Latency (milliseconds)");
+		METRIC_LABELS.put("MEDIAN","Median Latency (milliseconds)");
+		METRIC_LABELS.put("AVERAGE","Average Latency (milliseconds)");
+		METRIC_LABELS.put("75TH_PERCENTILE","75th Percentile Latency (milliseconds)");
+		METRIC_LABELS.put("90TH_PERCENTILE","90th Percentile Latency (milliseconds)");
+		METRIC_LABELS.put("95TH_PERCENTILE","95th Percentile Latency (milliseconds)");
+		METRIC_LABELS.put("99TH_PERCENTILE","99th Percentile Latency (milliseconds)");
+		METRIC_LABELS.put("MAXIMUM","Maximum Latency (milliseconds)");
+
+
+	}
 
 	/**
 	 * Contains (start time, latency, transactionType, workerid, phaseid) pentiplets 

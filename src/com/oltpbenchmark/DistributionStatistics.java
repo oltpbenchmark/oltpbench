@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+
 public class DistributionStatistics {
 	private static final Logger LOG = Logger.getLogger(DistributionStatistics.class);
 
@@ -165,15 +166,15 @@ public class DistributionStatistics {
 
 	public Map<String, Double> toMap() {
 		Map<String, Double> distMap = new LinkedHashMap<String, Double>();
-		distMap.put("Minimum Latency (milliseconds)", getMinimum() / 1e3);
-		distMap.put("25th Percentile Latency (milliseconds)", get25thPercentile() / 1e3);
-		distMap.put("Median Latency (milliseconds)", getMedian() / 1e3);
-		distMap.put("Average Latency (milliseconds)", getAverage() / 1e3);
-		distMap.put("75th Percentile Latency (milliseconds)", get75thPercentile() / 1e3);
-		distMap.put("90th Percentile Latency (milliseconds)", get90thPercentile() / 1e3);
-		distMap.put("95th Percentile Latency (milliseconds)", get95thPercentile() / 1e3);
-		distMap.put("99th Percentile Latency (milliseconds)", get99thPercentile() / 1e3);
-		distMap.put("Maximum Latency (milliseconds)", getMaximum() / 1e3);
+		distMap.put(LatencyRecord.METRIC_LABELS.get("MINIMUM"), getMinimum() / 1e3);
+		distMap.put(LatencyRecord.METRIC_LABELS.get("25TH_PERCENTILE"), get25thPercentile() / 1e3);
+		distMap.put(LatencyRecord.METRIC_LABELS.get("MEDIAN"), getMedian() / 1e3);
+		distMap.put(LatencyRecord.METRIC_LABELS.get("AVERAGE"), getAverage() / 1e3);
+		distMap.put(LatencyRecord.METRIC_LABELS.get("75TH_PERCENTILE"), get75thPercentile() / 1e3);
+		distMap.put(LatencyRecord.METRIC_LABELS.get("90TH_PERCENTILE"), get90thPercentile() / 1e3);
+		distMap.put(LatencyRecord.METRIC_LABELS.get("95TH_PERCENTILE"), get95thPercentile() / 1e3);
+		distMap.put(LatencyRecord.METRIC_LABELS.get("99TH_PERCENTILE"), get99thPercentile() / 1e3);
+		distMap.put(LatencyRecord.METRIC_LABELS.get("MAXIMUM"), getMaximum() / 1e3);
 		return distMap;
 	}
 }

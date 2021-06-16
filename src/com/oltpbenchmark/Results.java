@@ -39,6 +39,10 @@ public final class Results {
     final Histogram<TransactionType> txnRetry = new Histogram<TransactionType>(true);
     final Histogram<TransactionType> txnErrors = new Histogram<TransactionType>(true);
     final Map<TransactionType, Histogram<String>> txnAbortMessages = new HashMap<TransactionType, Histogram<String>>();
+    final double MILLISECONDS_FACTOR = 1e3;
+    /** Metrics labels */
+    final String TIME_LABEL = "Time (seconds)";
+    final String THROUGHPUT_LABEL = "Throughput (requests/second)";
     
     public final List<LatencyRecord.Sample> latencySamples;
 
@@ -90,10 +94,21 @@ public final class Results {
     }
     
     public void writeCSV(int windowSizeSeconds, PrintStream out, TransactionType txType) {
-        out.println("time(sec), throughput(req/sec), avg_lat(ms), min_lat(ms), 25th_lat(ms), median_lat(ms), 75th_lat(ms), 90th_lat(ms), 95th_lat(ms), 99th_lat(ms), max_lat(ms), tp (req/s) scaled");
+        out.println(String.format("%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, tp (req/s) scaled",
+            TIME_LABEL,
+            THROUGHPUT_LABEL,
+            LatencyRecord.METRIC_LABELS.get("AVERAGE"),
+            LatencyRecord.METRIC_LABELS.get("MINIMUM"),
+            LatencyRecord.METRIC_LABELS.get("25TH_PERCENTILE"),
+            LatencyRecord.METRIC_LABELS.get("MEDIAN"),
+            LatencyRecord.METRIC_LABELS.get("75TH_PERCENTILE"),
+            LatencyRecord.METRIC_LABELS.get("90TH_PERCENTILE"),
+            LatencyRecord.METRIC_LABELS.get("95TH_PERCENTILE"),
+            LatencyRecord.METRIC_LABELS.get("99TH_PERCENTILE"),
+            LatencyRecord.METRIC_LABELS.get("MAXIMUM")
+        ));
         int i = 0;
         for (DistributionStatistics s : new TimeBucketIterable(latencySamples, windowSizeSeconds, txType)) {
-            final double MILLISECONDS_FACTOR = 1e3;
             out.printf("%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n", i * windowSizeSeconds, (double) s.getCount() / windowSizeSeconds, s.getAverage() / MILLISECONDS_FACTOR,
                     s.getMinimum() / MILLISECONDS_FACTOR, s.get25thPercentile() / MILLISECONDS_FACTOR, s.getMedian() / MILLISECONDS_FACTOR, s.get75thPercentile() / MILLISECONDS_FACTOR,
                     s.get90thPercentile() / MILLISECONDS_FACTOR, s.get95thPercentile() / MILLISECONDS_FACTOR, s.get99thPercentile() / MILLISECONDS_FACTOR, s.getMaximum() / MILLISECONDS_FACTOR,
@@ -108,18 +123,18 @@ public final class Results {
 
     public void writeCSV2(int windowSizeSeconds, PrintStream out, TransactionType txType) {
     	String header[] = {
-	    	"Time (seconds)",
+	    	TIME_LABEL,
 	    	"Requests",
-	    	"Throughput (requests/second)",
-	    	"Minimum Latency (microseconds)",
-	    	"25th Percentile Latency (microseconds)",
-	    	"Median Latency (microseconds)",
-	    	"Average Latency (microseconds)",
-	    	"75th Percentile Latency (microseconds)",
-	    	"90th Percentile Latency (microseconds)",
-	    	"95th Percentile Latency (microseconds)",
-	    	"99th Percentile Latency (microseconds)",
-	    	"Maximum Latency (microseconds)"
+	    	THROUGHPUT_LABEL,
+            LatencyRecord.METRIC_LABELS.get("AVERAGE"),
+            LatencyRecord.METRIC_LABELS.get("MINIMUM"),
+            LatencyRecord.METRIC_LABELS.get("25TH_PERCENTILE"),
+            LatencyRecord.METRIC_LABELS.get("MEDIAN"),
+            LatencyRecord.METRIC_LABELS.get("75TH_PERCENTILE"),
+            LatencyRecord.METRIC_LABELS.get("90TH_PERCENTILE"),
+            LatencyRecord.METRIC_LABELS.get("95TH_PERCENTILE"),
+            LatencyRecord.METRIC_LABELS.get("99TH_PERCENTILE"),
+            LatencyRecord.METRIC_LABELS.get("MAXIMUM")
     	};
     	out.println(StringUtil.join(",", header));
         int i = 0;
@@ -128,15 +143,15 @@ public final class Results {
             		i * windowSizeSeconds,
             		s.getCount(),
             		(double) s.getCount() / windowSizeSeconds,
-                    (int) s.getMinimum(),
-                    (int) s.get25thPercentile(),
-                    (int) s.getMedian(),
-                    (int) s.getAverage(),
-                    (int) s.get75thPercentile(),
-                    (int) s.get90thPercentile(),
-                    (int) s.get95thPercentile(),
-                    (int) s.get99thPercentile(),
-                    (int) s.getMaximum());
+                    (int) s.getMinimum() / MILLISECONDS_FACTOR,
+                    (int) s.get25thPercentile() / MILLISECONDS_FACTOR,
+                    (int) s.getMedian() / MILLISECONDS_FACTOR,
+                    (int) s.getAverage() / MILLISECONDS_FACTOR,
+                    (int) s.get75thPercentile() / MILLISECONDS_FACTOR,
+                    (int) s.get90thPercentile() / MILLISECONDS_FACTOR,
+                    (int) s.get95thPercentile() / MILLISECONDS_FACTOR,
+                    (int) s.get99thPercentile() / MILLISECONDS_FACTOR,
+                    (int) s.getMaximum() / MILLISECONDS_FACTOR);
             i += 1;
         }
     }
