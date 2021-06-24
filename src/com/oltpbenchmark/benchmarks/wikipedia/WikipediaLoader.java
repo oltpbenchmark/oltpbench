@@ -179,7 +179,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         String sql = SQLUtil.getInsertSQL(catalog_tbl, this.getDatabaseType());
         if(this.getDatabaseType() == DatabaseType.ORACLE) {
             // Oracle handles quoted object identifiers differently, do not escape names
-            sql = SQLUtil.getInsertSQL(catalog_tbl, false);
+            sql = SQLUtil.getInsertSQL(catalog_tbl, false, DatabaseType.ORACLE.getInsertKeyword());
         }
         PreparedStatement userInsert = conn.prepareStatement(sql);
 
@@ -268,7 +268,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         String sql = SQLUtil.getInsertSQL(catalog_tbl, this.getDatabaseType());
         if (this.getDatabaseType() == DatabaseType.ORACLE) {
             // Oracle handles quoted object identifiers differently, do not escape names
-            sql = SQLUtil.getInsertSQL(catalog_tbl, false);
+            sql = SQLUtil.getInsertSQL(catalog_tbl, false, DatabaseType.ORACLE.getInsertKeyword());
         }
         PreparedStatement pageInsert = conn.prepareStatement(sql);
 
@@ -427,7 +427,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         String textSQL = SQLUtil.getInsertSQL(textTable, this.getDatabaseType());
         if (this.getDatabaseType() == DatabaseType.ORACLE) {
             // Oracle handles quoted object identifiers differently, do not escape names
-            textSQL = SQLUtil.getInsertSQL(textTable, false);
+            textSQL = SQLUtil.getInsertSQL(textTable, false, DatabaseType.ORACLE.getInsertKeyword());
         }
         PreparedStatement textInsert = conn.prepareStatement(textSQL);
 
@@ -436,7 +436,7 @@ public class WikipediaLoader extends Loader<WikipediaBenchmark> {
         String revSQL = SQLUtil.getInsertSQL(revTable, this.getDatabaseType());
         if (this.getDatabaseType() == DatabaseType.ORACLE) {
             // Oracle handles quoted object identifiers differently, do not escape names
-            revSQL = SQLUtil.getInsertSQL(revTable, false);
+            revSQL = SQLUtil.getInsertSQL(revTable, false, DatabaseType.ORACLE.getInsertKeyword());
         }
         PreparedStatement revisionInsert = conn.prepareStatement(revSQL);
 

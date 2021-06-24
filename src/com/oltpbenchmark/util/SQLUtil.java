@@ -338,7 +338,7 @@ public abstract class SQLUtil {
      * @return
      */
     public static String getInsertSQL(DatabaseType dbType, Table catalog_tbl, int...exclude_columns) {
-        return getInsertSQL(catalog_tbl, false, dbType.shouldEscapeNames(), 1, exclude_columns);
+        return getInsertSQL(catalog_tbl, false, dbType.shouldEscapeNames(), 1, dbType.getInsertKeyword(), exclude_columns);
     }
 
     /**
@@ -347,10 +347,11 @@ public abstract class SQLUtil {
      *
      * @param catalog_tbl Table affected
      * @param escape_names Flag to escape object names
+     * @param insertKeyword
      * @return
      */
-    public static String getInsertSQL(Table catalog_tbl, boolean escape_names, int...exclude_columns) {
-        return getInsertSQL(catalog_tbl, false, escape_names, 1, exclude_columns);
+    public static String getInsertSQL(Table catalog_tbl, boolean escape_names, String insertKeyword, int...exclude_columns) {
+        return getInsertSQL(catalog_tbl, false, escape_names, 1, insertKeyword, exclude_columns);
     }
     
     /**
@@ -363,7 +364,7 @@ public abstract class SQLUtil {
      * @return
      */
     public static String getInsertSQL(Table catalog_tbl, DatabaseType db_type, int... exclude_columns) {
-        return SQLUtil.getInsertSQL(catalog_tbl, false, false, 1, exclude_columns);
+        return SQLUtil.getInsertSQL(catalog_tbl, false, false, 1, db_type.getInsertKeyword(), exclude_columns);
     }
 
     /**
@@ -376,7 +377,7 @@ public abstract class SQLUtil {
      */
     @Deprecated
     public static String getInsertSQL(Table catalog_tbl, boolean show_cols, int batchSize, int...exclude_columns) {
-        return getInsertSQL(catalog_tbl, false, true, batchSize, exclude_columns);
+        return getInsertSQL(catalog_tbl, false, true, batchSize, "INSERT", exclude_columns);
     }
 
     /**
@@ -388,11 +389,13 @@ public abstract class SQLUtil {
      *            the number of sets of parameters
      *            that should be included in the insert
      * @param exclude_columns
+     * @param insertKeyword
      * @return
      */
-    public static String getInsertSQL(Table catalog_tbl, boolean show_cols, boolean escape_names, int batchSize, int... exclude_columns) {
+    public static String getInsertSQL(Table catalog_tbl, boolean show_cols, boolean escape_names, int batchSize, String insertKeyword, int... exclude_columns) {
     	StringBuilder sb = new StringBuilder();
-    	sb.append("INSERT INTO ")
+        sb.append(insertKeyword);
+        sb.append(" INTO ")
     	  .append(escape_names ? catalog_tbl.getEscapedName() : catalog_tbl.getName());
     	
     	StringBuilder values = new StringBuilder();
