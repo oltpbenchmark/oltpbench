@@ -1,3 +1,14 @@
 #!/bin/bash
-java -Xmx8G -cp `./classpath.sh bin` -Dlog4j.configuration=log4j.properties com.oltpbenchmark.DBWorkload $@
+
+JAVA_VERSION=`java -version 2>&1 | grep "java version" | awk '{print $3}' | tr -d \"`
+
+# TODO: Java10 will remove java.xml.bind so we'll need to add JAX-B APIs to the classpath for JDK10+
+
+if [[ "$JAVA_VERSION" > "9" ]]; then
+  JAVA_9_COMPAT="--add-modules java.xml.bind"
+else
+  JAVA_9_COMPAT=""
+fi
+
+java -Xmx8G $JAVA_9_COMPAT -cp `./classpath.sh bin` -Dlog4j.configuration=log4j.properties com.oltpbenchmark.DBWorkload $@
 
