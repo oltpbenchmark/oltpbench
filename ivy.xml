@@ -23,7 +23,8 @@
 		<dependency org="org.xerial" name="sqlite-jdbc" rev="3.6.20" force="true" conf="test->compile(*),runtime(*),master(*)"/>
 		<dependency org="org.postgresql" name="postgresql" rev="42.2.9" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="mysql" name="mysql-connector-java" rev="5.1.47"/>
-		<dependency org="org.hsqldb" name="hsqldb" rev="2.4.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+                <dependency org="org.hsqldb" name="hsqldb" rev="2.4.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="org.apache.phoenix" name="phoenix-client-hbase-2.4" rev="5.1.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 
       <!-- Core Libraries -->
 		<dependency org="junit" name="junit" rev="4.11" force="true" conf="test->compile(*),runtime(*),master(*)"/>
