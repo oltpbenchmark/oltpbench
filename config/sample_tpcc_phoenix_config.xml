@@ -4,7 +4,7 @@
     <!-- Connection details -->
     <dbtype>phoenix</dbtype>
     <driver>org.apache.phoenix.jdbc.PhoenixDriver</driver>
-    <DBUrl>jdbc:phoenix:rajeshph-3.rajeshph.root.hwx.site:2181/tpcc</DBUrl>
+    <DBUrl>jdbc:phoenix:localhost:2181/tpcc</DBUrl>
     <username>root</username>
     <password></password>
     <isolation>TRANSACTION_READ_COMMITTED</isolation>
