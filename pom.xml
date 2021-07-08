@@ -10,8 +10,8 @@
     <packaging>jar</packaging>
     
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.10</maven.compiler.source>
+        <maven.compiler.target>1.10</maven.compiler.target>
         <phoenix.version>5.1.0</phoenix.version>
     </properties>
     
