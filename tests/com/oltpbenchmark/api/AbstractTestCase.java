@@ -89,8 +89,7 @@ public abstract class AbstractTestCase<T extends BenchmarkModule> extends TestCa
     @SuppressWarnings({ "rawtypes", "unchecked" })
     protected void setUp(Class<T> clazz, Class...procClasses) throws Exception {
         super.setUp();
-//        Class.forName(DB_TYPE.getSuggestedDriver());
-        
+
         this.workConf = new WorkloadConfiguration();
         TransactionTypes txnTypes = new TransactionTypes();
         for (int i = 0; i < procClasses.length; i++) {
