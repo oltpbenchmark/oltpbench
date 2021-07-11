@@ -34,9 +34,8 @@ public abstract class AbstractTestBenchmarkModule<T extends BenchmarkModule> ext
      * testGetDatabaseDDL
      */
     public void testGetDatabaseDDL() throws Exception {
-        String ddl = this.benchmark.getDatabaseDDL();
+        String ddl = this.benchmark.getDatabaseDDLPath(this.workConf.getDatabaseType());
         assertNotNull(ddl);
-//        assertNotNull (IOUtils.toString(ddl));
     }
 
     /**
