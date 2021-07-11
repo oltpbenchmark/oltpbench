@@ -46,7 +46,7 @@ public class TestAuctionMarkWorker extends AbstractTestWorker<AuctionMarkBenchma
         // Make a bunch of workers and then loop through all of them to
         // make sure that they don't generate a seller id that was
         // generated from another worker
-        this.workers = this.benchmark.makeWorkers(false);
+        this.workers = this.benchmark.makeWorkers();
         assertNotNull(this.workers);
         assertEquals(num_workers, this.workers.size());
         
@@ -58,7 +58,7 @@ public class TestAuctionMarkWorker extends AbstractTestWorker<AuctionMarkBenchma
             assertNotNull(w);
             
             // Get the uninitialized profile
-            AuctionMarkProfile profile = worker.getProfile();
+            AuctionMarkProfile profile = worker.profile;
             assertNotNull(profile);
             assertTrue(profile.users_per_itemCount.isEmpty());
             

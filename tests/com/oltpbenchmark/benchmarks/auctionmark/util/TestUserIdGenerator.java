@@ -77,7 +77,7 @@ public class TestUserIdGenerator extends TestCase {
         Map<Integer, UserIdGenerator> clientGenerators = new HashMap<Integer, UserIdGenerator>();
         for (int client = 0; client < num_clients; client++) {
             generator = new UserIdGenerator(users_per_item_count, num_clients, client);
-            Collection<UserId> users = CollectionUtil.addAll(new HashSet<UserId>(), CollectionUtil.iterable(generator));
+            Collection<UserId> users = CollectionUtil.addAll(new HashSet<UserId>(), CollectionUtil.iterable(generator).iterator());
             assertFalse(users.isEmpty());
             clientIds.put(client, users);
             clientGenerators.put(client, generator);

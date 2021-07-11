@@ -43,10 +43,11 @@ public class TestSEATSBenchmark extends AbstractTestBenchmarkModule<SEATSBenchma
 	 * testGetDataDir
 	 */
 	public void testGetDataDir() throws Exception {
-	    File data_dir = this.benchmark.getDataDir();
+	    String data_dir = this.benchmark.getDataDir();
+	    File f = new File(data_dir);
 	    System.err.println("Data Dir: " + data_dir);
 	    assertNotNull(data_dir);
-	    assertTrue(data_dir.exists());
+	    assertTrue(f.exists());
 	}
 
 }

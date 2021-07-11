@@ -73,7 +73,7 @@ public class TestCollectionUtil extends TestCase {
             a[i] = next;
         } // FOR
         
-        Collection<Integer> c = CollectionUtil.addAll(new HashSet<Integer>(), l);
+        Collection<Integer> c = CollectionUtil.addAll(new HashSet<Integer>(), l.iterator());
         assertEquals(l.size(), c.size());
         assert(c.containsAll(l));
         

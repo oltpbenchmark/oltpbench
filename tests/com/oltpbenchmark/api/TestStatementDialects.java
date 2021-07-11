@@ -19,16 +19,23 @@ package com.oltpbenchmark.api;
 import java.io.File;
 import java.util.Collection;
 
+import com.oltpbenchmark.WorkloadConfiguration;
 import com.oltpbenchmark.benchmarks.epinions.EpinionsBenchmark;
 import com.oltpbenchmark.benchmarks.epinions.TestEpinionsBenchmark;
 import com.oltpbenchmark.benchmarks.epinions.procedures.GetItemAverageRating;
 import com.oltpbenchmark.types.DatabaseType;
 import com.oltpbenchmark.util.ClassUtil;
 import com.oltpbenchmark.util.FileUtil;
+import org.apache.commons.configuration2.XMLConfiguration;
+import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
+import org.apache.commons.configuration2.builder.fluent.Parameters;
+import org.apache.commons.configuration2.convert.LegacyListDelimiterHandler;
+import org.apache.commons.configuration2.tree.xpath.XPathExpressionEngine;
 
 public class TestStatementDialects extends AbstractTestCase<EpinionsBenchmark> {
     
     private File xmlFile;
+    private XMLConfiguration xmlConfig;
     
     private static final DatabaseType TARGET_DATABASE = DatabaseType.SQLITE;
     private static final Class<? extends Procedure> TARGET_PROCEDURE = GetItemAverageRating.class;
@@ -48,6 +55,13 @@ public class TestStatementDialects extends AbstractTestCase<EpinionsBenchmark> {
     protected void setUp() throws Exception {
         super.setUp(EpinionsBenchmark.class, TestEpinionsBenchmark.PROC_CLASSES);
         this.xmlFile = FileUtil.writeStringToTempFile(dialectXML, "xml");
+        Parameters params = new Parameters();
+        FileBasedConfigurationBuilder<XMLConfiguration> builder = new FileBasedConfigurationBuilder<>(XMLConfiguration.class)
+                .configure(params.xml()
+                        .setFile(xmlFile)
+                        .setListDelimiterHandler(new LegacyListDelimiterHandler(','))
+                        .setExpressionEngine(new XPathExpressionEngine()));
+        this.xmlConfig = builder.getConfiguration();
     }
     
     @Override
@@ -64,7 +78,10 @@ public class TestStatementDialects extends AbstractTestCase<EpinionsBenchmark> {
      */
     public void testDumpXMLFile() throws Exception {
         DatabaseType dbType = DatabaseType.POSTGRES;
-        StatementDialects dialects = new StatementDialects(dbType, xmlFile);
+        WorkloadConfiguration tmpWorkConfig = new WorkloadConfiguration();
+        tmpWorkConfig.setDatabaseType(dbType);
+        tmpWorkConfig.setXmlConfig(xmlConfig);
+        StatementDialects dialects = new StatementDialects(tmpWorkConfig);
         
         String dump = dialects.export(dbType, this.benchmark.getProcedures().values());
         assertNotNull(dump);
@@ -76,7 +93,7 @@ public class TestStatementDialects extends AbstractTestCase<EpinionsBenchmark> {
         // we expect to be there
         for (Procedure proc : this.benchmark.getProcedures().values()) {
             assertTrue(proc.getProcedureName(), dump.contains(proc.getProcedureName()));
-            for (String stmtName : proc.getStatments().keySet()) {
+            for (String stmtName : proc.getStatements().keySet()) {
                 assertTrue(proc.getProcedureName() + "." + stmtName, dump.contains(stmtName));
             }
         }
@@ -87,11 +104,13 @@ public class TestStatementDialects extends AbstractTestCase<EpinionsBenchmark> {
      */
     public void testLoadXMLFile() throws Exception {
         for (DatabaseType dbType : DatabaseType.values()) {
-            this.workConf.setDBType(dbType);
-            File xmlFile = this.benchmark.getSQLDialect();
+            this.workConf.setDatabaseType(dbType);
+            File xmlFile = new File(this.benchmark.getStatementDialects().getSQLDialectPath(dbType));
             if (xmlFile == null) continue;
-            
-            StatementDialects dialects = new StatementDialects(dbType, xmlFile);
+
+            this.workConf.setXmlConfig(xmlConfig);
+            StatementDialects dialects = new StatementDialects(workConf);
+
             boolean ret = dialects.load();
             if (ret == false) continue;
             
@@ -120,7 +139,10 @@ public class TestStatementDialects extends AbstractTestCase<EpinionsBenchmark> {
      */
     public void testSetDialect() throws Exception {
         // Load in our fabricated dialects
-        StatementDialects dialects = new StatementDialects(TARGET_DATABASE, this.xmlFile);
+        WorkloadConfiguration tmpWorkConfig = new WorkloadConfiguration();
+        tmpWorkConfig.setDatabaseType(TARGET_DATABASE);
+        tmpWorkConfig.setXmlConfig(xmlConfig);
+        StatementDialects dialects = new StatementDialects(tmpWorkConfig);
         boolean ret = dialects.load();
         assertTrue(ret);
         Procedure proc = ClassUtil.newInstance(TARGET_PROCEDURE, new Object[0], new Class<?>[0]);

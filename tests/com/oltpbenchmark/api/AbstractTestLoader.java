@@ -75,7 +75,7 @@ public abstract class AbstractTestLoader<T extends BenchmarkModule> extends Abst
             if (this.ignoreTables.contains(tableName.toUpperCase())) continue;
             Table catalog_tbl = this.catalog.getTable(tableName);
             
-            String sql = SQLUtil.getCountSQL(this.workConf.getDBType(), catalog_tbl);
+            String sql = SQLUtil.getCountSQL(this.workConf.getDatabaseType(), catalog_tbl);
             result = stmt.executeQuery(sql);
             assertNotNull(result);
             boolean adv = result.next();

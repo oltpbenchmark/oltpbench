@@ -34,9 +34,9 @@ public abstract class AbstractTestBenchmarkModule<T extends BenchmarkModule> ext
      * testGetDatabaseDDL
      */
     public void testGetDatabaseDDL() throws Exception {
-        URL ddl = this.benchmark.getDatabaseDDL();
+        String ddl = this.benchmark.getDatabaseDDL();
         assertNotNull(ddl);
-        assertNotNull (IOUtils.toString(ddl));
+//        assertNotNull (IOUtils.toString(ddl));
     }
 
     /**
@@ -91,25 +91,23 @@ public abstract class AbstractTestBenchmarkModule<T extends BenchmarkModule> ext
     /**
      * testGetSQLDialect
      */
-    public void testGetSQLDialect() throws Exception {
-        File xmlFile = this.benchmark.getSQLDialect();
-        if (xmlFile != null) {
-            assertTrue(xmlFile.getAbsolutePath(), xmlFile.exists());
-        }
-    }
+//    public void testGetSQLDialect() throws Exception {
+//        File xmlFile = this.benchmark.getSQLDialect();
+//        if (xmlFile != null) {
+//            assertTrue(xmlFile.getAbsolutePath(), xmlFile.exists());
+//        }
+//    }
     
     /**
      * testLoadSQLDialect
      */
     public void testLoadSQLDialect() throws Exception {
-        File xmlFile = this.benchmark.getSQLDialect();
-        if (xmlFile == null) return;
         
         for (DatabaseType dbType : DatabaseType.values()) {
-            this.workConf.setDBType(dbType);
+            this.workConf.setDatabaseType(dbType);
             
             // Just make sure that we can load it
-            StatementDialects dialects = new StatementDialects(dbType, xmlFile);
+            StatementDialects dialects = new StatementDialects(workConf);
             dialects.load();
             
             for (String procName : dialects.getProcedureNames()) {

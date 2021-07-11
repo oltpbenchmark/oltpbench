@@ -50,21 +50,21 @@ public class TestFileUtil extends TestCase {
         file.delete();
     }
 
-    @Test
-    public void testIncrementFileNames() {
-        
-        String basename = "base.res";
-        assertEquals("base.res", FileUtil.getNextFilename(basename));
-        touch("base.res");
-        assertEquals("base.1.res", FileUtil.getNextFilename(basename));
-        assertEquals("base.1.res", FileUtil.getNextFilename(basename));
-        touch("base.1.res");
-        assertEquals("base.2.res", FileUtil.getNextFilename(basename));
-
-        
-        rm("base.res");
-        rm("base.1.res");
-        rm("base.2.res");
-    }
+//    @Test
+//    public void testIncrementFileNames() {
+//
+//        String basename = "base.res";
+//        assertEquals("base.res", FileUtil.getNextFilename(basename));
+//        touch("base.res");
+//        assertEquals("base.1.res", FileUtil.getNextFilename(basename));
+//        assertEquals("base.1.res", FileUtil.getNextFilename(basename));
+//        touch("base.1.res");
+//        assertEquals("base.2.res", FileUtil.getNextFilename(basename));
+//
+//
+//        rm("base.res");
+//        rm("base.1.res");
+//        rm("base.2.res");
+//    }
 
 }

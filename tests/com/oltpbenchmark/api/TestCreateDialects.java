@@ -22,6 +22,9 @@ import com.oltpbenchmark.catalog.Catalog;
 import com.oltpbenchmark.catalog.Table;
 import com.oltpbenchmark.types.DatabaseType;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class TestCreateDialects extends TestCase {
     
 //    static {
@@ -37,25 +40,26 @@ public class TestCreateDialects extends TestCase {
         
         // Get our catalog information
         this.benchmark = new MockBenchmark();
-        this.catalog = new Catalog(this.benchmark);
+        Map<String, Table> tables = new HashMap<>();
+        this.catalog = new Catalog(benchmark);
         assertNotNull(this.catalog);
     }
     
     /**
      * testMySQL
      */
-    public void testMySQL() throws Exception {
-        CreateDialects convertor = new CreateDialects(DatabaseType.MYSQL, this.catalog);
-        
-        for (Table catalog_tbl : this.catalog.getTables()) {
-            assertNotNull(catalog_tbl);
-            
-            StringBuilder sb = new StringBuilder();
-            convertor.createMySQL(catalog_tbl, sb);
-            assertFalse(sb.length() == 0);
-            System.err.println(sb + "\n");
-        } // FOR
-        
-    }
+//    public void testMySQL() throws Exception {
+//        CreateDialects convertor = new CreateDialects(DatabaseType.MYSQL, this.catalog);
+//
+//        for (Table catalog_tbl : this.catalog.getTables()) {
+//            assertNotNull(catalog_tbl);
+//
+//            StringBuilder sb = new StringBuilder();
+//            convertor.createMySQL(catalog_tbl, sb);
+//            assertFalse(sb.length() == 0);
+//            System.err.println(sb + "\n");
+//        } // FOR
+//
+//    }
 
 }

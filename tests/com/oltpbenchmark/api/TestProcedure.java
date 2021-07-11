@@ -42,7 +42,7 @@ public class TestProcedure extends TestCase {
      * testGetStatments
      */
     public void testGetStatments() throws Exception {
-        Map<String, SQLStmt> stmts = Procedure.getStatments(new DeleteCallForwarding());
+        Map<String, SQLStmt> stmts = Procedure.getStatements(new DeleteCallForwarding());
         assertNotNull(stmts);
         assertEquals(2, stmts.size());
         System.err.println(stmts);
@@ -57,11 +57,11 @@ public class TestProcedure extends TestCase {
         
         // Make sure that procedure handle has the same
         // SQLStmts as what we get back from the static method
-        Map<String, SQLStmt> expected = Procedure.getStatments(proc);
+        Map<String, SQLStmt> expected = Procedure.getStatements(proc);
         assertNotNull(expected);
         System.err.println("EXPECTED:" + expected);
         
-        Map<String, SQLStmt> actual = proc.getStatments();
+        Map<String, SQLStmt> actual = proc.getStatements();
         assertNotNull(actual);
         System.err.println("ACTUAL:" + actual);
         

@@ -89,7 +89,7 @@ public abstract class AbstractTestCase<T extends BenchmarkModule> extends TestCa
     @SuppressWarnings({ "rawtypes", "unchecked" })
     protected void setUp(Class<T> clazz, Class...procClasses) throws Exception {
         super.setUp();
-        Class.forName(DB_TYPE.getSuggestedDriver());
+//        Class.forName(DB_TYPE.getSuggestedDriver());
         
         this.workConf = new WorkloadConfiguration();
         TransactionTypes txnTypes = new TransactionTypes();
@@ -103,7 +103,7 @@ public abstract class AbstractTestCase<T extends BenchmarkModule> extends TestCa
         
         this.dbName = String.format("%s-%d.db", clazz.getSimpleName(), new Random().nextInt());
         this.workConf.setTransTypes(txnTypes);
-        this.workConf.setDBType(DB_TYPE);
+        this.workConf.setDatabaseType(DB_TYPE);
         this.workConf.setDBConnection(DB_CONNECTION + this.dbName);
         this.workConf.setScaleFactor(DB_SCALE_FACTOR);
         
@@ -115,7 +115,7 @@ public abstract class AbstractTestCase<T extends BenchmarkModule> extends TestCa
         
         this.catalog = this.benchmark.getCatalog();
         assertNotNull(this.catalog);
-        this.conn = this.benchmark.makeConnection();
+        this.conn = this.benchmark.getConnection();
         assertNotNull(this.conn);
         assertFalse(this.conn.isReadOnly());
     }

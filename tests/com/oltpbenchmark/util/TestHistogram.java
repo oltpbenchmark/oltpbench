@@ -19,7 +19,7 @@ package com.oltpbenchmark.util;
 
 import org.junit.Test;
 
-import com.oltpbenchmark.util.json.JSONObject;
+import org.json.JSONObject;
 
 import java.lang.reflect.Field;
 import java.util.*;

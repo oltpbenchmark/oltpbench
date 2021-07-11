@@ -20,9 +20,9 @@ import com.oltpbenchmark.api.AbstractTestWorker;
 
 public class TestSEATSWorker extends AbstractTestWorker<SEATSBenchmark> {
 
-    static {
-        org.apache.log4j.PropertyConfigurator.configure("log4j.properties");
-    }
+//    static {
+//        org.apache.log4j.PropertyConfigurator.configure("log4j.properties");
+//    }
 
     @Override
     protected void setUp() throws Exception {

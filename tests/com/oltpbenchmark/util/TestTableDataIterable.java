@@ -18,6 +18,8 @@ package com.oltpbenchmark.util;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.Test;
 
@@ -37,8 +39,8 @@ public class TestTableDataIterable extends AbstractTestCase<SEATSBenchmark> {
     @Override
     protected void setUp() throws Exception {
         super.setUp(SEATSBenchmark.class);
-        
-        Catalog catalog = new Catalog(this.benchmark);
+        Map<String, Table> tables = new HashMap<>();
+        Catalog catalog = new Catalog(benchmark);
         assertNotNull(catalog);
         this.catalog_tbl = catalog.getTable("AIRLINE");
         assertNotNull(catalog.toString(), this.catalog_tbl);
@@ -50,11 +52,12 @@ public class TestTableDataIterable extends AbstractTestCase<SEATSBenchmark> {
      */
     @Test
     public void testLoadFile() throws Exception {
-        File f = SEATSBenchmark.getTableDataFile(benchmark.getDataDir(), catalog_tbl);
+        String tableDataFilePath = SEATSBenchmark.getTableDataFilePath(benchmark.getDataDir(), catalog_tbl);
+        File f = new File(tableDataFilePath);
         assertNotNull(f);
         assertTrue(f.getAbsolutePath(), f.exists());
         
-        TableDataIterable iterable = new TableDataIterable(this.catalog_tbl, f, true, true);
+        TableDataIterable iterable = new TableDataIterable(this.catalog_tbl, tableDataFilePath, true, true);
         int num_cols = -1;
         int num_rows = 0;
         for (Object row[] : iterable) {
