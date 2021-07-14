@@ -12,7 +12,7 @@
     <properties>
         <maven.compiler.source>1.10</maven.compiler.source>
         <maven.compiler.target>1.10</maven.compiler.target>
-        <phoenix.version>5.1.0</phoenix.version>
+        <phoenix.version>5.1.1</phoenix.version>
     </properties>
     
     <!-- *************************************** BUILDING *************************************** -->
@@ -203,7 +203,6 @@
             <artifactId>phoenix-client-hbase-2.4</artifactId>
             <version>${phoenix.version}</version>
         </dependency>
-
         <!--
             Because this isn't an open source jar this is required:
             $ mvn install:install-file \
