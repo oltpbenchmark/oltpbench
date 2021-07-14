@@ -76,7 +76,7 @@ public class TestStatementDialects extends AbstractTestCase<EpinionsBenchmark> {
         // we expect to be there
         for (Procedure proc : this.benchmark.getProcedures().values()) {
             assertTrue(proc.getProcedureName(), dump.contains(proc.getProcedureName()));
-            for (String stmtName : proc.getStatments().keySet()) {
+            for (String stmtName : proc.getStatements().keySet()) {
                 assertTrue(proc.getProcedureName() + "." + stmtName, dump.contains(stmtName));
             }
         }
@@ -87,7 +87,7 @@ public class TestStatementDialects extends AbstractTestCase<EpinionsBenchmark> {
      */
     public void testLoadXMLFile() throws Exception {
         for (DatabaseType dbType : DatabaseType.values()) {
-            this.workConf.setDBType(dbType);
+            this.workConf.setDatabaseType(dbType);
             File xmlFile = this.benchmark.getSQLDialect();
             if (xmlFile == null) continue;
             
