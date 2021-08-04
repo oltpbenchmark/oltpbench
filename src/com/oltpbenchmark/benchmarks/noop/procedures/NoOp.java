@@ -50,11 +50,13 @@ public class NoOp extends Procedure {
         // exception here and check whether it is actually working
         // correctly.
         try {
-            ResultSet r = stmt.executeQuery();
-            while (r.next()) {
-                // Do nothing
-            } // WHILE
-            r.close();
+            if (stmt.execute()) {
+                ResultSet r = stmt.getResultSet();
+                while (r.next()) {
+                    // Do nothing
+                } // WHILE
+                r.close();
+            }
         } catch (Exception ex) {
             // This error should be something like "No results were returned by the query."
             if (LOG.isDebugEnabled()) {
