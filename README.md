@@ -2,6 +2,14 @@
 
 [![Build Status](https://travis-ci.org/oltpbenchmark/oltpbench.png)](https://travis-ci.org/oltpbenchmark/oltpbench)
 
+### UPDATE 2021-08-22: Project moved to [BenchBase](https://github.com/cmu-db/benchbase).
+
+The OLTP-Bench project is **deprecated**. All development and maintenance has been moved to [BenchBase](https://github.com/cmu-db/benchbase).
+We have abandoned this repository and will no longer be updating it. It is unknown whether it will work on future versions of Java.
+We will not accept pull requests for this repository. We will also not respond to questions or problems that you may have with running with this software. The BenchBase project is backwards compatiable with OLTP-Bench, so you will want to change your dependencies to use the new repo.
+
+-----------------
+
 Benchmarking is incredibly useful, yet endlessly painful. This benchmark suite is the result of a group of
 Phd/post-docs/professors getting together and combining their workloads/frameworks/experiences/efforts. We hope this
 will save other people's time, and will provide an extensible platform, that can be grown in an open-source fashion. 
