@@ -52,6 +52,7 @@ public enum DatabaseType {
     CASSANDRA("com.github.adejanovski.cassandra.jdbc.CassandraDriver", true, true, false),
     MEMSQL("com.mysql.jdbc.Driver", true, false, false),
     NOISEPAGE("org.postgresql.Driver", false, false, true),
+    PHOENIX("org.apache.phoenix.jdbc.PhoenixDriver",false, false, true),
     ;
     
     private DatabaseType(String driver,
