@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<parameters>
+	
+    <!-- Connection details -->
+    <dbtype>nuodb</dbtype>
+    <driver>com.nuodb.jdbc.Driver</driver>
+    <DBUrl>jdbc:com.nuodb://arrakis/chbenchmark</DBUrl>
+    <DBName>chbenchmark</DBName>
+    <username>dba</username>
+    <password>dba</password>
+    <!-- isolation>TRANSACTION_SERIALIZABLE</isolation -->
+    <isolation>TRANSACTION_READ_COMMITTED</isolation>
+	
+    <!-- Scale factor is the number of warehouses in TPCC -->
+    <scalefactor>2</scalefactor>
+    
+    <!-- The workload -->
+    <!-- Workload-specific options a marked with @bench=[workload_name] -->
+    <!-- Workload-specific number of terminals -->
+    <!-- Number of terminal per workload -->
+    <terminals bench="chbenchmark">1</terminals>
+    <terminals bench="tpcc">4</terminals>
+	
+    <works>
+        <work>
+          <warmup>10</warmup>
+          <time>60</time>
+	  <rate bench="chbenchmark">unlimited</rate>
+          <rate bench="tpcc">unlimited</rate>
+	  <!-- NOTE: TPCC workers won't be distributed evenly between warehouses 
+		if not all workers are active -->
+	  <active_terminals bench="tpcc">4</active_terminals>	
+	  <active_terminals bench="chbenchmark">1</active_terminals>
+          <weights bench="chbenchmark">9, 9, 9, 9, 8, 8, 8, 8, 8, 8, 8, 8</weights>
+          <weights bench="tpcc">45,43,4,4,4</weights>
+        </work>
+    </works>
+	
+	<!-- TPCC specific --> 
+	<transactiontypes bench="tpcc">
+    	<transactiontype>
+    		<name>NewOrder</name>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>Payment</name>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>OrderStatus</name>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>Delivery</name>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>StockLevel</name>
+    	</transactiontype>
+   	</transactiontypes>	
+	
+	<!-- TPCH specific w/some Qs removed for performance reasons -->  
+   	<transactiontypes bench="chbenchmark">
+    	<transactiontype>
+    		<name>Q1</name>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>Q2</name>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>Q3</name>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>Q4</name>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>Q6</name>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>Q11</name>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>Q12</name>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>Q13</name>
+    	</transactiontype>    	
+    	<transactiontype>
+    		<name>Q14</name>
+    	</transactiontype>      
+    	<transactiontype>
+    		<name>Q17</name>
+    	</transactiontype>
+    	<transactiontype>
+    		<name>Q18</name>
+    	</transactiontype>   
+    	<transactiontype>
+    		<name>Q19</name>
+    	</transactiontype>
+   	</transactiontypes>	
+
+</parameters>
