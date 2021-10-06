@@ -34,34 +34,37 @@ public enum DatabaseType {
      * (3) Should SQLUtil.getInsertSQL include col names
      * (4) Does this DBMS support "real" transactions?
      */
-    DB2("com.ibm.db2.jcc.DB2Driver", true, false, true),
-    MYSQL("com.mysql.jdbc.Driver", true, false, true),
-    MYROCKS("com.mysql.jdbc.Driver", true, false, true),
-    POSTGRES("org.postgresql.Driver", false, false, true),
-    ORACLE("oracle.jdbc.driver.OracleDriver", true, false, true),
-    SQLSERVER("com.microsoft.sqlserver.jdbc.SQLServerDriver", true, false, true),
-    SQLITE("org.sqlite.JDBC", true, false, true),
-    AMAZONRDS(null, true, false, true),
-    SQLAZURE(null, true, false, true),
-    ASSCLOWN(null, true, false, true),
-    HSQLDB("org.hsqldb.jdbcDriver", false, false, true),
-    H2("org.h2.Driver", true, false, true),
-    MONETDB("nl.cwi.monetdb.jdbc.MonetDriver", false, false, true),
-    NUODB("com.nuodb.jdbc.Driver", true, false, true),
-    TIMESTEN("com.timesten.jdbc.TimesTenDriver", true, false, true),
-    CASSANDRA("com.github.adejanovski.cassandra.jdbc.CassandraDriver", true, true, false),
-    MEMSQL("com.mysql.jdbc.Driver", true, false, false),
-    NOISEPAGE("org.postgresql.Driver", false, false, true),
+    DB2("com.ibm.db2.jcc.DB2Driver", true, false, true, "INSERT"),
+    MYSQL("com.mysql.jdbc.Driver", true, false, true, "INSERT"),
+    MYROCKS("com.mysql.jdbc.Driver", true, false, true, "INSERT"),
+    POSTGRES("org.postgresql.Driver", false, false, true, "INSERT"),
+    ORACLE("oracle.jdbc.driver.OracleDriver", true, false, true, "INSERT"),
+    SQLSERVER("com.microsoft.sqlserver.jdbc.SQLServerDriver", true, false, true, "INSERT"),
+    SQLITE("org.sqlite.JDBC", true, false, true, "INSERT"),
+    AMAZONRDS(null, true, false, true, "INSERT" ),
+    SQLAZURE(null, true, false, true, "INSERT"),
+    ASSCLOWN(null, true, false, true, "INSERT"),
+    HSQLDB("org.hsqldb.jdbcDriver", false, false, true, "INSERT"),
+    H2("org.h2.Driver", true, false, true, "INSERT"),
+    MONETDB("nl.cwi.monetdb.jdbc.MonetDriver", false, false, true, "INSERT"),
+    NUODB("com.nuodb.jdbc.Driver", true, false, true, "INSERT"),
+    TIMESTEN("com.timesten.jdbc.TimesTenDriver", true, false, true, "INSERT"),
+    CASSANDRA("com.github.adejanovski.cassandra.jdbc.CassandraDriver", true, true, false, "INSERT"),
+    MEMSQL("com.mysql.jdbc.Driver", true, false, false, "INSERT"),
+    NOISEPAGE("org.postgresql.Driver", false, false, true, "INSERT")
     ;
     
     private DatabaseType(String driver,
                          boolean escapeNames,
                          boolean includeColNames,
-                         boolean supportTxns) {
+                         boolean supportTxns,
+                         String insertKeyword) {
         this.driver = driver;
         this.escapeNames = escapeNames;
         this.includeColNames = includeColNames;
         this.supportTxns = supportTxns;
+        this.insertKeyword = insertKeyword;
+
     }
     
     /**
@@ -90,6 +93,13 @@ public enum DatabaseType {
      * when the framework tries to set the isolation level.
      */
     private boolean supportTxns;
+
+    /**
+     * Most of the databases use "INSERT" key word in insert statements to write data to database
+     * but some databases like Apache Phoenix uses "UPSERT" to combine the semantics of insert
+     * and update together in same query. This helps to define the insert key word used in DB.
+     */
+    private String insertKeyword;
     
     // ---------------------------------------------------------------
     // ACCESSORS
@@ -129,6 +139,8 @@ public enum DatabaseType {
     public boolean shouldUseTransactions() {
         return (this.supportTxns);
     }
+
+    public String getInsertKeyword() { return (this.insertKeyword); }
     
     // ----------------------------------------------------------------
     // STATIC METHODS + MEMBERS
